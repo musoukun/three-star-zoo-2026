@@ -1,0 +1,870 @@
+<html><head><meta http-equiv="Content-Type" content="text/html; charset=utf-8"/><title>遊び方</title><style>
+/* cspell:disable-file */
+/* webkit printing magic: print all background colors */
+html {
+	-webkit-print-color-adjust: exact;
+}
+* {
+	box-sizing: border-box;
+	-webkit-print-color-adjust: exact;
+}
+
+html,
+body {
+	margin: 0;
+	padding: 0;
+}
+@media only screen {
+	body {
+		margin: 2em auto;
+		max-width: 900px;
+		color: rgb(55, 53, 47);
+	}
+}
+
+body {
+	line-height: 1.5;
+	white-space: pre-wrap;
+}
+
+a,
+a.visited {
+	color: inherit;
+	text-decoration: underline;
+}
+
+.pdf-relative-link-path {
+	font-size: 80%;
+	color: #444;
+}
+
+h1,
+h2,
+h3 {
+	letter-spacing: -0.01em;
+	line-height: 1.2;
+	font-weight: 600;
+	margin-bottom: 0;
+}
+
+/* Override strong tags inside headings to maintain consistent weight */
+h1 strong,
+h2 strong,
+h3 strong {
+	font-weight: 600;
+}
+
+.page-title {
+	font-size: 2.5rem;
+	font-weight: 700;
+	margin-top: 0;
+	margin-bottom: 0.75em;
+}
+
+h1 {
+	font-size: 1.875rem;
+	margin-top: 1.875rem;
+}
+
+h2 {
+	font-size: 1.5rem;
+	margin-top: 1.5rem;
+}
+
+h3 {
+	font-size: 1.25rem;
+	margin-top: 1.25rem;
+}
+
+.source {
+	border: 1px solid #ddd;
+	border-radius: 3px;
+	padding: 1.5em;
+	word-break: break-all;
+}
+
+.callout {
+	border-radius: 10px;
+	padding: 1rem;
+}
+
+figure {
+	margin: 1.25em 0;
+	page-break-inside: avoid;
+}
+
+figcaption {
+	opacity: 0.5;
+	font-size: 85%;
+	margin-top: 0.5em;
+}
+
+mark {
+	background-color: transparent;
+}
+
+.indented {
+	padding-left: 1.5em;
+}
+
+hr {
+	background: transparent;
+	display: block;
+	width: 100%;
+	height: 1px;
+	visibility: visible;
+	border: none;
+	border-bottom: 1px solid rgba(55, 53, 47, 0.09);
+}
+
+img {
+	max-width: 100%;
+}
+
+@media only print {
+	img {
+		max-height: 100vh;
+		object-fit: contain;
+	}
+}
+
+@page {
+	margin: 1in;
+}
+
+.collection-content {
+	font-size: 0.875rem;
+}
+
+.collection-content td {
+	white-space: pre-wrap;
+	word-break: break-word;
+}
+
+.column-list {
+	display: flex;
+	gap: 46px;
+}
+
+.column {
+	min-width: 0;
+	overflow: hidden;
+}
+
+.column > *:first-child {
+	margin-top: 0;
+}
+
+.table_of_contents-item {
+	display: block;
+	font-size: 0.875rem;
+	line-height: 1.3;
+	padding: 0.125rem;
+}
+
+.table_of_contents-indent-1 {
+	margin-left: 1.5rem;
+}
+
+.table_of_contents-indent-2 {
+	margin-left: 3rem;
+}
+
+.table_of_contents-indent-3 {
+	margin-left: 4.5rem;
+}
+
+.table_of_contents-link {
+	text-decoration: none;
+	opacity: 0.7;
+	border-bottom: 1px solid rgba(55, 53, 47, 0.18);
+}
+
+table,
+th,
+td {
+	border: 1px solid rgba(55, 53, 47, 0.09);
+	border-collapse: collapse;
+}
+
+table {
+	border-left: none;
+	border-right: none;
+}
+
+th,
+td {
+	font-weight: normal;
+	padding: 0.25em 0.5em;
+	line-height: 1.5;
+	min-height: 1.5em;
+	text-align: left;
+}
+
+th {
+	color: rgba(55, 53, 47, 0.6);
+}
+
+ol,
+ul {
+	margin: 0;
+	margin-block-start: 0.6em;
+	margin-block-end: 0.6em;
+}
+
+li > ol:first-child,
+li > ul:first-child {
+	margin-block-start: 0.6em;
+}
+
+ul > li {
+	list-style: disc;
+}
+
+ul.to-do-list {
+	padding-inline-start: 0;
+}
+
+ul.to-do-list > li {
+	list-style: none;
+}
+
+.to-do-children-checked {
+	text-decoration: line-through;
+	opacity: 0.375;
+}
+
+ul.toggle > li {
+	list-style: none;
+}
+
+ul {
+	padding-inline-start: 1.7em;
+}
+
+ul > li {
+	padding-left: 0.1em;
+}
+
+ol {
+	padding-inline-start: 1.6em;
+}
+
+ol > li {
+	padding-left: 0.2em;
+}
+
+.mono ol {
+	padding-inline-start: 2em;
+}
+
+.mono ol > li {
+	text-indent: -0.4em;
+}
+
+.toggle {
+	padding-inline-start: 0em;
+	list-style-type: none;
+}
+
+/* Indent toggle children */
+.toggle > li > details {
+	padding-left: 1.7em;
+}
+
+.toggle > li > details > summary {
+	margin-left: -1.1em;
+}
+
+.selected-value {
+	display: inline-block;
+	padding: 0 0.5em;
+	background: rgba(206, 205, 202, 0.5);
+	border-radius: 3px;
+	margin-right: 0.5em;
+	margin-top: 0.3em;
+	margin-bottom: 0.3em;
+	white-space: nowrap;
+}
+
+.collection-title {
+	display: inline-block;
+	margin-right: 1em;
+}
+
+.page-description {
+	margin-bottom: 2em;
+}
+
+.simple-table {
+	margin-top: 1em;
+	font-size: 0.875rem;
+	empty-cells: show;
+}
+.simple-table td {
+	height: 29px;
+	min-width: 120px;
+}
+
+.simple-table th {
+	height: 29px;
+	min-width: 120px;
+}
+
+.simple-table-header-color {
+	background: rgb(247, 246, 243);
+	color: black;
+}
+.simple-table-header {
+	font-weight: 500;
+}
+
+time {
+	opacity: 0.5;
+}
+
+.icon {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	max-width: 1.2em;
+	max-height: 1.2em;
+	text-decoration: none;
+	vertical-align: text-bottom;
+	margin-right: 0.5em;
+}
+
+img.icon {
+	border-radius: 3px;
+}
+
+.callout img.notion-static-icon {
+	width: 1em;
+	height: 1em;
+}
+
+.callout p {
+	margin: 0;
+}
+
+.callout h1,
+.callout h2,
+.callout h3 {
+	margin: 0 0 0.6rem;
+}
+
+.user-icon {
+	width: 1.5em;
+	height: 1.5em;
+	border-radius: 100%;
+	margin-right: 0.5rem;
+}
+
+.user-icon-inner {
+	font-size: 0.8em;
+}
+
+.text-icon {
+	border: 1px solid #000;
+	text-align: center;
+}
+
+.page-cover-image {
+	display: block;
+	object-fit: cover;
+	width: 100%;
+	max-height: 30vh;
+}
+
+.page-header-icon {
+	font-size: 3rem;
+	margin-bottom: 1rem;
+}
+
+.page-header-icon-with-cover {
+	margin-top: -0.72em;
+	margin-left: 0.07em;
+}
+
+.page-header-icon img {
+	border-radius: 3px;
+}
+
+.link-to-page {
+	margin: 1em 0;
+	padding: 0;
+	border: none;
+	font-weight: 500;
+}
+
+p > .user {
+	opacity: 0.5;
+}
+
+td > .user,
+td > time {
+	white-space: nowrap;
+}
+
+input[type="checkbox"] {
+	transform: scale(1.5);
+	margin-right: 0.6em;
+	vertical-align: middle;
+}
+
+p {
+	margin-top: 0.5em;
+	margin-bottom: 0.5em;
+}
+
+.image {
+	border: none;
+	margin: 1.5em 0;
+	padding: 0;
+	border-radius: 0;
+	text-align: center;
+}
+
+.code,
+code {
+	background: rgba(135, 131, 120, 0.15);
+	border-radius: 3px;
+	padding: 0.2em 0.4em;
+	border-radius: 3px;
+	font-size: 85%;
+	tab-size: 2;
+}
+
+code {
+	color: #eb5757;
+}
+
+.code {
+	padding: 1.5em 1em;
+}
+
+.code-wrap {
+	white-space: pre-wrap;
+	word-break: break-all;
+}
+
+.code > code {
+	background: none;
+	padding: 0;
+	font-size: 100%;
+	color: inherit;
+}
+
+blockquote {
+	font-size: 1em;
+	margin: 1em 0;
+	padding-left: 1em;
+	border-left: 3px solid rgb(55, 53, 47);
+}
+
+blockquote.quote-large {
+	font-size: 1.25em;
+}
+
+.bookmark {
+	text-decoration: none;
+	max-height: 8em;
+	padding: 0;
+	display: flex;
+	width: 100%;
+	align-items: stretch;
+}
+
+.bookmark-title {
+	font-size: 0.85em;
+	overflow: hidden;
+	text-overflow: ellipsis;
+	height: 1.75em;
+	white-space: nowrap;
+}
+
+.bookmark-text {
+	display: flex;
+	flex-direction: column;
+}
+
+.bookmark-info {
+	flex: 4 1 180px;
+	padding: 12px 14px 14px;
+	display: flex;
+	flex-direction: column;
+	justify-content: space-between;
+}
+
+.bookmark-image {
+	width: 33%;
+	flex: 1 1 180px;
+	display: block;
+	position: relative;
+	object-fit: cover;
+	border-radius: 1px;
+}
+
+.bookmark-description {
+	color: rgba(55, 53, 47, 0.6);
+	font-size: 0.75em;
+	overflow: hidden;
+	max-height: 4.5em;
+	word-break: break-word;
+}
+
+.bookmark-href {
+	font-size: 0.75em;
+	margin-top: 0.25em;
+}
+
+.sans { font-family: ui-sans-serif, -apple-system, BlinkMacSystemFont, "Segoe UI Variable Display", "Segoe UI", Helvetica, "Apple Color Emoji", "Noto Sans Arabic", "Noto Sans Hebrew", Arial, sans-serif, "Segoe UI Emoji", "Segoe UI Symbol"; }
+.code { font-family: "SFMono-Regular", Menlo, Consolas, "PT Mono", "Liberation Mono", Courier, monospace; }
+.serif { font-family: Lyon-Text, Georgia, ui-serif, serif; }
+.mono { font-family: iawriter-mono, Nitti, Menlo, Courier, monospace; }
+.pdf .sans { font-family: Inter, ui-sans-serif, -apple-system, BlinkMacSystemFont, "Segoe UI Variable Display", "Segoe UI", Helvetica, "Apple Color Emoji", "Noto Sans Arabic", "Noto Sans Hebrew", Arial, sans-serif, "Segoe UI Emoji", "Segoe UI Symbol", 'Twemoji', 'Noto Color Emoji', 'Noto Sans CJK JP'; }
+.pdf:lang(zh-CN) .sans { font-family: Inter, ui-sans-serif, -apple-system, BlinkMacSystemFont, "Segoe UI Variable Display", "Segoe UI", Helvetica, "Apple Color Emoji", "Noto Sans Arabic", "Noto Sans Hebrew", Arial, sans-serif, "Segoe UI Emoji", "Segoe UI Symbol", 'Twemoji', 'Noto Color Emoji', 'Noto Sans CJK SC'; }
+.pdf:lang(zh-TW) .sans { font-family: Inter, ui-sans-serif, -apple-system, BlinkMacSystemFont, "Segoe UI Variable Display", "Segoe UI", Helvetica, "Apple Color Emoji", "Noto Sans Arabic", "Noto Sans Hebrew", Arial, sans-serif, "Segoe UI Emoji", "Segoe UI Symbol", 'Twemoji', 'Noto Color Emoji', 'Noto Sans CJK TC'; }
+.pdf:lang(ko-KR) .sans { font-family: Inter, ui-sans-serif, -apple-system, BlinkMacSystemFont, "Segoe UI Variable Display", "Segoe UI", Helvetica, "Apple Color Emoji", "Noto Sans Arabic", "Noto Sans Hebrew", Arial, sans-serif, "Segoe UI Emoji", "Segoe UI Symbol", 'Twemoji', 'Noto Color Emoji', 'Noto Sans CJK KR'; }
+.pdf .code { font-family: Source Code Pro, "SFMono-Regular", Menlo, Consolas, "PT Mono", "Liberation Mono", Courier, monospace, 'Twemoji', 'Noto Color Emoji', 'Noto Sans Mono CJK JP'; }
+.pdf:lang(zh-CN) .code { font-family: Source Code Pro, "SFMono-Regular", Menlo, Consolas, "PT Mono", "Liberation Mono", Courier, monospace, 'Twemoji', 'Noto Color Emoji', 'Noto Sans Mono CJK SC'; }
+.pdf:lang(zh-TW) .code { font-family: Source Code Pro, "SFMono-Regular", Menlo, Consolas, "PT Mono", "Liberation Mono", Courier, monospace, 'Twemoji', 'Noto Color Emoji', 'Noto Sans Mono CJK TC'; }
+.pdf:lang(ko-KR) .code { font-family: Source Code Pro, "SFMono-Regular", Menlo, Consolas, "PT Mono", "Liberation Mono", Courier, monospace, 'Twemoji', 'Noto Color Emoji', 'Noto Sans Mono CJK KR'; }
+.pdf .serif { font-family: PT Serif, Lyon-Text, Georgia, ui-serif, serif, 'Twemoji', 'Noto Color Emoji', 'Noto Serif CJK JP'; }
+.pdf:lang(zh-CN) .serif { font-family: PT Serif, Lyon-Text, Georgia, ui-serif, serif, 'Twemoji', 'Noto Color Emoji', 'Noto Serif CJK SC'; }
+.pdf:lang(zh-TW) .serif { font-family: PT Serif, Lyon-Text, Georgia, ui-serif, serif, 'Twemoji', 'Noto Color Emoji', 'Noto Serif CJK TC'; }
+.pdf:lang(ko-KR) .serif { font-family: PT Serif, Lyon-Text, Georgia, ui-serif, serif, 'Twemoji', 'Noto Color Emoji', 'Noto Serif CJK KR'; }
+.pdf .mono { font-family: PT Mono, iawriter-mono, Nitti, Menlo, Courier, monospace, 'Twemoji', 'Noto Color Emoji', 'Noto Sans Mono CJK JP'; }
+.pdf:lang(zh-CN) .mono { font-family: PT Mono, iawriter-mono, Nitti, Menlo, Courier, monospace, 'Twemoji', 'Noto Color Emoji', 'Noto Sans Mono CJK SC'; }
+.pdf:lang(zh-TW) .mono { font-family: PT Mono, iawriter-mono, Nitti, Menlo, Courier, monospace, 'Twemoji', 'Noto Color Emoji', 'Noto Sans Mono CJK TC'; }
+.pdf:lang(ko-KR) .mono { font-family: PT Mono, iawriter-mono, Nitti, Menlo, Courier, monospace, 'Twemoji', 'Noto Color Emoji', 'Noto Sans Mono CJK KR'; }
+.highlight-default {
+	color: rgba(44, 44, 43, 1);
+}
+.highlight-gray {
+	color: rgba(125, 122, 117, 1);
+	fill: rgba(125, 122, 117, 1);
+}
+.highlight-brown {
+	color: rgba(159, 118, 90, 1);
+	fill: rgba(159, 118, 90, 1);
+}
+.highlight-orange {
+	color: rgba(210, 123, 45, 1);
+	fill: rgba(210, 123, 45, 1);
+}
+.highlight-yellow {
+	color: rgba(203, 148, 52, 1);
+	fill: rgba(203, 148, 52, 1);
+}
+.highlight-teal {
+	color: rgba(80, 148, 110, 1);
+	fill: rgba(80, 148, 110, 1);
+}
+.highlight-blue {
+	color: rgba(56, 125, 201, 1);
+	fill: rgba(56, 125, 201, 1);
+}
+.highlight-purple {
+	color: rgba(154, 107, 180, 1);
+	fill: rgba(154, 107, 180, 1);
+}
+.highlight-pink {
+	color: rgba(193, 76, 138, 1);
+	fill: rgba(193, 76, 138, 1);
+}
+.highlight-red {
+	color: rgba(207, 81, 72, 1);
+	fill: rgba(207, 81, 72, 1);
+}
+.highlight-default_background {
+	color: rgba(44, 44, 43, 1);
+}
+.highlight-gray_background {
+	background: rgba(42, 28, 0, 0.07);
+}
+.highlight-brown_background {
+	background: rgba(139, 46, 0, 0.086);
+}
+.highlight-orange_background {
+	background: rgba(224, 101, 1, 0.129);
+}
+.highlight-yellow_background {
+	background: rgba(211, 168, 0, 0.137);
+}
+.highlight-teal_background {
+	background: rgba(0, 100, 45, 0.09);
+}
+.highlight-blue_background {
+	background: rgba(0, 124, 215, 0.094);
+}
+.highlight-purple_background {
+	background: rgba(102, 0, 178, 0.078);
+}
+.highlight-pink_background {
+	background: rgba(197, 0, 93, 0.086);
+}
+.highlight-red_background {
+	background: rgba(223, 22, 0, 0.094);
+}
+.block-color-default {
+	color: inherit;
+	fill: inherit;
+}
+.block-color-gray {
+	color: rgba(125, 122, 117, 1);
+	fill: rgba(125, 122, 117, 1);
+}
+.block-color-brown {
+	color: rgba(159, 118, 90, 1);
+	fill: rgba(159, 118, 90, 1);
+}
+.block-color-orange {
+	color: rgba(210, 123, 45, 1);
+	fill: rgba(210, 123, 45, 1);
+}
+.block-color-yellow {
+	color: rgba(203, 148, 52, 1);
+	fill: rgba(203, 148, 52, 1);
+}
+.block-color-teal {
+	color: rgba(80, 148, 110, 1);
+	fill: rgba(80, 148, 110, 1);
+}
+.block-color-blue {
+	color: rgba(56, 125, 201, 1);
+	fill: rgba(56, 125, 201, 1);
+}
+.block-color-purple {
+	color: rgba(154, 107, 180, 1);
+	fill: rgba(154, 107, 180, 1);
+}
+.block-color-pink {
+	color: rgba(193, 76, 138, 1);
+	fill: rgba(193, 76, 138, 1);
+}
+.block-color-red {
+	color: rgba(207, 81, 72, 1);
+	fill: rgba(207, 81, 72, 1);
+}
+.block-color-default_background {
+	color: inherit;
+	fill: inherit;
+}
+.block-color-gray_background {
+	background: rgba(240, 239, 237, 1);
+}
+.block-color-brown_background {
+	background: rgba(245, 237, 233, 1);
+}
+.block-color-orange_background {
+	background: rgba(251, 235, 222, 1);
+}
+.block-color-yellow_background {
+	background: rgba(249, 243, 220, 1);
+}
+.block-color-teal_background {
+	background: rgba(232, 241, 236, 1);
+}
+.block-color-blue_background {
+	background: rgba(229, 242, 252, 1);
+}
+.block-color-purple_background {
+	background: rgba(243, 235, 249, 1);
+}
+.block-color-pink_background {
+	background: rgba(250, 233, 241, 1);
+}
+.block-color-red_background {
+	background: rgba(252, 233, 231, 1);
+}
+.select-value-color-default { background-color: rgba(42, 28, 0, 0.07); }
+.select-value-color-gray { background-color: rgba(28, 19, 1, 0.11); }
+.select-value-color-brown { background-color: rgba(127, 51, 0, 0.156); }
+.select-value-color-orange { background-color: rgba(196, 88, 0, 0.203); }
+.select-value-color-yellow { background-color: rgba(209, 156, 0, 0.282); }
+.select-value-color-green { background-color: rgba(0, 96, 38, 0.156); }
+.select-value-color-blue { background-color: rgba(0, 118, 217, 0.203); }
+.select-value-color-purple { background-color: rgba(92, 0, 163, 0.141); }
+.select-value-color-pink { background-color: rgba(183, 0, 78, 0.152); }
+.select-value-color-red { background-color: rgba(206, 24, 0, 0.164); }
+
+.checkbox {
+	display: inline-flex;
+	vertical-align: text-bottom;
+	width: 16;
+	height: 16;
+	background-size: 16px;
+	margin-left: 2px;
+	margin-right: 5px;
+}
+
+.checkbox-on {
+	background-image: url("data:image/svg+xml;charset=UTF-8,%3Csvg%20width%3D%2216%22%20height%3D%2216%22%20viewBox%3D%220%200%2016%2016%22%20fill%3D%22none%22%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%3E%0A%3Crect%20width%3D%2216%22%20height%3D%2216%22%20fill%3D%22%2358A9D7%22%2F%3E%0A%3Cpath%20d%3D%22M6.71429%2012.2852L14%204.9995L12.7143%203.71436L6.71429%209.71378L3.28571%206.2831L2%207.57092L6.71429%2012.2852Z%22%20fill%3D%22white%22%2F%3E%0A%3C%2Fsvg%3E");
+}
+
+.checkbox-off {
+	background-image: url("data:image/svg+xml;charset=UTF-8,%3Csvg%20width%3D%2216%22%20height%3D%2216%22%20viewBox%3D%220%200%2016%2016%22%20fill%3D%22none%22%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%3E%0A%3Crect%20x%3D%220.75%22%20y%3D%220.75%22%20width%3D%2214.5%22%20height%3D%2214.5%22%20fill%3D%22white%22%20stroke%3D%22%2336352F%22%20stroke-width%3D%221.5%22%2F%3E%0A%3C%2Fsvg%3E");
+}
+	
+</style></head><body><article id="e73ce6f2-876a-83cd-b1bc-01cc4575508c" class="page sans"><header><img class="page-cover-image" src="%25E8%25A3%25BD%25E5%2593%2581%25E3%2582%25AB%25E3%2583%2583%25E3%2583%25884.jpg" style="object-position:center 50%"/><h1 class="page-title" dir="auto">遊び方</h1><p class="page-description" dir="auto"></p></header><div class="page-body"><div style="display:contents" dir="auto"><p id="6a8ce6f2-876a-8302-bd24-015d6078924d" class=""><strong>日本語</strong>　/　<mark class="highlight-gray"><a href="https://www.notion.so/13e83b72111044028f32afd5e0044eab?pvs=21">English</a></mark>　/　<del><mark class="highlight-gray">繁體中文</mark></del></p></div><div style="display:contents" dir="auto"><p id="c94ce6f2-876a-83e1-a77b-011feb11ea41" class="">
+</p></div><div style="display:contents" dir="auto"><ul id="633ce6f2-876a-82dd-b1c3-014f401d646a" class="toggle"><li><details open=""><summary><mark class="highlight-gray">更新履歴 (最終更新 2023/06/01)</mark></summary><div style="display:contents" dir="auto"><p id="927ce6f2-876a-8265-bb58-818a0dd3c106" class=""><strong>2023/06/01</strong></p></div><div style="display:contents" dir="auto"><ul id="b5ece6f2-876a-83f3-9a87-81735e61e8e4" class="bulleted-list"><li style="list-style-type:disc">英語版の説明ページを公開しました</li></ul></div><div style="display:contents" dir="auto"><p id="13ece6f2-876a-8220-8e38-8198475b2f3b" class=""><strong>2023/05/07</strong></p></div><div style="display:contents" dir="auto"><ul id="a9dce6f2-876a-83ad-aa3f-8134894b09b4" class="bulleted-list"><li style="list-style-type:disc">動物を市場に戻す際のルールについて書き方を調整しました（好きな動物を戻すことができるので、それによって同じ種類の動物同士が離れてしまったも問題ありません。）</li></ul></div><div style="display:contents" dir="auto"><p id="340ce6f2-876a-823c-879c-01e1db851539" class=""><strong>2023/04/30</strong></p></div><div style="display:contents" dir="auto"><ul id="7dcce6f2-876a-8206-96a0-81c6a49ce2d3" class="bulleted-list"><li style="list-style-type:disc">説明書のPDFを追加しました</li></ul></div><div style="display:contents" dir="auto"><p id="72cce6f2-876a-826d-8f16-815f166ba616" class=""><strong>2023/04/21</strong></p></div><div style="display:contents" dir="auto"><ul id="db9ce6f2-876a-82d3-bd4b-01e055542a87" class="bulleted-list"><li style="list-style-type:disc">説明ページを公開しました</li></ul></div></details></li></ul></div><div style="display:contents" dir="auto"><p id="47cce6f2-876a-8392-a167-01a7254f0fcf" class="">
+</p></div><div style="display:contents" dir="auto"><hr id="a79ce6f2-876a-82f6-b3ee-8185891d7810"/></div><div style="display:contents" dir="auto"><p id="dcdce6f2-876a-8255-b8f8-01794c2b721d" class="">
+</p></div><div style="display:contents" dir="auto"><p id="d30ce6f2-876a-8295-9048-0107adbde3d5" class=""><strong>『三つ星動物園 アドベンチャーワールド・エディション』の遊び方</strong></p></div><div style="display:contents" dir="auto"><p id="85bce6f2-876a-83a9-8eb3-819767b53f8f" class="">
+</p></div><div style="display:contents" dir="auto"><hr id="89ace6f2-876a-82ac-bc40-812a0c216025"/></div><div style="display:contents" dir="auto"><h1 id="499ce6f2-876a-8342-8d8b-815bb3154051" class="">目次</h1></div><div style="display:contents" dir="auto"><p id="85fce6f2-876a-829e-95cc-0165e7784e23" class=""><a href="https://www.notion.so/e73ce6f2876a83cdb1bc01cc4575508c?pvs=21">ゲームの概要</a></p></div><div style="display:contents" dir="auto"><p id="b93ce6f2-876a-825f-9d8d-819bf163446f" class=""><a href="https://www.notion.so/e73ce6f2876a83cdb1bc01cc4575508c?pvs=21">準備</a></p></div><div style="display:contents" dir="auto"><p id="5eace6f2-876a-82f5-b0c8-81c99a0b1005" class=""><a href="https://www.notion.so/e73ce6f2876a83cdb1bc01cc4575508c?pvs=21">始める前に</a></p></div><div style="display:contents" dir="auto"><p id="28cce6f2-876a-83cf-aa64-81741404be63" class=""><a href="https://www.notion.so/e73ce6f2876a83cdb1bc01cc4575508c?pvs=21">ゲームスタート</a></p></div><div style="display:contents" dir="auto"><p id="b7bce6f2-876a-8347-8b66-0197531e7c0f" class=""><a href="https://www.notion.so/e73ce6f2876a83cdb1bc01cc4575508c?pvs=21">よくある質問</a></p></div><div style="display:contents" dir="auto"><p id="fc0ce6f2-876a-82b5-8ba7-01ba63b37adf" class=""><a href="https://www.notion.so/e73ce6f2876a83cdb1bc01cc4575508c?pvs=21">逆引き辞書</a></p></div><div style="display:contents" dir="auto"><p id="e53ce6f2-876a-83ef-8daf-81685185f53b" class=""><a href="https://www.notion.so/e73ce6f2876a83cdb1bc01cc4575508c?pvs=21">説明書PDF</a></p></div><div style="display:contents" dir="auto"><p id="056ce6f2-876a-827e-b790-81a6d42de067" class=""><a href="https://www.notion.so/e73ce6f2876a83cdb1bc01cc4575508c?pvs=21">お問い合わせ</a></p></div><div style="display:contents" dir="auto"><p id="4b5ce6f2-876a-82f0-b024-01c095886fb6" class="">
+</p></div><div style="display:contents" dir="auto"><hr id="32fce6f2-876a-827c-8d80-81596773a5c6"/></div><div style="display:contents" dir="auto"><p id="c94ce6f2-876a-8301-a4a2-81fad9fb2fbf" class="">
+</p></div><div style="display:contents" dir="auto"><p id="5d2ce6f2-876a-82c2-a572-0183600be25f" class="">
+</p></div><div style="display:contents" dir="auto"><h1 id="9b7ce6f2-876a-82fe-b93c-018d76f1e8cf" class="">🧑‍🏫 ゲームの概要 🧑‍🏫</h1></div><div style="display:contents" dir="auto"><ul id="48fce6f2-876a-830e-afb3-8137b180dd0f" class="bulleted-list"><li style="list-style-type:disc">『三つ星動物園 アドベンチャーワールド・エディション』は理想の動物園をつくるゲームです。</li></ul></div><div style="display:contents" dir="auto"><ul id="d09ce6f2-876a-8356-9b29-81315bc5f0c9" class="bulleted-list"><li style="list-style-type:disc">あなたの目的は、動物の効果でコインをゲットしながら自分の園を拡大させることです。</li></ul></div><div style="display:contents" dir="auto"><ul id="96cce6f2-876a-82c2-b35d-0140e8a14467" class="bulleted-list"><li style="list-style-type:disc">ただし、動物の効果はサイコロの出目によって発動したりしなかったりするので注意しましょう。</li></ul></div><div style="display:contents" dir="auto"><ul id="0f4ce6f2-876a-83ed-9d9a-01a157f0ce71" class="bulleted-list"><li style="list-style-type:disc">動物園が人気になれば、名声の証である「星」が買えるようになり、この<mark class="highlight-red"><strong>星を最初に3つゲットした人が勝利</strong></mark>です。</li></ul></div><div style="display:contents" dir="auto"><ul id="af1ce6f2-876a-8300-86c0-81f6b57e535e" class="bulleted-list"><li style="list-style-type:disc">それでは、サイコロに一喜一憂しながら栄光の三つ星動物園を目指してがんばりましょう。</li></ul></div><div style="display:contents" dir="auto"><p id="03ace6f2-876a-8340-89d1-01835d4d7b12" class="">
+</p></div><div style="display:contents" dir="auto"><p id="10ace6f2-876a-83ea-9f99-81591c9d64ad" class="">
+</p></div><div style="display:contents" dir="auto"><p id="966ce6f2-876a-8305-b355-010540c48b11" class="">
+</p></div><div style="display:contents" dir="auto"><hr id="b8ece6f2-876a-837a-ba6d-815a7d736d17"/></div><div style="display:contents" dir="auto"><p id="e95ce6f2-876a-8278-a759-0156f68205d2" class="">
+</p></div><div style="display:contents" dir="auto"><p id="4e5ce6f2-876a-8334-87a5-81bc21a26b2f" class="">
+</p></div><div style="display:contents" dir="auto"><h1 id="3face6f2-876a-8225-9687-819ff1648444" class="">📦 準備 📦</h1></div><div style="display:contents" dir="auto"><h2 id="c6ece6f2-876a-82ee-b8a1-014e30803528" class="">箱の中身</h2></div><div style="display:contents" dir="auto"><hr id="df3ce6f2-876a-832e-8c7c-015e8c5e7998"/></div><div style="display:contents" dir="ltr"><figure id="439ce6f2-876a-832c-9945-811ead03b1e3" class="image"><a href="%25E5%2586%2585%25E5%25AE%25B9%25E7%2589%25A9.png"><img style="width:709.9573364257812px" src="%25E5%2586%2585%25E5%25AE%25B9%25E7%2589%25A9.png"/></a></figure></div><div style="display:contents" dir="auto"><p id="6e5ce6f2-876a-8387-b9f1-01b5a6c77532" class="">
+</p></div><div style="display:contents" dir="auto"><p id="1bdce6f2-876a-833a-a550-0125badc1f7b" class="">
+</p></div><div style="display:contents" dir="auto"><h2 id="75ece6f2-876a-8325-8714-0171d3b6ffbb" class="">市場づくり</h2></div><div style="display:contents" dir="auto"><hr id="fdbce6f2-876a-82ce-b0b0-0172d79d5442"/></div><div style="display:contents" dir="auto"><h3 id="8c9ce6f2-876a-82d2-903c-8153cb15012f" class="">1  動物ボードを並べて市場をつくります</h3></div><div style="display:contents" dir="ltr"><figure id="37cce6f2-876a-82ab-986d-81dd4dc991f0" class="image"><a href="%25E5%25B8%2582%25E5%25A0%25B4_gif0815.gif"><img style="width:708px" src="%25E5%25B8%2582%25E5%25A0%25B4_gif0815.gif"/></a></figure></div><div style="display:contents" dir="auto"><p id="edbce6f2-876a-83b8-9625-0148e88ad4a0" class="">上の画像のように並べます。</p></div><div style="display:contents" dir="auto"><p id="720ce6f2-876a-8285-b6c9-810fa3c98816" class="">
+</p></div><div style="display:contents" dir="auto"><p id="b7dce6f2-876a-83d4-a7ae-013afde29ddc" class="">遊ぶ人の中央あたりに並べると、各プレイヤーが見やすくなります。</p></div><div style="display:contents" dir="auto"><p id="2d5ce6f2-876a-8224-a41a-81e9c671d5fd" class="">
+</p></div><div style="display:contents" dir="auto"><h3 id="238ce6f2-876a-8352-9685-019465ed1e93" class="">2  動物チップを重ねます</h3></div><div style="display:contents" dir="ltr"><figure id="4cfce6f2-876a-8265-8bae-010d544fab42" class="image"><a href="%25E3%2583%2581%25E3%2583%2583%25E3%2583%2595%25E3%2582%259A%25E9%2587%258D%25E3%2581%25AD_gif.gif"><img style="width:708px" src="%25E3%2583%2581%25E3%2583%2583%25E3%2583%2595%25E3%2582%259A%25E9%2587%258D%25E3%2581%25AD_gif.gif"/></a></figure></div><div style="display:contents" dir="auto"><p id="3ecce6f2-876a-8266-96a1-01f1b393b95b" class="">動物チップを各動物ボードの上に重ねます。</p></div><div style="display:contents" dir="auto"><p id="b79ce6f2-876a-83ef-9a49-01b4f14ff62d" class="">
+</p></div><div style="display:contents" dir="auto"><p id="952ce6f2-876a-835d-96ab-81d39f6f1b30" class="">使う動物チップの枚数は、プレイ人数によって変わるので、以下の表を見てください。</p></div><div style="display:contents" dir="auto"><p id="a57ce6f2-876a-82b3-98a4-8185374907d2" class="">
+</p></div><div style="display:contents" dir="auto"><p id="a51ce6f2-876a-832b-bcee-01879e4c317f" class=""><strong>プレイ人数と使う動物のチップ数</strong></p></div><div style="display:contents" dir="ltr"><figure id="bc8ce6f2-876a-83b6-a346-01cd4aa58690" class="image"><a href="%25E3%2583%2581%25E3%2583%2583%25E3%2583%2595%25E3%2582%259A%25E6%2595%25B0.png"><img style="width:4615px" src="%25E3%2583%2581%25E3%2583%2583%25E3%2583%2595%25E3%2582%259A%25E6%2595%25B0.png"/></a></figure></div><div style="display:contents" dir="auto"><p id="47ece6f2-876a-820d-b2bb-0188f4011cfa" class="">※ ジャイアントパンダは、7枚中お好きな4枚を選んで遊んでください。</p></div><div style="display:contents" dir="auto"><p id="c7cce6f2-876a-836b-abf5-81ab40bccb03" class="">
+</p></div><div style="display:contents" dir="auto"><h3 id="895ce6f2-876a-824c-8e1e-0194edf49bb7" class="">3  チャンスカードの山札をつくります</h3></div><div style="display:contents" dir="ltr"><figure id="d30ce6f2-876a-8272-8229-01c12e5dda91" class="image"><a href="%25E3%2583%2581%25E3%2583%25A3%25E3%2583%25B3%25E3%2582%25B9%25E3%2582%25AB%25E3%2583%25BC%25E3%2583%2588%25E3%2582%2599%25E9%2585%258D%25E7%25BD%25AE.gif"><img style="width:708px" src="%25E3%2583%2581%25E3%2583%25A3%25E3%2583%25B3%25E3%2582%25B9%25E3%2582%25AB%25E3%2583%25BC%25E3%2583%2588%25E3%2582%2599%25E9%2585%258D%25E7%25BD%25AE.gif"/></a></figure></div><div style="display:contents" dir="auto"><p id="74ace6f2-876a-839c-a889-01d0ae479ac0" class="">シャッフルしたら裏向きにします。</p></div><div style="display:contents" dir="auto"><p id="441ce6f2-876a-83c9-9a9f-012b6ef37f7c" class="">
+</p></div><div style="display:contents" dir="auto"><h3 id="721ce6f2-876a-829c-a2be-81b4550b74cc" class="">4  他のものは1箇所にまとめます</h3></div><div style="display:contents" dir="ltr"><figure id="9ebce6f2-876a-8356-92ad-0173d3c8d4b5" class="image"><a href="%25E9%258A%2580%25E8%25A1%258C%25E3%2581%2586%25E3%2582%2593%25E3%2581%25A1.jpg"><img style="width:709.9715576171875px" src="%25E9%258A%2580%25E8%25A1%258C%25E3%2581%2586%25E3%2582%2593%25E3%2581%25A1.jpg"/></a></figure></div><div style="display:contents" dir="auto"><p id="346ce6f2-876a-8276-bfd8-8148072c1370" class="">コインは箱の中などに集めて「銀行」をつくります。</p></div><div style="display:contents" dir="auto"><p id="06bce6f2-876a-8311-a235-818efef14623" class="">
+</p></div><div style="display:contents" dir="auto"><p id="f37ce6f2-876a-8218-a874-81342763e0f0" class="">星とうんちコマもそれぞれ1箇所にまとめておきましょう。</p></div><div style="display:contents" dir="auto"><p id="c7bce6f2-876a-8256-9ee8-818e35d9aead" class="">
+</p></div><div style="display:contents" dir="auto"><p id="35ece6f2-876a-8306-836d-0131d7ad14e0" class="">
+</p></div><div style="display:contents" dir="auto"><h2 id="aa0ce6f2-876a-83ae-b963-81f87d7949ac" class="">自分の動物園づくり</h2></div><div style="display:contents" dir="auto"><hr id="9c1ce6f2-876a-83d6-87ce-017eba12d39e"/></div><div style="display:contents" dir="auto"><h3 id="e96ce6f2-876a-82fb-b716-8175778aedfb" class="">1  エリアボードを手元に置きます</h3></div><div style="display:contents" dir="ltr"><figure id="b57ce6f2-876a-8221-8027-81979fe6c782" class="image"><a href="%25E3%2582%25A8%25E3%2583%25AA%25E3%2582%25A2%25E3%2583%259B%25E3%2582%2599%25E3%2583%25BC%25E3%2583%2588%25E3%2582%2599%25E9%2585%258D%25E7%25BD%25AEgif.gif"><img style="width:708px" src="%25E3%2582%25A8%25E3%2583%25AA%25E3%2582%25A2%25E3%2583%259B%25E3%2582%2599%25E3%2583%25BC%25E3%2583%2588%25E3%2582%2599%25E9%2585%258D%25E7%25BD%25AEgif.gif"/></a></figure></div><div style="display:contents" dir="auto"><p id="d9cce6f2-876a-83d8-9adc-81138fdf8cba" class="">各プレイヤーはエリアボードを手元に置いて自分の動物園を準備します。</p></div><div style="display:contents" dir="auto"><p id="690ce6f2-876a-834c-927f-0133b0e60fb4" class="">
+</p></div><div style="display:contents" dir="auto"><h3 id="9bace6f2-876a-82a3-b8c1-81a54ed8cb25" class="">2  全員に4コインずつ配ります</h3></div><div style="display:contents" dir="ltr"><figure id="f58ce6f2-876a-836f-96d4-8183ad736f26" class="image"><a href="%25E3%2582%25B3%25E3%2582%25A4%25E3%2583%25B3%25E9%2585%258D%25E3%2582%258Agif.gif"><img style="width:708px" src="%25E3%2582%25B3%25E3%2582%25A4%25E3%2583%25B3%25E9%2585%258D%25E3%2582%258Agif.gif"/></a></figure></div><div style="display:contents" dir="auto"><p id="eb4ce6f2-876a-8309-9339-817ba039417e" class="">各プレイヤーは銀行から4コインもらいます。</p></div><div style="display:contents" dir="auto"><p id="065ce6f2-876a-8288-8d0e-01b62e13a2fa" class="">
+</p></div><div style="display:contents" dir="auto"><p id="7b3ce6f2-876a-8216-be56-015606e50e76" class="">
+</p></div><div style="display:contents" dir="auto"><h2 id="0a2ce6f2-876a-83ba-aa42-8122dd747553" class="">最終的な見た目</h2></div><div style="display:contents" dir="auto"><hr id="bc8ce6f2-876a-8294-aeb8-8178f0834064"/></div><div style="display:contents" dir="ltr"><figure id="322ce6f2-876a-838c-84db-81eb1c3ff969" class="image"><a href="%25E6%259C%2580%25E7%25B5%2582%25E7%259A%2584%25E3%2581%25AA%25E8%25A6%258B%25E3%2581%259F%25E7%259B%25AE.jpg"><img style="width:709.9715576171875px" src="%25E6%259C%2580%25E7%25B5%2582%25E7%259A%2584%25E3%2581%25AA%25E8%25A6%258B%25E3%2581%259F%25E7%259B%25AE.jpg"/></a></figure></div><div style="display:contents" dir="auto"><p id="9bcce6f2-876a-8389-bb47-81cd3b111e5d" class="">上の図のような見た目になれば準備完了です。</p></div><div style="display:contents" dir="auto"><p id="494ce6f2-876a-83f9-a646-812afb38da9f" class="">
+</p></div><div style="display:contents" dir="auto"><p id="d5ece6f2-876a-8213-801c-01dcaf16d09e" class="">
+</p></div><div style="display:contents" dir="auto"><p id="ca3ce6f2-876a-8283-81ee-0126cfcc6063" class="">
+</p></div><div style="display:contents" dir="auto"><hr id="9b7ce6f2-876a-83b8-afe6-8183b64a721b"/></div><div style="display:contents" dir="auto"><p id="465ce6f2-876a-8373-9359-81bac5d578dd" class="">
+</p></div><div style="display:contents" dir="auto"><p id="a39ce6f2-876a-82ba-b604-81b452afd7f2" class="">
+</p></div><div style="display:contents" dir="auto"><h1 id="d71ce6f2-876a-8209-8085-81d5fdd7e375" class="">👷 始める前に 👷</h1></div><div style="display:contents" dir="auto"><p id="e34ce6f2-876a-82da-bf44-01161d10f900" class="">
+</p></div><div style="display:contents" dir="auto"><p id="7d3ce6f2-876a-8237-b1b0-811b6472cc58" class="">ゲームを始める前にポイントを3つだけご紹介します。</p></div><div style="display:contents" dir="auto"><p id="a28ce6f2-876a-83f6-8646-81aad49e3305" class="">
+</p></div><div style="display:contents" dir="auto"><h3 id="639ce6f2-876a-831a-91b0-8172c5741764" class="">ポイント1</h3></div><div style="display:contents" dir="auto"><p id="544ce6f2-876a-82f9-a516-01fc2039a823" class=""><strong>ボードの数字はサイコロの出目と連動している</strong></p></div><div style="display:contents" dir="auto"><hr id="226ce6f2-876a-839a-9c5f-81a8b6886965"/></div><div style="display:contents" dir="ltr"><figure id="780ce6f2-876a-82a1-adab-01c5ce3553bf" class="image"><a href="%25E3%2583%259B%25E3%2582%259A%25E3%2582%25A4%25E3%2583%25B3%25E3%2583%25881.gif"><img style="width:708px" src="%25E3%2583%259B%25E3%2582%259A%25E3%2582%25A4%25E3%2583%25B3%25E3%2583%25881.gif"/></a></figure></div><div style="display:contents" dir="auto"><p id="a4cce6f2-876a-82e3-8f74-811f2db5ff72" class="">エリアボードに書かれている1〜12の数字はサイコロの出目に対応しています。</p></div><div style="display:contents" dir="auto"><p id="bd3ce6f2-876a-82f0-ae1c-010c21e1efda" class="">誰かがサイコロを振ったら、<strong>出目と同じ数字が書かれた自分のエリア</strong>を確認して、もしそのエリアに動物がいれば、動物の効果に応じてコインなどをゲットできます。</p></div><div style="display:contents" dir="auto"><p id="4f8ce6f2-876a-82cd-82f3-81ac622b7806" class="">
+</p></div><div style="display:contents" dir="auto"><h2 id="2edce6f2-876a-8373-a797-818853ab2934" class="">ポイント2</h2></div><div style="display:contents" dir="auto"><p id="a12ce6f2-876a-8367-8b60-81e027ec013e" class=""><strong>動物の効果と発動条件をチェックしよう！</strong></p></div><div style="display:contents" dir="auto"><hr id="552ce6f2-876a-8336-a06f-0164f42e8689"/></div><div style="display:contents" dir="ltr"><figure id="1d8ce6f2-876a-83cd-9c10-81bfbbf8a600" class="image"><a href="%25E3%2583%259B%25E3%2582%259A%25E3%2582%25A4%25E3%2583%25B3%25E3%2583%2588%25EF%25BC%2592%25E7%2599%25BA%25E5%258B%2595%25E6%259D%25A1%25E4%25BB%25B6_gif.gif"><img style="width:708px" src="%25E3%2583%259B%25E3%2582%259A%25E3%2582%25A4%25E3%2583%25B3%25E3%2583%2588%25EF%25BC%2592%25E7%2599%25BA%25E5%258B%2595%25E6%259D%25A1%25E4%25BB%25B6_gif.gif"/></a></figure></div><div style="display:contents" dir="auto"><p id="f9ece6f2-876a-8245-9fcc-8100f66c4015" class="">各動物にはそれぞれ異なる効果があります。また、効果が発動するタイミングが2種類あります。</p></div><div style="display:contents" dir="auto"><p id="584ce6f2-876a-839b-a908-81bc2ef94dc5" class="">
+</p></div><div style="display:contents" dir="auto"><p id="9e0ce6f2-876a-8259-ba99-8150508de423" class=""><mark class="highlight-red_background">自分のターン</mark>・・・<strong>「自分」</strong>がサイコロを振った時に、その出目のエリアに動物がいたら効果が発動</p></div><div style="display:contents" dir="auto"><p id="52bce6f2-876a-8255-9d9f-0129c5929df8" class=""><mark class="highlight-red_background">全員のターン</mark>・・・<strong>「自分または他の人」</strong>がサイコロを振った時に、その出目のエリアに動物がいたら効果が発動</p></div><div style="display:contents" dir="auto"><p id="e74ce6f2-876a-836b-8808-81e12ed85658" class="">
+</p></div><div style="display:contents" dir="auto"><p id="5f2ce6f2-876a-8333-aa88-815e5335bcc5" class="">各動物の効果を上手く活用しながらコインを集めましょう。</p></div><div style="display:contents" dir="auto"><p id="b88ce6f2-876a-82e4-87ac-81dfc9fcb4af" class="">
+</p></div><div style="display:contents" dir="auto"><h2 id="4c6ce6f2-876a-83a0-b172-81cc063c847f" class="">ポイント3</h2></div><div style="display:contents" dir="auto"><p id="4dfce6f2-876a-82ff-95ee-81523dce97fa" class=""><strong>サイコロは1つ振っても2つ振ってもOK！</strong></p></div><div style="display:contents" dir="auto"><hr id="f53ce6f2-876a-832c-b394-8103ca099ffa"/></div><div style="display:contents" dir="ltr"><figure id="0b3ce6f2-876a-836c-b6ef-817c1b6874f4" class="image"><a href="%25E3%2583%259B%25E3%2582%259A%25E3%2582%25A4%25E3%2583%25B3%25E3%2583%25883%25E5%2587%25BA%25E7%259B%25AE%25E7%25A2%25BA%25E7%258E%2587.jpg"><img style="width:709.9573364257812px" src="%25E3%2583%259B%25E3%2582%259A%25E3%2582%25A4%25E3%2583%25B3%25E3%2583%25883%25E5%2587%25BA%25E7%259B%25AE%25E7%25A2%25BA%25E7%258E%2587.jpg"/></a></figure></div><div style="display:contents" dir="auto"><p id="020ce6f2-876a-8241-90d8-01e3310ac76d" class="">サイコロを振るプレイヤーは1つ振るか、2つ振るかを選ぶことができます。</p></div><div style="display:contents" dir="auto"><p id="885ce6f2-876a-8220-87ae-01bde087c720" class="">2つ振ったら2〜12までが出ますが、1つ振りなら1〜6しか出ません。この特性を上手に利用して、相手がどのエリアに動物を置いているかを観察しながら、1つ振りと2つ振りを使い分けましょう。</p></div><div style="display:contents" dir="auto"><p id="18ece6f2-876a-8250-b635-01cb7f309d60" class="">
+</p></div><div style="display:contents" dir="auto"><p id="bedce6f2-876a-82d6-9581-81919f711565" class="">
+</p></div><div style="display:contents" dir="auto"><h2 id="ca9ce6f2-876a-83f4-a389-814f2e66349a" class="">では、はじめましょう！</h2></div><div style="display:contents" dir="auto"><hr id="4dcce6f2-876a-823d-89f8-01c0b45f57da"/></div><div style="display:contents" dir="ltr"><figure id="270ce6f2-876a-82b3-a0f9-014ae9b5c043" class="image"><a href="%25E3%2581%25AF%25E3%2581%2597%25E3%2582%2599%25E3%2582%2581%25E3%2581%25AE%25E9%2585%258D%25E7%25BD%25AEgif.gif"><img style="width:708px" src="%25E3%2581%25AF%25E3%2581%2597%25E3%2582%2599%25E3%2582%2581%25E3%2581%25AE%25E9%2585%258D%25E7%25BD%25AEgif.gif"/></a></figure></div><div style="display:contents" dir="auto"><p id="b83ce6f2-876a-835d-9af1-01fca3bd2224" class="">まずは初期動物を配置していきます。</p></div><div style="display:contents" dir="auto"><p id="98fce6f2-876a-82ea-8d7e-81371910909b" class="">
+</p></div><div style="display:contents" dir="auto"><p id="664ce6f2-876a-8395-ac63-81b222a41318" class="">最近<strong>動物園に行った人</strong>が手番プレイヤーになります。</p></div><div style="display:contents" dir="auto"><p id="ef0ce6f2-876a-838a-96f1-8125404d59dd" class="">
+</p></div><div style="display:contents" dir="auto"><p id="c09ce6f2-876a-83d8-8d42-014a52cdcc87" class="">手番プレイヤーは「レッサーパンダ」と「ペンギン」のチップを1枚ずつ好きなエリアに置きます。この時、2匹はそれぞれ別のエリアに置いてください。</p></div><div style="display:contents" dir="auto"><p id="a32ce6f2-876a-8246-978d-016e2ad36c42" class="">
+</p></div><div style="display:contents" dir="auto"><p id="50fce6f2-876a-830f-9fe9-01ffd6c7a696" class="">これを時計回りに各プレイヤーが行います。全員が動物チップを置いたら準備完了です。</p></div><div style="display:contents" dir="auto"><p id="94fce6f2-876a-8386-af0f-01a39049ac00" class="">
+</p></div><div style="display:contents" dir="auto"><p id="439ce6f2-876a-8229-8552-01e261fe4869" class="">
+</p></div><div style="display:contents" dir="auto"><p id="b63ce6f2-876a-83b2-b3d9-01b34fac769b" class="">
+</p></div><div style="display:contents" dir="auto"><hr id="9c9ce6f2-876a-8203-8c1b-017f9e6d4cd7"/></div><div style="display:contents" dir="auto"><p id="a1cce6f2-876a-8363-b5ff-815119d5ff5d" class="">
+</p></div><div style="display:contents" dir="auto"><p id="dcfce6f2-876a-83c7-ae95-81c602de2d6e" class="">
+</p></div><div style="display:contents" dir="auto"><h1 id="9dfce6f2-876a-824f-ab13-8192cdb2b26e" class="">🚀 ゲームスタート 🚀</h1></div><div style="display:contents" dir="auto"><h2 id="819ce6f2-876a-82a6-9a5d-81abe57e4f04" class="">ゲームの流れ</h2></div><div style="display:contents" dir="auto"><hr id="280ce6f2-876a-83bc-b4b5-81ab55fcf08a"/></div><div style="display:contents" dir="ltr"><figure id="f79ce6f2-876a-83a4-9fc7-018c09f0e326" class="image"><a href="%25E3%2582%25B1%25E3%2582%2599%25E3%2583%25BC%25E3%2583%25A0%25E3%2581%25AE%25E6%25B5%2581%25E3%2582%258C%25E3%2581%25A8%25E3%2583%259B%25E3%2582%259A%25E3%2582%25A4%25E3%2583%25B3%25E3%2583%2588_gif.gif"><img style="width:708px" src="%25E3%2582%25B1%25E3%2582%2599%25E3%2583%25BC%25E3%2583%25A0%25E3%2581%25AE%25E6%25B5%2581%25E3%2582%258C%25E3%2581%25A8%25E3%2583%259B%25E3%2582%259A%25E3%2582%25A4%25E3%2583%25B3%25E3%2583%2588_gif.gif"/></a></figure></div><div style="display:contents" dir="auto"><p id="fa9ce6f2-876a-82c9-bc86-81e888aa8dbb" class="">このゲームは<strong>5つのステップから構成される「1ターン」</strong>を繰り返しながら進行します。</p></div><div style="display:contents" dir="auto"><p id="0ecce6f2-876a-8256-a6a2-01e5c80bd6f3" class="">
+</p></div><div style="display:contents" dir="auto"><p id="02dce6f2-876a-83c4-9ab6-81f217f1bcb5" class="">
+</p></div><div style="display:contents" dir="auto"><h2 id="f01ce6f2-876a-83d1-9032-019453c5f62f" class="">1  うんちをもらう (手番プレイヤー)</h2></div><div style="display:contents" dir="auto"><hr id="5bece6f2-876a-82be-9ad6-81231553bf88"/></div><div style="display:contents" dir="ltr"><figure id="4d5ce6f2-876a-8236-aabb-819de734b5d1" class="image"><a href="%25E3%2581%2586%25E3%2582%2593%25E3%2581%25A1%25E3%2582%2592%25E3%2582%2582%25E3%2582%2589%25E3%2581%2586gif.gif"><img style="width:708px" src="%25E3%2581%2586%25E3%2582%2593%25E3%2581%25A1%25E3%2582%2592%25E3%2582%2582%25E3%2582%2589%25E3%2581%2586gif.gif"/></a></figure></div><div style="display:contents" dir="auto"><p id="2dcce6f2-876a-83de-b282-01a956c7fe59" class="">手番プレイヤーは自分のエリアボードにある全ての動物チップを確認します。</p></div><div style="display:contents" dir="auto"><p id="52ace6f2-876a-8252-9df3-815704796088" class="">
+</p></div><div style="display:contents" dir="auto"><p id="b29ce6f2-876a-83f7-8a38-8180c092006a" class="">チップの右下に書かれているうんちコストの合計を数えて、その分の<strong>うんちコマを手元に置きます</strong>（最初はうんちコスト1のペンギンが1羽いるので、うんちコマを1つもらいます）。</p></div><div style="display:contents" dir="auto"><p id="d4ace6f2-876a-82e0-a9f5-81b555ffa8c9" class="">
+</p></div><div style="display:contents" dir="auto"><p id="a92ce6f2-876a-82c9-9026-814d7828fcdc" class="">
+</p></div><div style="display:contents" dir="auto"><h2 id="7a2ce6f2-876a-8346-83c3-016d7ed822c8" class="">2  サイコロを振る (手番プレイヤー)</h2></div><div style="display:contents" dir="auto"><hr id="45cce6f2-876a-8216-ba62-0190ed650ff0"/></div><div style="display:contents" dir="ltr"><figure id="960ce6f2-876a-82e5-b262-014ec2b5d0f0" class="image"><a href="%25E3%2582%25B5%25E3%2582%25A4%25E3%2582%25B3%25E3%2583%25AD%25E6%258C%25AF%25E3%2582%258B_gif.gif"><img style="width:708px" src="%25E3%2582%25B5%25E3%2582%25A4%25E3%2582%25B3%25E3%2583%25AD%25E6%258C%25AF%25E3%2582%258B_gif.gif"/></a></figure></div><div style="display:contents" dir="auto"><p id="4b2ce6f2-876a-8320-bbf3-81c3eb60c1e3" class="">手番プレイヤーは、サイコロを1つ振るか、2つ振るかを選びます。</p></div><div style="display:contents" dir="auto"><p id="490ce6f2-876a-82f3-a1f4-81e13214a270" class="">
+</p></div><div style="display:contents" dir="auto"><p id="b95ce6f2-876a-820a-b5a8-01a642b1173e" class="">そして、その数を宣言してからサイコロを振ります。</p></div><div style="display:contents" dir="auto"><ul id="facce6f2-876a-8258-ac7f-8117eca0f7ca" class="toggle"><li><details open=""><summary><mark class="highlight-gray">ヒント：サイコロを投げる個数</mark></summary><div style="display:contents" dir="auto"><div><div style="display:contents" dir="ltr"><figure id="91bce6f2-876a-83c0-acd3-010c00181442" class="image"><a href="%25E3%2583%259B%25E3%2582%259A%25E3%2582%25A4%25E3%2583%25B3%25E3%2583%25883%25E5%2587%25BA%25E7%259B%25AE%25E7%25A2%25BA%25E7%258E%2587%201.jpg"><img style="width:1500px" src="%25E3%2583%259B%25E3%2582%259A%25E3%2582%25A4%25E3%2583%25B3%25E3%2583%25883%25E5%2587%25BA%25E7%259B%25AE%25E7%25A2%25BA%25E7%258E%2587%201.jpg"/></a></figure></div><div style="display:contents" dir="auto"><p id="c5dce6f2-876a-83cc-a959-81f1f3b05d00" class="">サイコロを2つ振った際に一番出やすい数字は「7」ですが、1つ振った時は1〜6しか出ません。</p></div><div style="display:contents" dir="auto"><p id="115ce6f2-876a-82d3-982e-81375ee46c6d" class="">
+</p></div><div style="display:contents" dir="auto"><p id="045ce6f2-876a-831f-bffe-8186ed351ed2" class="">ちなみに「2つ振りで7を出す確率」と「1つ振りで1〜6を出す確率」は共に同じ1/6（約16.7%）です。</p></div><div style="display:contents" dir="auto"><p id="9e6ce6f2-876a-8289-95f6-81fa73e78525" class="">
+</p></div><div style="display:contents" dir="auto"><p id="860ce6f2-876a-820d-b584-81a04ea8d7fb" class="">相手のエリアや動物の配置を観察しながら、その時に振るべきサイコロの数を上手く見極めましょう。</p></div></div></div></details></li></ul></div><div style="display:contents" dir="auto"><p id="082ce6f2-876a-839e-8a1e-8194f719af56" class="">
+</p></div><div style="display:contents" dir="auto"><p id="0a1ce6f2-876a-83a8-8cbf-0176f9ecfb0f" class="">
+</p></div><div style="display:contents" dir="auto"><h2 id="456ce6f2-876a-8257-b0d2-813489c94600" class="">3  収入をもらう (全員)</h2></div><div style="display:contents" dir="auto"><hr id="f38ce6f2-876a-8259-b988-8194736a0a73"/></div><div style="display:contents" dir="ltr"><figure id="590ce6f2-876a-8375-8ccb-0114b303758d" class="image"><a href="%25E3%2583%259B%25E3%2582%259A%25E3%2582%25A4%25E3%2583%25B3%25E3%2583%25881.gif"><img style="width:708px" src="%25E3%2583%259B%25E3%2582%259A%25E3%2582%25A4%25E3%2583%25B3%25E3%2583%25881.gif"/></a></figure></div><div style="display:contents" dir="auto"><p id="7abce6f2-876a-83d0-9ed2-81380beba71e" class="">各プレイヤーは<strong>サイコロの目（2個なら合計）と同じ数字が書かれた自分のエリアを確認</strong>します。</p></div><div style="display:contents" dir="auto"><p id="870ce6f2-876a-838c-b124-015eae0767ee" class="">
+</p></div><div style="display:contents" dir="auto"><p id="fbece6f2-876a-830f-a0dc-818a1af16269" class="">もしそのエリアに動物チップが置かれていたら、動物ボードに書かれているその動物の効果が発動して、収入をもらいます。</p></div><div style="display:contents" dir="auto"><p id="1bcce6f2-876a-829a-8398-812b7b466ee0" class="">
+</p></div><div style="display:contents" dir="auto"><p id="71dce6f2-876a-82ba-9ecb-81b60021c7d0" class="">例えば最初のターンなら</p></div><div style="display:contents" dir="auto"><ul id="e33ce6f2-876a-83c9-9256-816d0efee806" class="bulleted-list"><li style="list-style-type:disc">ペンギンがいる場合、銀行から1コインもらいます</li></ul></div><div style="display:contents" dir="auto"><ul id="0dcce6f2-876a-826d-bca1-81b3271cb5f8" class="bulleted-list"><li style="list-style-type:disc">レッサーパンダがいる場合、<strong>自分がサイコロを振った</strong>プレイヤーなら、銀行から1コインもらいます</li></ul></div><div style="display:contents" dir="auto"><p id="a12ce6f2-876a-8266-828d-811cb9e8db52" class="">
+</p></div><div style="display:contents" dir="auto"><p id="b19ce6f2-876a-820b-a01b-817ed7ae27ff" class=""><strong>複数人の効果が同時に発動する場合</strong>は、サイコロを投げた人が一番最後になるように、手番プレイヤーの左隣から時計回りの順番で処理します。</p></div><div style="display:contents" dir="auto"><p id="cc5ce6f2-876a-82d8-8bca-81c8e2eb5575" class="">
+</p></div><div style="display:contents" dir="auto"><h3 id="c4ace6f2-876a-8321-bd3d-016e0b606e80" class="">例：4人で遊んだ場合のコインの流れ</h3></div><div style="display:contents" dir="auto"><p id="7afce6f2-876a-831a-a3b0-81999527bc9a" class="">Aさんが手番プレイヤーで、サイコロを2つ振ったら「4」が出ました。すると、各プレイヤーのコインの行き来はこうなります。</p></div><div style="display:contents" dir="ltr"><figure id="a73ce6f2-876a-82f1-a6e8-816f8294db56" class="image"><a href="%25E5%258F%258E%25E5%2585%25A5%25E3%2583%25AD%25E3%2583%25BC%25E3%2583%2586%25E3%2583%25BC%25E3%2582%25B7%25E3%2583%25A7%25E3%2583%25B3_gif.gif"><img style="width:708px" src="%25E5%258F%258E%25E5%2585%25A5%25E3%2583%25AD%25E3%2583%25BC%25E3%2583%2586%25E3%2583%25BC%25E3%2582%25B7%25E3%2583%25A7%25E3%2583%25B3_gif.gif"/></a></figure></div><div style="display:contents" dir="auto"><p id="647ce6f2-876a-8399-8071-012057d21eea" class="block-color-blue_background">　Bさん（ペンギン）　</p></div><div style="display:contents" dir="auto"><p id="5a2ce6f2-876a-8342-a744-0199795e9eeb" class="">ペンギンは誰のターンでも効果を発動するので、銀行から1コインをゲット</p></div><div style="display:contents" dir="auto"><p id="b0cce6f2-876a-8249-8800-0182ff2066ef" class="">　　↓</p></div><div style="display:contents" dir="auto"><p id="f8dce6f2-876a-82f1-91cc-018c6dc6cebf" class="block-color-red_background">　Cさん（ライオン）</p></div><div style="display:contents" dir="auto"><p id="339ce6f2-876a-821b-bac3-010a4cd70aba" class="">ライオンは誰のターンでも誰か1人からコインをもらう効果なので、Aさんを指名して1コインをゲット</p></div><div style="display:contents" dir="auto"><p id="67fce6f2-876a-8250-99d5-01259317abc2" class="">　　↓</p></div><div style="display:contents" dir="auto"><p id="005ce6f2-876a-8253-a979-0165ddc3e247" class="block-color-orange_background">　Dさん（レッサーパンダ）</p></div><div style="display:contents" dir="auto"><p id="4ffce6f2-876a-82ca-b731-81a553e298d8" class="">レッサーパンダがいますが、「自分のターン（サイコロを投げた時）」ではないので、今回は効果はなし…</p></div><div style="display:contents" dir="auto"><p id="578ce6f2-876a-8242-aec6-0196408561eb" class="">　　↓</p></div><div style="display:contents" dir="auto"><p id="b26ce6f2-876a-8364-be7b-81551853d761" class="block-color-orange_background">　Aさん（レッサーパンダ）</p></div><div style="display:contents" dir="auto"><p id="880ce6f2-876a-834d-a183-813509afb7d5" class="">「自分のターン」でレッサーパンダのいる出目が出たので、銀行から1コインをゲット</p></div><div style="display:contents" dir="auto"><ul id="7eace6f2-876a-8309-b3fe-0118f118e0bb" class="toggle"><li><details open=""><summary><mark class="highlight-gray">動物ボードってどう見ればいいの？</mark></summary><div style="display:contents" dir="auto"><div style="display:contents" dir="auto"><div><div style="display:contents" dir="ltr"><figure id="dc7ce6f2-876a-828f-b981-81c4118d9798" class="image"><a href="%25E5%258B%2595%25E7%2589%25A9%25E3%2582%25AB%25E3%2583%25BC%25E3%2583%2588%25E3%2582%2599%25E8%25AA%25AC%25E6%2598%258E.jpg"><img style="width:709.9573364257812px" src="%25E5%258B%2595%25E7%2589%25A9%25E3%2582%25AB%25E3%2583%25BC%25E3%2583%2588%25E3%2582%2599%25E8%25AA%25AC%25E6%2598%258E.jpg"/></a></figure></div></div></div></div></details></li></ul></div><div style="display:contents" dir="auto"><ul id="902ce6f2-876a-8243-9f4c-019954edfced" class="toggle"><li><details open=""><summary><mark class="highlight-gray">複数人の効果が同時に発生したら誰から処理するの？</mark></summary><div style="display:contents" dir="auto"><p id="87ece6f2-876a-82de-92c8-819e79b2f45d" class="">サイコロを投げた人が一番最後になるように、手番プレイヤーの左隣から時計回りの順番で処理します。</p></div></details></li></ul></div><div style="display:contents" dir="auto"><ul id="b84ce6f2-876a-8374-a9e1-013ab7d80e37" class="toggle"><li><details open=""><summary><mark class="highlight-gray">コインが足りない場合は？</mark></summary><div style="display:contents" dir="auto"><p id="6a9ce6f2-876a-830a-bc85-81f76f1462a0" class="">他のプレイヤーにコインを支払えない場合は、支払える分だけ渡してください。後のターンでまとめて支払ったり、その時もらえなかったコインをあとから要求することはできません。</p></div><div style="display:contents" dir="auto"><p id="82cce6f2-876a-83ff-828e-81f32d362238" class="">銀行のコインが足りなくなった場合は、身の回りのもので代用してください。</p></div></details></li></ul></div><div style="display:contents" dir="auto"><p id="7d3ce6f2-876a-8266-9c57-8172fe604b6d" class="">
+</p></div><div style="display:contents" dir="auto"><h3 id="f73ce6f2-876a-828e-bcb0-8107a4dcb19d" class="">もし、サイコロの出目が11か12なら…</h3></div><div style="display:contents" dir="ltr"><figure id="22cce6f2-876a-8336-b420-81b2a82c11db" class="image"><a href="%25E3%2583%2581%25E3%2583%25A3%25E3%2583%25B3%25E3%2582%25B9%25E7%258D%25B2%25E5%25BE%2597gif.gif"><img style="width:708px" src="%25E3%2583%2581%25E3%2583%25A3%25E3%2583%25B3%25E3%2582%25B9%25E7%258D%25B2%25E5%25BE%2597gif.gif"/></a></figure></div><div style="display:contents" dir="auto"><p id="bebce6f2-876a-823e-8fe5-01990bec1a69" class="">もし<strong>サイコロの出目が11または12</strong>だったら、手番プレイヤーは山札からチャンスカードを1枚引いて、他に人に見られないようにカードの中身を確認します。</p></div><div style="display:contents" dir="auto"><p id="420ce6f2-876a-838b-a2e5-01870f0c90f4" class="">
+</p></div><div style="display:contents" dir="auto"><p id="b66ce6f2-876a-831a-9fb3-81244950b426" class="">引いたチャンスカードはそのターン中に表向きにして使うことができます。</p></div><div style="display:contents" dir="auto"><p id="6f3ce6f2-876a-83a4-990e-81e7da84ebe6" class="">
+</p></div><div style="display:contents" dir="auto"><p id="d28ce6f2-876a-83e6-83c5-01f37176c267" class="">使わない場合は、伏せた状態で手元に置き、以降は自分のターンの「お買い物」中であればいつでも使うことができます。</p></div><div style="display:contents" dir="auto"><ul id="d8fce6f2-876a-823e-b85f-0126fe6bf3b8" class="toggle"><li><details open=""><summary><mark class="highlight-gray">同時に複数枚伏せられるの？</mark></summary><div style="display:contents" dir="auto"><p id="270ce6f2-876a-8241-9939-01de0a0e1605" class="">すでにカードを伏せている状態で新しくカードを引いた場合は、どちらか一方をそのターン内で必ず使ってください。また、1ターンでチャンスカードは複数枚使えます。</p></div></details></li></ul></div><div style="display:contents" dir="auto"><ul id="ab8ce6f2-876a-83e3-ae7a-816b29e1df74" class="toggle"><li><details open=""><summary><mark class="highlight-gray">チャンスカードを使い切ったら？</mark></summary><div style="display:contents" dir="auto"><p id="718ce6f2-876a-830b-a331-8135d03cff7a" class="">一度使用されたチャンスカードは山札には戻さず、捨札とします。山札からチャンスカードがなくなったら、捨札をシャッフルして再び山札を作ります。</p></div></details></li></ul></div><div style="display:contents" dir="auto"><p id="235ce6f2-876a-8225-a3cc-810bf3d52ae7" class="">
+</p></div><div style="display:contents" dir="auto"><h3 id="daace6f2-876a-8231-987a-01bd14a7cdf7" class="">どんなカードが入ってるか</h3></div><div style="display:contents" dir="ltr"><table id="232ce6f2-876a-83d6-b16e-81a8c8d2e379" class="simple-table"><thead class="simple-table-header"><div style="display:contents" dir="ltr"><tr id="ef7ce6f2-876a-839d-aed2-8154d769031c"><th id="T&gt;Oa" class="simple-table-header-color simple-table-header" style="width:47px">枚数</th><th id="f?OP" class="simple-table-header-color simple-table-header" style="width:144.0234375px">効果名</th><th id="g&lt;@b" class="simple-table-header-color simple-table-header" style="width:206.5078125px">効果内容</th></tr></div></thead><tbody><div style="display:contents" dir="ltr"><tr id="3dcce6f2-876a-830d-96af-0192287ced7f"><td id="T&gt;Oa" class="" style="width:47px">2</td><td id="f?OP" class="" style="width:144.0234375px">新メニューがヒット</td><td id="g&lt;@b" class="" style="width:206.5078125px">銀行から3金もらう</td></tr></div><div style="display:contents" dir="ltr"><tr id="fe8ce6f2-876a-835f-ac19-01ec64afaecd"><td id="T&gt;Oa" class="" style="width:47px">2</td><td id="f?OP" class="" style="width:144.0234375px">新商品が大ヒット</td><td id="g&lt;@b" class="" style="width:206.5078125px">銀行から5金もらう</td></tr></div><div style="display:contents" dir="ltr"><tr id="190ce6f2-876a-83d8-b079-81eca484a834"><td id="T&gt;Oa" class="" style="width:47px">2</td><td id="f?OP" class="" style="width:144.0234375px">うんちの堆肥化</td><td id="g&lt;@b" class="" style="width:206.5078125px">自分の💩を最大5個まで<br/>1つあたり1金に変える</td></tr></div><div style="display:contents" dir="ltr"><tr id="a94ce6f2-876a-83ec-b1ce-81a1741386ab"><td id="T&gt;Oa" class="" style="width:47px">2</td><td id="f?OP" class="" style="width:144.0234375px">堆肥の提供</td><td id="g&lt;@b" class="" style="width:206.5078125px">自分の💩を最大6個まで<br/>他のプレイヤーに分配する<br/>(分配人数は複数人でもOK)</td></tr></div><div style="display:contents" dir="ltr"><tr id="53cce6f2-876a-8297-9d9c-811ff7fb9c82"><td id="T&gt;Oa" class="" style="width:47px">2</td><td id="f?OP" class="" style="width:144.0234375px">再入園</td><td id="g&lt;@b" class="" style="width:206.5078125px">このターンが終わったら<br/>自分のターンをもう1度行う</td></tr></div><div style="display:contents" dir="ltr"><tr id="d44ce6f2-876a-8225-af20-016de51d5b4d"><td id="T&gt;Oa" class="" style="width:47px">2</td><td id="f?OP" class="" style="width:144.0234375px">お引っ越し</td><td id="g&lt;@b" class="" style="width:206.5078125px">任意のプレイヤー1人の<br/>動物1頭を指定して市場に戻す</td></tr></div></tbody></table></div><div style="display:contents" dir="auto"><p id="c87ce6f2-876a-8300-8543-012cf417740e" class="">
+</p></div><div style="display:contents" dir="auto"><p id="318ce6f2-876a-83c8-9813-01df73e82d26" class="">
+</p></div><div style="display:contents" dir="auto"><h2 id="749ce6f2-876a-8253-b9c4-8193b897a00e" class="">4  お買い物 (手番プレイヤー)</h2></div><div style="display:contents" dir="auto"><hr id="8d1ce6f2-876a-8229-bdbf-812463d06532"/></div><div style="display:contents" dir="ltr"><figure id="131ce6f2-876a-8262-9f9c-010776718f89" class="image"><a href="%25E3%2581%258A%25E8%25B2%25B7%25E3%2581%2584%25E7%2589%25A9_gif.gif"><img style="width:708px" src="%25E3%2581%258A%25E8%25B2%25B7%25E3%2581%2584%25E7%2589%25A9_gif.gif"/></a></figure></div><div style="display:contents" dir="auto"><p id="a46ce6f2-876a-82a4-ae70-012ed14b2438" class="">全員のコインの処理が終わったら、手番プレイヤーは<strong>3つのアクション</strong>ができます。</p></div><div style="display:contents" dir="auto"><p id="37ace6f2-876a-832c-aea9-8164a2ea0225" class="">
+</p></div><div style="display:contents" dir="auto"><p id="defce6f2-876a-8314-bc02-011feb944183" class="">🐼 <strong>動物を買う（最大1匹）</strong></p></div><div style="display:contents" dir="auto"><p id="0b2ce6f2-876a-83fc-b19a-81db6e2b32ea" class="">⭐ <strong>星を買う（最大1つ）</strong></p></div><div style="display:contents" dir="auto"><p id="a84ce6f2-876a-8361-b145-01f31f0f5771" class="">🚚<strong> 動物を市場に返す（複数OK）</strong></p></div><div style="display:contents" dir="auto"><p id="5b0ce6f2-876a-83b3-8336-01abb45c8d75" class="">
+</p></div><div style="display:contents" dir="auto"><p id="e2ace6f2-876a-83e6-944d-01512e58c71f" class="">1ターンで、いくつでも好きな順番でアクションを行うことができます。</p></div><div style="display:contents" dir="auto"><p id="b95ce6f2-876a-821a-b512-8178482c28f5" class="">
+</p></div><div style="display:contents" dir="auto"><p id="575ce6f2-876a-8249-a30b-01abb177a063" class="">ただし、1ターンに動物を2匹以上買ったり、星を2個以上買うことはできません。</p></div><div style="display:contents" dir="auto"><p id="b31ce6f2-876a-82c0-b81a-813bc2b271aa" class="">
+</p></div><div style="display:contents" dir="auto"><h3 id="371ce6f2-876a-830c-88ad-0158762c558d" class="">🐼 動物を買う</h3></div><div style="display:contents" dir="auto"><div><div style="display:contents" dir="ltr"><figure id="dc7ce6f2-876a-828f-b981-81c4118d9798" class="image"><a href="%25E5%258B%2595%25E7%2589%25A9%25E3%2582%25AB%25E3%2583%25BC%25E3%2583%2588%25E3%2582%2599%25E8%25AA%25AC%25E6%2598%258E.jpg"><img style="width:709.9573364257812px" src="%25E5%258B%2595%25E7%2589%25A9%25E3%2582%25AB%25E3%2583%25BC%25E3%2583%2588%25E3%2582%2599%25E8%25AA%25AC%25E6%2598%258E.jpg"/></a></figure></div></div></div><div style="display:contents" dir="auto"><p id="16dce6f2-876a-8325-9d63-01790094e474" class="">動物ボードの左上に書かれた<strong>購入コストを銀行に支払うことで動物チップを1枚ゲット</strong>します。</p></div><div style="display:contents" dir="auto"><p id="7c0ce6f2-876a-8330-ad63-816b5618fdf8" class="">
+</p></div><div style="display:contents" dir="auto"><p id="bfcce6f2-876a-8218-866b-816f2e189700" class="">支払いが終わったら、動物チップを自分のエリアボード上に置きます。ただし、<strong>購入した動物チップを置く時</strong>にはルールがあります。</p></div><div style="display:contents" dir="auto"><p id="284ce6f2-876a-83f4-b43d-81cc0c83605e" class="">
+</p></div><div style="display:contents" dir="auto"><p id="9ebce6f2-876a-823f-b80c-8114f52642a1" class=""><strong>⚠  動物を置く時のルール</strong></p></div><div style="display:contents" dir="auto"><div id="267ce6f2-876a-8310-bf4d-017d41e34226" class="column-list"><div style="display:contents" dir="auto"><div id="f90ce6f2-876a-8235-b752-8148166d5207" style="width:50%" class="column"><div style="display:contents" dir="ltr"><figure id="e3dce6f2-876a-8211-87f4-81d9f35ff372" class="image"><a href="%25E9%2585%258D%25E7%25BD%25AE%25E3%2583%25AB%25E3%2583%25BC%25E3%2583%25AB1.jpg"><img style="width:1500px" src="%25E9%2585%258D%25E7%25BD%25AE%25E3%2583%25AB%25E3%2583%25BC%25E3%2583%25AB1.jpg"/></a></figure></div></div></div><div style="display:contents" dir="auto"><div id="16ace6f2-876a-82db-82d9-014ae87540b4" style="width:50%" class="column"><div style="display:contents" dir="ltr"><figure class="block-color-gray_background callout" style="white-space:pre-wrap;display:flex" id="9adce6f2-876a-821b-9689-8163fccbaec3"><div style="font-size:1.5em"><img class="icon" src="OK.png"/></div><div style="width:100%">同じ動物は同じエリアに1匹まで</div></figure></div><div style="display:contents" dir="ltr"><figure class="block-color-gray_background callout" style="white-space:pre-wrap;display:flex" id="c0bce6f2-876a-8315-8921-8150b4abdccf"><div style="font-size:1.5em"><img class="icon" src="NG.png"/></div><div style="width:100%">同じ動物を1つのエリアに2匹以上置けない</div></figure></div></div></div></div></div><div style="display:contents" dir="auto"><p id="b4ace6f2-876a-8216-8ee3-81aac031a15a" class="">
+</p></div><div style="display:contents" dir="auto"><div id="a65ce6f2-876a-8356-9f9d-0128ca785fca" class="column-list"><div style="display:contents" dir="auto"><div id="728ce6f2-876a-8345-bc5d-817d73c18f33" style="width:50%" class="column"><div style="display:contents" dir="ltr"><figure id="a46ce6f2-876a-8240-9ca4-0176845e70a2" class="image"><a href="%25E9%2585%258D%25E7%25BD%25AE%25E3%2583%25AB%25E3%2583%25BC%25E3%2583%25AB2.jpg"><img style="width:1500px" src="%25E9%2585%258D%25E7%25BD%25AE%25E3%2583%25AB%25E3%2583%25BC%25E3%2583%25AB2.jpg"/></a></figure></div></div></div><div style="display:contents" dir="auto"><div id="8f7ce6f2-876a-8304-b121-0129f924fd46" style="width:50%" class="column"><div style="display:contents" dir="ltr"><figure class="block-color-gray_background callout" style="white-space:pre-wrap;display:flex" id="d20ce6f2-876a-827c-a4a4-81854f396c3c"><div style="font-size:1.5em"><img class="icon" src="OK.png"/></div><div style="width:100%">同じ色の動物は同じエリアに置いてOK</div></figure></div><div style="display:contents" dir="ltr"><figure class="block-color-gray_background callout" style="white-space:pre-wrap;display:flex" id="5acce6f2-876a-833e-a226-816fd762271c"><div style="font-size:1.5em"><img class="icon" src="NG.png"/></div><div style="width:100%">違う色の動物は同じエリアに置けない</div></figure></div></div></div></div></div><div style="display:contents" dir="auto"><p id="a5ace6f2-876a-83b9-869b-012b900125e9" class="">
+</p></div><div style="display:contents" dir="auto"><div id="2a4ce6f2-876a-83a5-b183-01bd92d931c4" class="column-list"><div style="display:contents" dir="auto"><div id="dc4ce6f2-876a-8345-8c32-81824c1ced8c" style="width:50%" class="column"><div style="display:contents" dir="ltr"><figure id="2c8ce6f2-876a-83f5-8b12-818dc65e90f9" class="image"><a href="%25E9%2585%258D%25E7%25BD%25AE%25E3%2583%25AB%25E3%2583%25BC%25E3%2583%25AB3.jpg"><img style="width:1500px" src="%25E9%2585%258D%25E7%25BD%25AE%25E3%2583%25AB%25E3%2583%25BC%25E3%2583%25AB3.jpg"/></a></figure></div></div></div><div style="display:contents" dir="auto"><div id="6d6ce6f2-876a-8347-966e-018986c58f16" style="width:50%" class="column"><div style="display:contents" dir="ltr"><figure class="block-color-gray_background callout" style="white-space:pre-wrap;display:flex" id="255ce6f2-876a-83ae-bdda-813ce8139697"><div style="font-size:1.5em"><img class="icon" src="OK%201.png"/></div><div style="width:100%">同じ動物をさらに買う時は<strong>上下左右の隣接しているエリア</strong>から置く</div></figure></div><div style="display:contents" dir="ltr"><figure class="block-color-gray_background callout" style="white-space:pre-wrap;display:flex" id="803ce6f2-876a-8293-8a7d-01f031045e8c"><div style="font-size:1.5em"><img class="icon" src="NG.png"/></div><div style="width:100%">同じ動物を離したり、斜め隣のエリアには置けない</div></figure></div></div></div></div></div><div style="display:contents" dir="auto"><ul id="538ce6f2-876a-8373-940c-01770eb2d720" class="toggle"><li><details open=""><summary><mark class="highlight-gray">動物の色って何を表しているの？</mark></summary><div style="display:contents" dir="auto"><p id="a0ace6f2-876a-832f-b046-81049ead9747" class="">動物の色は、実際にアドベンチャーワールドで暮らしている展示エリアを表しています</p></div><div style="display:contents" dir="auto"><p id="747ce6f2-876a-8381-ab8b-013f08232f64" class="">🔴：サファリワールド（肉食）</p></div><div style="display:contents" dir="auto"><p id="e38ce6f2-876a-83b5-bf4d-0114cb69bb7b" class="">🟢：サファリワールド（草食）</p></div><div style="display:contents" dir="auto"><p id="4dcce6f2-876a-83b1-8605-81a2da145259" class="">🔵：マリンワールド</p></div><div style="display:contents" dir="auto"><p id="654ce6f2-876a-8352-ab11-81f50497a2b8" class="">🟠：ふれあい広場・ファミリー広場</p></div><div style="display:contents" dir="auto"><p id="b03ce6f2-876a-830a-8953-81c5fe22f6ae" class="">🟣：パンダラブ</p></div></details></li></ul></div><div style="display:contents" dir="auto"><ul id="444ce6f2-876a-83ed-892a-01347dff2e3c" class="toggle"><li><details open=""><summary><mark class="highlight-gray">ヒント：全員のターン と 自分のターン</mark></summary><div style="display:contents" dir="auto"><p id="f1fce6f2-876a-8278-b11a-813568091c1f" class="">動物の強さはプレイする人数によって相対的に変わります。人数が少ない時は「自分のターン」の動物が比較的強くなり、人数が多い時は「全員のターン」の動物が強くなります。</p></div><div style="display:contents" dir="auto"><p id="427ce6f2-876a-8303-aa6c-019d6a0742d2" class="">ぜひ、色々な人数でお楽しみください。</p></div></details></li></ul></div><div style="display:contents" dir="auto"><p id="6f8ce6f2-876a-8360-9673-011ff6430f5d" class="">
+</p></div><div style="display:contents" dir="auto"><p id="bd0ce6f2-876a-8346-a336-81cba11357a8" class="">
+</p></div><div style="display:contents" dir="auto"><h3 id="237ce6f2-876a-8319-ab46-81481f22e7b0" class="">⭐ 星を買う</h3></div><div style="display:contents" dir="ltr"><figure id="1d8ce6f2-876a-825c-8b1a-018413a25dc6" class="image"><a href="%25E6%2598%259F%25E8%25B3%25BC%25E5%2585%25A5_gif.gif"><img style="width:708px" src="%25E6%2598%259F%25E8%25B3%25BC%25E5%2585%25A5_gif.gif"/></a></figure></div><div style="display:contents" dir="auto"><p id="711ce6f2-876a-8301-bb0d-8117d3605525" class=""><strong>10コインを銀行に支払うと星を1つゲット</strong>します。</p></div><div style="display:contents" dir="auto"><p id="e4dce6f2-876a-83b8-8b2d-01891fee114e" class="">
+</p></div><div style="display:contents" dir="auto"><p id="398ce6f2-876a-828c-98a0-81c6476e921d" class="">
+</p></div><div style="display:contents" dir="auto"><h3 id="046ce6f2-876a-821c-be46-015034cfcdeb" class="">🚚 動物を市場に返す</h3></div><div style="display:contents" dir="ltr"><figure id="4a4ce6f2-876a-8367-a57d-81e2e52cbd12" class="image"><a href="%25E5%258B%2595%25E7%2589%25A9%25E6%2588%25BB%25E3%2581%2597.gif"><img style="width:708px" src="%25E5%258B%2595%25E7%2589%25A9%25E6%2588%25BB%25E3%2581%2597.gif"/></a></figure></div><div style="display:contents" dir="auto"><p id="399ce6f2-876a-824d-8667-0195b6dd5c9a" class="">「うんちコストの高い動物を買いすぎた」「チップの置き場所ここじゃなかったかも…」と思ったら、<strong>好きな動物チップをいくつでも市場に戻すことができます</strong>。ただし、戻す際は購入時に支払ったコインは返ってきません。</p></div><div style="display:contents" dir="auto"><p id="364ce6f2-876a-8281-b1af-016e23d8397c" class="">
+</p></div><div style="display:contents" dir="auto"><p id="802ce6f2-876a-836c-8232-01242f624fcc" class="">市場に戻した動物を買い直したい場合は、再び購入コストを支払ってゲットします。</p></div><div style="display:contents" dir="auto"><p id="b74ce6f2-876a-8226-8d07-81f233f607eb" class="">
+</p></div><div style="display:contents" dir="auto"><p id="9c2ce6f2-876a-822b-b11d-81a32a455a48" class="">
+</p></div><div style="display:contents" dir="auto"><h2 id="070ce6f2-876a-8301-bdd0-0178889f1b14" class="">5 うんちの掃除 (手番プレイヤー)</h2></div><div style="display:contents" dir="auto"><hr id="659ce6f2-876a-82ad-9d89-819660d617b0"/></div><div style="display:contents" dir="ltr"><figure id="45fce6f2-876a-8214-b67f-013b82e6f869" class="image"><a href="%25E3%2581%2586%25E3%2582%2593%25E3%2581%25A1%25E6%258E%2583%25E9%2599%25A4.gif"><img style="width:708px" src="%25E3%2581%2586%25E3%2582%2593%25E3%2581%25A1%25E6%258E%2583%25E9%2599%25A4.gif"/></a></figure></div><div style="display:contents" dir="auto"><p id="55dce6f2-876a-821a-87b7-014e0fbc7be7" class="">お買い物が終わったら、うんち掃除をしましょう。</p></div><div style="display:contents" dir="auto"><p id="facce6f2-876a-837e-9566-0159f5a484d2" class="">
+</p></div><div style="display:contents" dir="auto"><p id="44ace6f2-876a-83c6-b440-01e9f5e7a7e9" class=""><strong>コインを銀行に支払うことでうんちコマを元の場所に戻す</strong>ことができます。うんち掃除は、1ターンに何度でも行うことができます。</p></div><div style="display:contents" dir="auto"><p id="3f7ce6f2-876a-8332-914b-01cd6674ace5" class="">
+</p></div><div style="display:contents" dir="ltr"><table id="293ce6f2-876a-827b-8605-81bc9a186493" class="simple-table"><thead class="simple-table-header"><div style="display:contents" dir="ltr"><tr id="14ace6f2-876a-83c7-a96b-811632c63e4c"><th id="&lt;JMD" class="simple-table-header-color simple-table-header" style="width:110.6640625px">💰 コイン数</th><th id="&gt;XW~" class="simple-table-header-color simple-table-header" style="width:200.6640625px">💩 掃除できるうんちコマ</th></tr></div></thead><tbody><div style="display:contents" dir="ltr"><tr id="adcce6f2-876a-82b7-9b0a-81dcbe54ebbe"><td id="&lt;JMD" class="" style="width:110.6640625px">1</td><td id="&gt;XW~" class="" style="width:200.6640625px">2つ</td></tr></div><div style="display:contents" dir="ltr"><tr id="9f0ce6f2-876a-82aa-876b-81c608bc080a"><td id="&lt;JMD" class="" style="width:110.6640625px">2</td><td id="&gt;XW~" class="" style="width:200.6640625px">4つ</td></tr></div><div style="display:contents" dir="ltr"><tr id="d7fce6f2-876a-839c-a81f-01dc45dc81be"><td id="&lt;JMD" class="" style="width:110.6640625px">3</td><td id="&gt;XW~" class="" style="width:200.6640625px">6つ</td></tr></div><div style="display:contents" dir="ltr"><tr id="2fdce6f2-876a-83dd-943c-017f03eded2a"><td id="&lt;JMD" class="" style="width:110.6640625px">…</td><td id="&gt;XW~" class="" style="width:200.6640625px">…</td></tr></div></tbody></table></div><div style="display:contents" dir="auto"><p id="0b1ce6f2-876a-83cf-9eca-811ce4a0b966" class="">
+</p></div><div style="display:contents" dir="auto"><p id="a3cce6f2-876a-82bd-8d34-8162edb92a9c" class="">ただし、ひとつだけ注意してください。<strong>自分のターン終了時</strong>にうんちコマが手元に<strong>7つ以上</strong>残っている場合は、バーストです。</p></div><div style="display:contents" dir="auto"><p id="f0ace6f2-876a-82cd-89a2-81cb3d9825fc" class="">
+</p></div><div style="display:contents" dir="auto"><p id="ed7ce6f2-876a-8225-b433-810600b8cf88" class="">掃除が不十分な動物園として認定され、ペナルティとして<strong>星を1つ</strong>失います。星を持っていない場合は、代わりに自分の動物園にいる<strong>「購入金額が一番高い動物」を1匹</strong>選んで市場に戻します。</p></div><div style="display:contents" dir="auto"><p id="248ce6f2-876a-8243-a548-01e25c975b6e" class="">
+</p></div><div style="display:contents" dir="auto"><p id="d7cce6f2-876a-83fa-8f28-018064d5159f" class="">ペナルティを受けた後は、持っているコインとうんちコマを全て銀行に戻します。</p></div><div style="display:contents" dir="auto"><ul id="7b7ce6f2-876a-8289-b8a7-81000986cef7" class="toggle"><li><details open=""><summary><mark class="highlight-gray">同じ購入金額の動物が2匹以上いる場合は？</mark></summary><div style="display:contents" dir="auto"><p id="acbce6f2-876a-83e9-9bf9-816a4c9467c8" class="">うんちコストがより高い方の動物を戻します。</p></div><div style="display:contents" dir="auto"><p id="513ce6f2-876a-822e-97cb-81764bd2c3bf" class="">同じ動物を2匹以上持っている場合は、戻す1匹を選んで市場に戻します。</p></div></details></li></ul></div><div style="display:contents" dir="auto"><div><div style="display:contents" dir="auto"><ul id="763ce6f2-876a-8272-bd15-816b216d0d06" class="toggle"><li><details open=""><summary><mark class="highlight-gray">うんちコストはどこに書いてあるの？</mark></summary><div style="display:contents" dir="ltr"><figure id="bc9ce6f2-876a-8320-9617-81855c6d88bf" class="image"><a href="%25E3%2582%25B3%25E3%2582%25B9%25E3%2583%2588_gif.gif"><img style="width:800px" src="%25E3%2582%25B3%25E3%2582%25B9%25E3%2583%2588_gif.gif"/></a></figure></div><div style="display:contents" dir="auto"><p id="e4ece6f2-876a-836b-b896-01e3ce1e0259" class="">ボードの右上に書かれている「茶色の数字」がうんちコストです。</p></div></details></li></ul></div></div></div><div style="display:contents" dir="auto"><p id="60fce6f2-876a-830e-851e-01b5de7fbadf" class="">
+</p></div><div style="display:contents" dir="auto"><p id="453ce6f2-876a-83d2-84d6-01a40fdf0fe3" class="">
+</p></div><div style="display:contents" dir="auto"><h2 id="e6cce6f2-876a-83b9-9851-8144e9bea2b9" class="">6 ターン終了 (手番プレイヤー交代)</h2></div><div style="display:contents" dir="auto"><hr id="bf3ce6f2-876a-83e5-b3bd-81dec836ccbf"/></div><div style="display:contents" dir="ltr"><figure id="d45ce6f2-876a-8264-a86e-81e928bbc935" class="image"><a href="%25E3%2582%25BF%25E3%2583%25BC%25E3%2583%25B3%25E4%25BA%25A4%25E4%25BB%25A3_gif.gif"><img style="width:708px" src="%25E3%2582%25BF%25E3%2583%25BC%25E3%2583%25B3%25E4%25BA%25A4%25E4%25BB%25A3_gif.gif"/></a></figure></div><div style="display:contents" dir="auto"><p id="dbfce6f2-876a-821d-89fd-017eaac25f4e" class="">うんち掃除が終わったら、手番プレイヤーのターンは終了です。</p></div><div style="display:contents" dir="auto"><p id="10dce6f2-876a-826a-903e-01b28ad2fa0b" class="">
+</p></div><div style="display:contents" dir="auto"><p id="542ce6f2-876a-82bd-90b0-81752f6f7a5f" class=""><strong>サイコロを左隣のプレイヤーに渡して</strong>「1 うんちをもらう (手番プレイヤー)」から繰り返します。</p></div><div style="display:contents" dir="auto"><p id="620ce6f2-876a-8304-95b1-013ca868bfa9" class="">
+</p></div><div style="display:contents" dir="auto"><p id="2fece6f2-876a-83d1-b7bf-817798976300" class="">1ターンの流れはエリアボードにも簡単に書かれています。</p></div><div style="display:contents" dir="ltr"><figure id="735ce6f2-876a-83bd-811c-8106828abe93" class="image"><a href="%25E6%2589%258B%25E7%2595%25AA%25E3%2581%25AE%25E6%25B5%2581%25E3%2582%258C_gif.gif"><img style="width:708px" src="%25E6%2589%258B%25E7%2595%25AA%25E3%2581%25AE%25E6%25B5%2581%25E3%2582%258C_gif.gif"/></a></figure></div><div style="display:contents" dir="auto"><p id="d98ce6f2-876a-836a-9b5d-815e9caddde1" class="">
+</p></div><div style="display:contents" dir="auto"><p id="684ce6f2-876a-82b6-b6af-01988056e5bc" class="">
+</p></div><div style="display:contents" dir="auto"><h2 id="dddce6f2-876a-827f-b1d5-81003bee268b" class="">7 ゲームの終了条件</h2></div><div style="display:contents" dir="auto"><hr id="565ce6f2-876a-8282-9d90-819a4ee70b4c"/></div><div style="display:contents" dir="ltr"><figure id="b48ce6f2-876a-82ea-96f6-01313049ff7f" class="image"><a href="%25E5%258B%259D%25E5%2588%25A9.gif"><img style="width:708px" src="%25E5%258B%259D%25E5%2588%25A9.gif"/></a></figure></div><div style="display:contents" dir="auto"><p id="c18ce6f2-876a-836b-9f01-01aa127c6283" class="">このようにターンを繰り返しながら、各プレイヤーは自分たちの動物園を拡大させていきます。誰か1人が星を3つゲットして<strong>うんちコマ6つ以下で自身のターンを終えることができたら</strong>、そのプレイヤーが勝者となりゲーム終了です。</p></div><div style="display:contents" dir="auto"><p id="156ce6f2-876a-82d2-ab6a-01d7a8eec031" class="">
+</p></div><div style="display:contents" dir="auto"><p id="153ce6f2-876a-8290-bc39-017aca30c93c" class="">
+</p></div><div style="display:contents" dir="auto"><h1 id="aa8ce6f2-876a-82f0-9bc2-81852f30e8da" class="">ということで</h1></div><div style="display:contents" dir="auto"><hr id="132ce6f2-876a-8356-afc4-81bb3b3ccdc6"/></div><div style="display:contents" dir="auto"><p id="180ce6f2-876a-8397-800a-014a4ac4bd07" class="">一通りの流れがわかったら</p></div><div style="display:contents" dir="auto"><p id="23ace6f2-876a-83a4-9de4-0140fbf0e391" class="">
+</p></div><div style="display:contents" dir="auto"><ul id="2e0ce6f2-876a-82af-9504-01b8aade86e3" class="bulleted-list"><li style="list-style-type:disc">レッサーパンダとペンギン以外の動物を市場に戻して</li></ul></div><div style="display:contents" dir="auto"><ul id="d8ece6f2-876a-8230-b0f2-81d889458637" class="bulleted-list"><li style="list-style-type:disc">所持金を4コインにリセットして</li></ul></div><div style="display:contents" dir="auto"><p id="d87ce6f2-876a-83c6-a4bd-01f0a397d4c5" class="">
+</p></div><div style="display:contents" dir="auto"><p id="323ce6f2-876a-837a-87f6-0101688aca24" class="">改めて「 」から始めてみてください。</p></div><div style="display:contents" dir="auto"><p id="326ce6f2-876a-820b-844a-013e0e909122" class="">
+</p></div><div style="display:contents" dir="auto"><p id="7d2ce6f2-876a-8309-b780-8117f11bacba" class="">最初のチップ配置が思いもよらぬ結果につながることもあるので、相手の配置もよく見ながら置いてみてくださいね。</p></div><div style="display:contents" dir="auto"><p id="c1ace6f2-876a-83d1-b3bf-817c36dbff09" class="">
+</p></div><div style="display:contents" dir="auto"><p id="acdce6f2-876a-8299-b275-01421effc76d" class="">それでは、一流の三つ星レストランならぬ三つ星動物園を目指してがんばりましょう！</p></div><div style="display:contents" dir="auto"><p id="cb0ce6f2-876a-8372-8342-019e2665d2a6" class="">
+</p></div><div style="display:contents" dir="auto"><p id="e7bce6f2-876a-82c9-be5c-81a1e2824f30" class="">
+</p></div><div style="display:contents" dir="auto"><p id="1a8ce6f2-876a-8389-95bc-813c19933bb8" class="">
+</p></div><div style="display:contents" dir="auto"><hr id="9cece6f2-876a-82ee-bbad-81ce565eef26"/></div><div style="display:contents" dir="auto"><p id="385ce6f2-876a-8227-801f-819b0a22ea21" class="">
+</p></div><div style="display:contents" dir="auto"><p id="ba8ce6f2-876a-82a6-b492-0148f8d7d029" class="">
+</p></div><div style="display:contents" dir="auto"><h1 id="171ce6f2-876a-8371-9802-816a0147611e" class="">❓よくある質問❓</h1></div><div style="display:contents" dir="ltr"><figure class="block-color-gray_background callout" style="white-space:pre-wrap;display:flex" id="d82ce6f2-876a-82b2-af34-017e06ca28f0"><div style="font-size:1.5em"><img class="icon notion-static-icon" src="https://www.notion.so/icons/thought-dialogue_gray.svg"/></div><div style="width:100%">お買い物の上限は？</div></figure></div><div style="display:contents" dir="auto"><p id="a60ce6f2-876a-83fe-ae99-8190c54c2960" class="">「動物1匹」と「星1つ」です。両方を1ターンに買うことはできますが、1ターンに動物を2匹以上買ったり、星を2個以上買うことはできません。</p></div><div style="display:contents" dir="auto"><p id="e35ce6f2-876a-8366-8f3f-0164db67221b" class="">
+</p></div><div style="display:contents" dir="ltr"><figure class="block-color-gray_background callout" style="white-space:pre-wrap;display:flex" id="f3cce6f2-876a-82ca-9f8a-01f9a6845338"><div style="font-size:1.5em"><img class="icon notion-static-icon" src="https://www.notion.so/icons/thought-dialogue_gray.svg"/></div><div style="width:100%">複数のプレイヤーの動物の効果が同時に発動する場合は、誰か処理するの？</div></figure></div><div style="display:contents" dir="auto"><p id="8bdce6f2-876a-8351-b1f0-817949a5dbdd" class="">サイコロを投げた人が一番最後になるように、手番プレイヤーの左隣から時計回りの順番で処理します。</p></div><div style="display:contents" dir="auto"><p id="db7ce6f2-876a-83b2-8936-01e3043c1fb5" class="">
+</p></div><div style="display:contents" dir="ltr"><figure class="block-color-gray_background callout" style="white-space:pre-wrap;display:flex" id="1f1ce6f2-876a-8273-9088-818b8f9420fe"><div style="font-size:1.5em"><img class="icon notion-static-icon" src="https://www.notion.so/icons/thought-dialogue_gray.svg"/></div><div style="width:100%">動物チップは一度置いたら位置を変えられないの？</div></figure></div><div style="display:contents" dir="auto"><p id="1c0ce6f2-876a-821c-858c-811cac8432ed" class="">一度置いた動物チップを移動させることはできません。ただし、チップを市場に戻してから再度購入することで別のエリアに配置することはできます。市場に戻った動物を再度購入する際は通常の購入コストを銀行に支払います。</p></div><div style="display:contents" dir="auto"><p id="361ce6f2-876a-83a6-bdda-8141f4b5f345" class="">
+</p></div><div style="display:contents" dir="ltr"><figure class="block-color-gray_background callout" style="white-space:pre-wrap;display:flex" id="330ce6f2-876a-839d-ae4a-81888c24ee19"><div style="font-size:1.5em"><img class="icon notion-static-icon" src="https://www.notion.so/icons/thought-dialogue_gray.svg"/></div><div style="width:100%">プレイヤーの支払うコインが足りなくなったらどうするの？</div></figure></div><div style="display:contents" dir="auto"><p id="8a1ce6f2-876a-8235-b6ac-8170ea529892" class="">プレイヤーが他プレイヤーにコインを支払えない場合は、支払える分だけ渡してください。後のターンでまとめて支払ったり、その時もらえなかったコインをあとから要求することはできません。つまり「借金」の概念はありません。</p></div><div style="display:contents" dir="auto"><p id="8bbce6f2-876a-83e3-bf96-8109c3f006f8" class="">銀行のコインが足りなくなった場合は、身の回りのもので代用してください。</p></div><div style="display:contents" dir="auto"><p id="fa0ce6f2-876a-83dd-a9b8-014115ddedbf" class="">
+</p></div><div style="display:contents" dir="auto"><p id="af8ce6f2-876a-826e-93e6-0132a03795c0" class="">
+</p></div><div style="display:contents" dir="auto"><p id="1c9ce6f2-876a-8295-917b-013df9208792" class="">
+</p></div><div style="display:contents" dir="auto"><hr id="646ce6f2-876a-8367-b81a-81225495e29f"/></div><div style="display:contents" dir="auto"><p id="506ce6f2-876a-82d6-acc4-01ba1a8fae21" class="">
+</p></div><div style="display:contents" dir="auto"><p id="e00ce6f2-876a-82c2-8f75-81dd6cf06687" class="">
+</p></div><div style="display:contents" dir="auto"><h1 id="f9fce6f2-876a-833a-9441-01512994079e" class="">📖 逆引き辞書 📖</h1></div><div style="display:contents" dir="auto"><h3 id="b60ce6f2-876a-831e-a3d3-01336cb9923c" class="">💩<strong> うんち</strong></h3></div><div style="display:contents" dir="auto"><p id="b19ce6f2-876a-828b-9e5a-8107b85b7b11" class="">各プレイヤーが持っているうんちコマ以外は全て1箇所にまとめ、必要な場合はそこからもらいます。</p></div><div style="display:contents" dir="auto"><p id="addce6f2-876a-8387-b95c-81dcd07d59ff" class="">1コインで掃除できるうんちコマは2つまでです。自分のターン終了時にうんちコマを7つ以上持っていたらバーストです。ターンの途中で7つ以上持っていても問題ありません。</p></div><div style="display:contents" dir="auto"><p id="2fcce6f2-876a-8375-bd69-81289f645e8e" class="">うんちコマが足りなくなったら、身の回りのもので代用してください。</p></div><div style="display:contents" dir="auto"><p id="68dce6f2-876a-83ed-bd54-0143f4bed269" class="">
+</p></div><div style="display:contents" dir="auto"><h3 id="966ce6f2-876a-8200-9559-01850a6eb560" class="">🏘️<strong> エリアボード</strong></h3></div><div style="display:contents" dir="auto"><p id="eb0ce6f2-876a-833a-b938-814e2b7b5d7b" class="">「となりのエリア」とは、隣接しているエリアの事を指します。例えば、5の「となりのエリア」は4/6/8です。斜め隣の7や9は含まれません。</p></div><div style="display:contents" dir="auto"><p id="184ce6f2-876a-8272-a2e0-81a94766c9f5" class="">
+</p></div><div style="display:contents" dir="auto"><h3 id="4c9ce6f2-876a-83d4-9b0b-8150deafc4bc" class=""><strong>🏦 銀行</strong></h3></div><div style="display:contents" dir="auto"><p id="033ce6f2-876a-8310-a5fc-81e044a03191" class="">各プレイヤーの所持金以外は全て1箇所にまとめ、これを銀行のコインとします。銀行のコインが足りなくなったら、身の周りのもので代用してください。</p></div><div style="display:contents" dir="auto"><p id="c54ce6f2-876a-83ae-a9ee-811df40f6328" class="">
+</p></div><div style="display:contents" dir="auto"><h3 id="5ccce6f2-876a-8375-bec4-01f72a762dbf" class=""><strong>💰 コイン</strong></h3></div><div style="display:contents" dir="auto"><p id="7f7ce6f2-876a-82b8-b3fc-81270492d93c" class="">ゲーム内で取り扱う通貨です。足りなくなったら身の回りのもので代用してください。</p></div><div style="display:contents" dir="auto"><p id="eb6ce6f2-876a-8392-a9db-8171ecc6019a" class="">
+</p></div><div style="display:contents" dir="auto"><h3 id="56bce6f2-876a-82b4-aaa9-0129d5fb7f11" class="">💡 チャンスカード</h3></div><div style="display:contents" dir="auto"><p id="484ce6f2-876a-836f-9a84-01ed55fbc07a" class="">サイコロの目が11また12だった際に、手番プレイヤーのみこのカードを引きます。一度使用されたチャンスカードは山札には戻さず、捨札とします。山札からチャンスカードがなくなったら、捨札をシャッフルして再び山札を作ります。</p></div><div style="display:contents" dir="auto"><p id="f0dce6f2-876a-8393-a2e4-0137333221c2" class="">
+</p></div><div style="display:contents" dir="auto"><h3 id="472ce6f2-876a-8200-81a7-81e9d6a1a268" class="">♟️ 動物チップ</h3></div><div style="display:contents" dir="auto"><p id="10ace6f2-876a-828f-b53d-81f224d213d4" class="">各動物のチップは、動物の種類によって枚数が異なります（詳しくは「<a href="https://www.notion.so/a51ce6f2876a832bbcee01879e4c317f?pvs=21">プレイ人数と使う動物のチップ数</a> 」をご確認ください）。また、一度配置したチップは移動できません。一度、チップを市場に戻して、再度購入すれば新しいエリアに配置できます。ただし、その際は通常の購入コストを支払って動物チップを手に入れます。</p></div><div style="display:contents" dir="auto"><p id="761ce6f2-876a-8280-95d3-81192fd4eecf" class="">
+</p></div><div style="display:contents" dir="auto"><h3 id="d9fce6f2-876a-8330-bd0c-013e19d9b892" class="">🐼 動物の効果</h3></div><div style="display:contents" dir="auto"><p id="424ce6f2-876a-8377-bca6-01e9f5d5a1a4" class=""><strong>コンゴウインコ</strong></p></div><div style="display:contents" dir="auto"><div><div style="display:contents" dir="auto"><ul id="ff4ce6f2-876a-82bd-a3f3-01c11c494465" class="bulleted-list"><li style="list-style-type:disc">自分もしくは他の誰かがサイコロを振って、その出目のエリアにコンゴウインコがいたら、銀行から1コインもらいます。</li></ul></div><div style="display:contents" dir="auto"><ul id="18dce6f2-876a-8379-a028-0112ee8cfcdb" class="bulleted-list"><li style="list-style-type:disc">園内にコンゴウインコが複数いても、もらえるコイン数は変わりません。</li></ul></div><div style="display:contents" dir="auto"><ul id="4f3ce6f2-876a-8259-b63c-01cfdbef12c2" class="bulleted-list"><li style="list-style-type:disc">コンゴウインコは赤、緑、あるいはオレンジ色の動物となら同じエリアに配置できます。</li></ul></div><div style="display:contents" dir="auto"><ul id="a70ce6f2-876a-8264-855d-81bc181a89d6" class="bulleted-list"><li style="list-style-type:disc">各チップの見た目は違いますが、効果に違いはありません。</li></ul></div><div style="display:contents" dir="auto"><p id="7b0ce6f2-876a-83aa-9bd3-01d0b113bd6a" class="">
+</p></div><div style="display:contents" dir="auto"><p id="085ce6f2-876a-8265-8437-01608e9739f6" class=""><strong>アドベンチャーワールドのコンゴウインコたち</strong></p></div><div style="display:contents" dir="ltr"><figure id="602ce6f2-876a-8279-9d19-01bd7f2be944" class="image"><a href="%25E3%2582%25B3%25E3%2583%25B3%25E3%2582%25B3%25E3%2582%2599%25E3%2582%25A6%25E3%2582%25A4%25E3%2583%25B3%25E3%2582%25B3.jpg"><img style="width:709.9573364257812px" src="%25E3%2582%25B3%25E3%2583%25B3%25E3%2582%25B3%25E3%2582%2599%25E3%2582%25A6%25E3%2582%25A4%25E3%2583%25B3%25E3%2582%25B3.jpg"/></a></figure></div><div style="display:contents" dir="auto"><p id="150ce6f2-876a-831e-983e-81e3661a82c4" class="">
+</p></div></div></div><div style="display:contents" dir="auto"><p id="d47ce6f2-876a-826e-9798-81e930e0b0af" class=""><strong>レッサーパンダ</strong></p></div><div style="display:contents" dir="auto"><div><div style="display:contents" dir="auto"><ul id="955ce6f2-876a-8350-9f5a-81f2993afc66" class="bulleted-list"><li style="list-style-type:disc">自分がサイコロを振って、その出目のエリアにレッサーパンダがいたら、園内にいるレッサーパンダ1匹につき1コインを銀行からもらいます。</li></ul></div><div style="display:contents" dir="auto"><ul id="27fce6f2-876a-838c-8b40-8179365717fe" class="bulleted-list"><li style="list-style-type:disc">園内にジャイアントパンダが1頭以上いれば、さらに追加で2コインもらいます。</li></ul></div><div style="display:contents" dir="auto"><ul id="9f5ce6f2-876a-83c3-8b57-015d379c68df" class="bulleted-list"><li style="list-style-type:disc">ジャイアントパンダが複数いても、もらえるのは2コインです。</li></ul></div><div style="display:contents" dir="auto"><p id="f9ece6f2-876a-8370-bccf-81a27a335ab9" class="">
+</p></div><div style="display:contents" dir="auto"><p id="2adce6f2-876a-830d-8d7d-01cbb057b8a1" class="">なんでこんな効果になっているの？と思ったら動物ボードの裏面を読んでみてください 💁</p></div><div style="display:contents" dir="auto"><p id="b1fce6f2-876a-8332-880d-8100c2db5dab" class="">
+</p></div></div></div><div style="display:contents" dir="auto"><p id="02ece6f2-876a-822b-9264-81864c12616c" class=""><strong>ペンギン</strong></p></div><div style="display:contents" dir="auto"><div><div style="display:contents" dir="auto"><ul id="356ce6f2-876a-8293-a1fd-81b167433258" class="bulleted-list"><li style="list-style-type:disc">自分もしくは他の誰かがサイコロを振って、その出目のエリアにペンギンがいたら、園内にいるペンギンの羽数によって銀行からコインをもらいます。</li></ul></div><div style="display:contents" dir="auto"><ul id="1b0ce6f2-876a-838c-900c-01011807bf99" class="bulleted-list"><li style="list-style-type:disc">1羽なら1コイン、2羽以上なら3コインもらいます。</li></ul></div><div style="display:contents" dir="auto"><ul id="ddece6f2-876a-821f-87f3-010e35ffecf1" class="bulleted-list"><li style="list-style-type:disc">各チップの見た目は違いますが、効果に違いはありません。</li></ul></div><div style="display:contents" dir="auto"><p id="455ce6f2-876a-83ca-b7b1-010adf73af85" class="">
+</p></div><div style="display:contents" dir="auto"><p id="de4ce6f2-876a-83f4-85a0-015f5e06b208" class=""><strong>アドベンチャーワールドのペンギンたち</strong></p></div><div style="display:contents" dir="ltr"><figure id="4ffce6f2-876a-8211-a328-8110f7f75586" class="image"><a href="%25E3%2583%2598%25E3%2582%259A%25E3%2583%25B3%25E3%2582%25AD%25E3%2582%2599%25E3%2583%25B3.jpg"><img style="width:709.9573364257812px" src="%25E3%2583%2598%25E3%2582%259A%25E3%2583%25B3%25E3%2582%25AD%25E3%2582%2599%25E3%2583%25B3.jpg"/></a></figure></div><div style="display:contents" dir="auto"><p id="b4fce6f2-876a-8306-a1f2-8112463caa12" class="">
+</p></div></div></div><div style="display:contents" dir="auto"><p id="187ce6f2-876a-8366-9444-014cf5ea68d0" class=""><strong>ライオン</strong></p></div><div style="display:contents" dir="auto"><div><div style="display:contents" dir="auto"><ul id="da7ce6f2-876a-8313-a60a-81bc0908046c" class="bulleted-list"><li style="list-style-type:disc">自分もしくは他の誰かがサイコロを振って、その出目のエリアにライオンがいたら、プレイヤーを1人選び、その人からコインをもらいます。</li></ul></div><div style="display:contents" dir="auto"><ul id="c38ce6f2-876a-83cf-bbd8-812ca055dddf" class="bulleted-list"><li style="list-style-type:disc">園内にいるライオンが1頭なら1コイン、2頭以上なら3コインもらいます。</li></ul></div><div style="display:contents" dir="auto"><ul id="839ce6f2-876a-83e6-8824-016f198ce81d" class="bulleted-list"><li style="list-style-type:disc">選んだプレイヤーが十分にコインを持っていない場合は、支払える分だけ渡します。</li></ul></div><div style="display:contents" dir="auto"><ul id="035ce6f2-876a-838b-a7b7-0190e1ab41de" class="bulleted-list"><li style="list-style-type:disc">後のターンでまとめて支払ったり、足りないコインを後から要求することはできません。</li></ul></div><div style="display:contents" dir="auto"><p id="ce6ce6f2-876a-8353-9dfc-819e7308c338" class="">
+</p></div></div></div><div style="display:contents" dir="auto"><p id="fe2ce6f2-876a-8264-bde8-010ad4f11b14" class=""><strong>ジャイアントパンダ</strong></p></div><div style="display:contents" dir="auto"><div><div style="display:contents" dir="auto"><ul id="3abce6f2-876a-821c-a4e1-01eabad3db30" class="bulleted-list"><li style="list-style-type:disc">自分もしくは他の誰かがサイコロを振って、その出目のエリアにジャイアントパンダがいたら、園内にいるジャイアントパンダ1頭につき2コインもらいます。</li></ul></div><div style="display:contents" dir="auto"><ul id="6ddce6f2-876a-8303-9d75-01898e0dccd7" class="bulleted-list"><li style="list-style-type:disc">各チップの見た目は違いますが、効果に違いはありません。</li></ul></div><div style="display:contents" dir="auto"><ul id="172ce6f2-876a-830d-92b5-01dc4c4abc3f" class="bulleted-list"><li style="list-style-type:disc">ゲーム中で使用するジャイアントパンダのチップは4枚ですが、2023年2月に中国へ旅立った永明、桜浜、桃浜たちのチップもあります。お好きな4枚を選んでお楽しみください。</li></ul></div><div style="display:contents" dir="auto"><p id="0efce6f2-876a-826e-a2d2-014b68bb483d" class="">
+</p></div><div style="display:contents" dir="auto"><p id="650ce6f2-876a-83cd-9cec-814953622d99" class=""><strong>アドベンチャーワールドのジャイアントパンダたち</strong></p></div><div style="display:contents" dir="ltr"><figure id="ea4ce6f2-876a-8215-b822-0157c2329655" class="image"><a href="%25E3%2583%258F%25E3%2582%259A%25E3%2583%25B3%25E3%2582%25BF%25E3%2582%2599.jpg"><img style="width:709.9573364257812px" src="%25E3%2583%258F%25E3%2582%259A%25E3%2583%25B3%25E3%2582%25BF%25E3%2582%2599.jpg"/></a></figure></div><div style="display:contents" dir="auto"><p id="34ace6f2-876a-8249-8b89-01edeb82c203" class="">
+</p></div></div></div><div style="display:contents" dir="auto"><p id="db0ce6f2-876a-82b6-93ec-011d2234509f" class="">
+</p></div><div style="display:contents" dir="auto"><p id="3a5ce6f2-876a-822d-abcb-0178537a328f" class=""><strong>カリフォルニアアシカ</strong></p></div><div style="display:contents" dir="auto"><div><div style="display:contents" dir="auto"><ul id="aeece6f2-876a-8234-a6db-8141236a7bf9" class="bulleted-list"><li style="list-style-type:disc">自分がサイコロを振って、その出目のエリアにカリフォルニアアシカがいたら、銀行から3コインもらいます。</li></ul></div><div style="display:contents" dir="auto"><ul id="746ce6f2-876a-83ae-93c8-01bc9c543cc0" class="bulleted-list"><li style="list-style-type:disc">さらに、プレイヤーを1人選び、その人から2コインをもらいます。</li></ul></div><div style="display:contents" dir="auto"><ul id="541ce6f2-876a-834b-90fb-01a95c246829" class="bulleted-list"><li style="list-style-type:disc">選んだプレイヤーが十分にコインを持っていない場合は、支払える分だけ渡します。</li></ul></div><div style="display:contents" dir="auto"><ul id="d5bce6f2-876a-83c6-8892-01b6db897ddd" class="bulleted-list"><li style="list-style-type:disc">後のターンでまとめて支払ったり、足りないコインを後から要求することはできません。</li></ul></div><div style="display:contents" dir="auto"><p id="f27ce6f2-876a-838c-b4a8-81065548be80" class="">
+</p></div></div></div><div style="display:contents" dir="auto"><p id="bf8ce6f2-876a-820e-a7eb-01b08142c609" class=""><strong>アミメキリン</strong></p></div><div style="display:contents" dir="auto"><div><div style="display:contents" dir="auto"><ul id="f75ce6f2-876a-830d-ab7b-81f46e76c8f9" class="bulleted-list"><li style="list-style-type:disc">自分もしくは他の誰かがサイコロを振って、その出目のエリアにアミメキリンがいたら、銀行から3コインもらいます。</li></ul></div><div style="display:contents" dir="auto"><ul id="295ce6f2-876a-82b2-ab1d-0186b0db68a1" class="bulleted-list"><li style="list-style-type:disc">また、アミメキリンが置かれているエリアと隣接している出目が出たら、1コインもらいます。</li></ul></div><div style="display:contents" dir="auto"><ul id="914ce6f2-876a-82db-9560-81fcd707c1ea" class="bulleted-list"><li style="list-style-type:disc">例）キリンを3に置いた場合：3が出たら3コイン、2/4/10が出たら1コインもらいます</li></ul></div><div style="display:contents" dir="auto"><ul id="441ce6f2-876a-82a9-958e-815f547be753" class="bulleted-list"><li style="list-style-type:disc">例）キリンを7に置いた場合：7が出たら3コイン、6/8が出たら1コインもらいます</li></ul></div><div style="display:contents" dir="ltr"><figure id="ad1ce6f2-876a-8372-87d8-0182af0d291c" class="image"><a href="%25E3%2582%25AD%25E3%2583%25AA%25E3%2583%25B3%25E9%2585%258D%25E7%25BD%25AE%25E3%2583%25AB%25E3%2583%25BC%25E3%2583%25AB.jpg"><img style="width:709.9573364257812px" src="%25E3%2582%25AD%25E3%2583%25AA%25E3%2583%25B3%25E9%2585%258D%25E7%25BD%25AE%25E3%2583%25AB%25E3%2583%25BC%25E3%2583%25AB.jpg"/></a></figure></div><div style="display:contents" dir="auto"><p id="7c3ce6f2-876a-8365-9f53-0161d23d8df1" class="">
+</p></div></div></div><div style="display:contents" dir="auto"><p id="947ce6f2-876a-8279-8a58-81db640b7a77" class=""><strong>チーター</strong></p></div><div style="display:contents" dir="auto"><div><div style="display:contents" dir="auto"><ul id="f88ce6f2-876a-8238-a7ac-8170129569ab" class="bulleted-list"><li style="list-style-type:disc">自分もしくは他の誰かがサイコロを振って、その出目のエリアにチーターがいたら、銀行から3コインもらいます。</li></ul></div><div style="display:contents" dir="auto"><ul id="481ce6f2-876a-8347-89cc-81c5a700eff7" class="bulleted-list"><li style="list-style-type:disc">なおこの3コインは、全員の動物の効果の処理が終わった後にもらいます。</li></ul></div><div style="display:contents" dir="auto"><ul id="34cce6f2-876a-8214-a091-8163a3b8cbd5" class="bulleted-list"><li style="list-style-type:disc">つまり、この3コインがライオンやカリフォルニアアシカの効果で取られることはありません。</li></ul></div><div style="display:contents" dir="auto"><ul id="514ce6f2-876a-82c6-8461-8149a49b705b" class="bulleted-list"><li style="list-style-type:disc">複数のチーターの効果が同時に発動した場合は、サイコロを振ったプレイヤーが最後になるように、手番プレイヤーの左隣から時計回りの順番で処理します。</li></ul></div><div style="display:contents" dir="auto"><p id="212ce6f2-876a-838e-b96b-8160a3ddebde" class="">
+</p></div></div></div><div style="display:contents" dir="auto"><p id="ac3ce6f2-876a-8229-b537-01c6cb94cf98" class=""><strong>バンドウイルカ</strong></p></div><div style="display:contents" dir="auto"><div><div style="display:contents" dir="auto"><ul id="357ce6f2-876a-829f-8b3c-010493789d67" class="bulleted-list"><li style="list-style-type:disc">自分がサイコロを振って、その出目のエリアにバンドウイルカがいたら、銀行から7コインもらうか、または誰か1人を選び、その人から5コインもらいます。</li></ul></div><div style="display:contents" dir="auto"><ul id="ec2ce6f2-876a-8234-ac37-81b1c249e175" class="bulleted-list"><li style="list-style-type:disc">選んだプレイヤーが十分にコインを持っていない場合は、支払える分だけ渡します。</li></ul></div><div style="display:contents" dir="auto"><ul id="ddcce6f2-876a-82a0-a76c-81f89500397b" class="bulleted-list"><li style="list-style-type:disc">後のターンでまとめて支払ったり、足りないコインを後から要求することはできません。</li></ul></div><div style="display:contents" dir="auto"><p id="cedce6f2-876a-83d6-bad1-01cee3d87d00" class="">
+</p></div></div></div><div style="display:contents" dir="auto"><p id="1ebce6f2-876a-8350-a732-81e109973244" class=""><strong>ミナミシロサイ</strong></p></div><div style="display:contents" dir="auto"><div><div style="display:contents" dir="auto"><ul id="cbece6f2-876a-8220-aac1-0192a2c42586" class="bulleted-list"><li style="list-style-type:disc">自分がサイコロを振って、その出目のエリアにミナミシロサイがいたら、誰か1人を選び、その人から星を1つもらいます。</li></ul></div><div style="display:contents" dir="auto"><ul id="7fcce6f2-876a-8393-bb82-816e1847444c" class="bulleted-list"><li style="list-style-type:disc">選んだプレイヤーが星を持っていない場合は何もゲットできません。</li></ul></div><div style="display:contents" dir="auto"><ul id="995ce6f2-876a-82d9-8c64-014dfa045c7e" class="bulleted-list"><li style="list-style-type:disc">その時もらえなかった星を後から要求することはできません。</li></ul></div><div style="display:contents" dir="auto"><p id="278ce6f2-876a-8283-b3cb-81f163e66b85" class="">
+</p></div></div></div><div style="display:contents" dir="auto"><p id="643ce6f2-876a-830f-906c-819045d3adac" class=""><strong>アフリカゾウ</strong></p></div><div style="display:contents" dir="auto"><div><div style="display:contents" dir="auto"><ul id="c9ace6f2-876a-8356-ac92-012c11cbbf5f" class="bulleted-list"><li style="list-style-type:disc">自分もしくは他の誰かがサイコロを振って、その出目のエリアにアフリカゾウがいたら、銀行から7コインもらいます。</li></ul></div><div style="display:contents" dir="auto"><p id="8c2ce6f2-876a-83f0-ab83-81c5b061bc10" class="">
+</p></div></div></div><div style="display:contents" dir="auto"><h3 id="b69ce6f2-876a-82d9-8fd6-81d14b165cfb" class="">⭐ 星</h3></div><div style="display:contents" dir="auto"><p id="a7dce6f2-876a-8313-9e2d-81070d2c8b2a" class="">1ターンに買える星の数は1つまでです。一度手に入れた星を後からコインと両替することはできません。</p></div><div style="display:contents" dir="auto"><p id="793ce6f2-876a-83da-a1cb-8194d59bb27a" class="">
+</p></div><div style="display:contents" dir="auto"><p id="4afce6f2-876a-82f5-8fc1-81c45d27c72d" class="">
+</p></div><div style="display:contents" dir="auto"><p id="829ce6f2-876a-829b-98af-014568c6073c" class="">
+</p></div><div style="display:contents" dir="auto"><hr id="37dce6f2-876a-836c-ae27-01cd36443094"/></div><div style="display:contents" dir="auto"><p id="622ce6f2-876a-82b8-a92c-017d1c0f2378" class="">
+</p></div><div style="display:contents" dir="auto"><p id="dddce6f2-876a-82a3-8e6d-812575f0c00e" class="">
+</p></div><div style="display:contents" dir="auto"><h1 id="236ce6f2-876a-82a2-a7ce-81b7413e67ee" class="">🖨️ 説明書PDF</h1></div><div style="display:contents" dir="ltr"><figure id="94dce6f2-876a-8332-8697-817679e3d517" class="image"><a href="P1.png"><img style="width:720px" src="P1.png"/></a></figure></div><div style="display:contents" dir="ltr"><figure class="block-color-gray_background callout" style="white-space:pre-wrap;display:flex" id="077ce6f2-876a-828e-9fc1-01860a6923a9"><div style="font-size:1.5em"><span class="icon">💁</span></div><div style="width:100%">スマホやタブレットが使えない時や、印刷して遊ばれたい際にご活用ください。</div></figure></div><div style="display:contents" dir="ltr"><figure id="9c5ce6f2-876a-83f3-b71c-81940b0ac34c"><div class="source"><a href="%25E9%2581%258A%25E3%2581%25B2%25E3%2582%2599%25E6%2596%25B9%25E8%25AA%25AC%25E6%2598%258E%25E6%259B%25B8_TSZ-002_20230704.pdf">遊び方説明書_TSZ-002_20230704.pdf</a></div></figure></div><div style="display:contents" dir="auto"><p id="756ce6f2-876a-82c5-9fe5-81dfe00a3535" class="">
+</p></div><div style="display:contents" dir="auto"><p id="ab5ce6f2-876a-8206-a20f-01b6a31fa670" class="">
+</p></div><div style="display:contents" dir="auto"><p id="c8ace6f2-876a-83fa-a2b4-81989ff44307" class="">
+</p></div><div style="display:contents" dir="auto"><hr id="4e0ce6f2-876a-838f-838c-8122bd4d2d22"/></div><div style="display:contents" dir="auto"><p id="7bbce6f2-876a-8377-8579-81b63b3999cc" class="">
+</p></div><div style="display:contents" dir="auto"><p id="095ce6f2-876a-83a7-b76f-01221f13a90e" class="">
+</p></div><div style="display:contents" dir="auto"><p id="920ce6f2-876a-8380-9939-01945fa7615a" class=""><strong>ゲームデザイン　</strong>マイトゲームズ</p></div><div style="display:contents" dir="auto"><p id="38ace6f2-876a-827f-a5b3-81342489301a" class=""><strong>アートワーク</strong>　　マイトゲームズ</p></div><div style="display:contents" dir="auto"><p id="0abce6f2-876a-8369-8eb7-015ab1ef868c" class=""><strong>動物監修</strong>　　　　アドベンチャーワールド</p></div><div style="display:contents" dir="auto"><p id="3face6f2-876a-833a-824e-012c252a5995" class=""><strong>印刷　　　　　　</strong>盤上遊戯製作所</p></div><div style="display:contents" dir="auto"><p id="1f9ce6f2-876a-82b4-b727-012f84ace707" class="">
+</p></div><div style="display:contents" dir="auto"><p id="524ce6f2-876a-827e-93cf-81f0f9329df3" class="">
+</p></div><div style="display:contents" dir="auto"><p id="0abce6f2-876a-8263-9f77-01710ecfa489" class=""><strong>SPECIAL THANKS</strong></p></div><div style="display:contents" dir="auto"><p id="40ece6f2-876a-82c8-80e8-81459b58b08f" class="">Licca・MinMin・OG・OT・pngjng・Rita・RY・Saashiさん・SASUKE・takechi ・TJ・Umeruma Games・U.S.・WYゲームズ・yoda・あつしくん・いずみん・うえのさん・うたたね・うみやま・えいと・遠藤紘也・小川・おやゆび・かがみ優・かれん・くんぽ・こっちゃん・こはる・さお・しおりん・七味屋・じーこ・ずんずん・そら・たいが・たおかもいち・たきざわ家・タケボンバー・たもり・ちむぱむ・父・つな・なな・はな・母・はやと・ふじこさん・まさと・ますぶち・ミチョ〜・三山久・みゆP・むーさん・やまちゅう・ヤン・ゆっこ・ゆなちょふ・ヨネ・りんたろう・れお</p></div><div style="display:contents" dir="auto"><p id="f32ce6f2-876a-82fc-98e4-81ae2fb993d5" class="">
+</p></div><div style="display:contents" dir="auto"><p id="b24ce6f2-876a-8209-a486-812c6d93b688" class="">
+</p></div><div style="display:contents" dir="auto"><p id="42cce6f2-876a-83a5-8440-819aafa71e26" class="">
+</p></div><div style="display:contents" dir="auto"><hr id="2b2ce6f2-876a-839a-9a9e-01c33de299aa"/></div><div style="display:contents" dir="auto"><p id="edbce6f2-876a-8248-a1fb-01bccff974b6" class="">
+</p></div><div style="display:contents" dir="auto"><p id="ba7ce6f2-876a-83cb-ad1c-014e067feae9" class="">
+</p></div><div style="display:contents" dir="auto"><h1 id="b4dce6f2-876a-83ef-a50a-814bfb9d4a49" class="">📮 お問い合わせ 📮</h1></div><div style="display:contents" dir="auto"><p id="218ce6f2-876a-829f-9fad-81abd2db3210" class="">商品に関するご質問や、不備、ご連絡等ございましたらこちらのフォームより受け付けております。</p></div><div style="display:contents" dir="ltr"><figure id="0f6ce6f2-876a-8256-ad7a-01f2c9530cf8"><a href="https://docs.google.com/forms/d/e/1FAIpQLSePy-JS2XOd77m3AAq0DnKMzhUDlZwFzjQrrmyfAUrO07SHiw/viewform?usp=sf_link" class="bookmark source"><div class="bookmark-info"><div class="bookmark-text"><div class="bookmark-title">Might Games お問い合わせフォーム</div><div class="bookmark-description">商品に関する質問、不備、ご感想、連絡等はこちらから承ります。</div></div><div class="bookmark-href"><img src="https://ssl.gstatic.com/docs/spreadsheets/forms/favicon_qp2.png" class="icon bookmark-icon"/>https://docs.google.com/forms/d/e/1FAIpQLSePy-JS2XOd77m3AAq0DnKMzhUDlZwFzjQrrmyfAUrO07SHiw/viewform?usp=sf_link</div></div><img src="https://lh3.googleusercontent.com/jhxVlZhuDdfEAQfxLmDpNuFzOhES6v_siIavOjNQrR4uUesrskA_-egvadJ4nEMA_GODZoCWMoY=w1200-h630-p" class="bookmark-image"/></a></figure></div><div style="display:contents" dir="auto"><p id="ae2ce6f2-876a-8346-9413-0138719a130b" class="">
+</p></div><div style="display:contents" dir="auto"><p id="da1ce6f2-876a-8256-9a1c-013d0e9df42a" class="">
+</p></div><div style="display:contents" dir="auto"><p id="2cbce6f2-876a-820e-b5f3-817b5b93bc9d" class="">
+</p></div><div style="display:contents" dir="ltr"><figure class="block-color-gray_background callout" style="white-space:pre-wrap;display:flex" id="ebdce6f2-876a-8373-8a26-01cf9a9f680f"><div style="font-size:1.5em"><span class="icon">🐦</span></div><div style="width:100%">最新情報はTwitterをチェック！</div></figure></div><div style="display:contents" dir="auto"><p id="8d9ce6f2-876a-83e1-b351-01cd527877cf" class="">
+</p></div><div style="display:contents" dir="auto"><p id="36ece6f2-876a-82aa-b42a-01ad9986a6cd" class="">
+</p></div><div style="display:contents" dir="ltr"><figure id="f61ce6f2-876a-8365-b444-819fcc3903b1"><div class="source"><a href="https://twitter.com/might_games/status/1658019629573472257?s=20">https://twitter.com/might_games/status/1658019629573472257?s=20</a></div></figure></div><div style="display:contents" dir="auto"><p id="c93ce6f2-876a-829e-baa1-8129ee22270b" class="">
+</p></div><div style="display:contents" dir="auto"><p id="f84ce6f2-876a-8298-b8a8-01f9c1d46c9c" class="">
+</p></div><div style="display:contents" dir="auto"><p id="a1ece6f2-876a-831e-9bcd-0186a8cd4b33" class="">
+</p></div><div style="display:contents" dir="auto"><hr id="015ce6f2-876a-8343-a7c9-818e3477fff3"/></div><div style="display:contents" dir="auto"><p id="5a9ce6f2-876a-8333-85b3-81bde67542d2" class="">
+</p></div></div></article><span class="sans" style="font-size:14px;padding-top:2em"></span></body></html>

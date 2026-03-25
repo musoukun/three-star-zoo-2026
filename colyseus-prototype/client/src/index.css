@@ -1,0 +1,665 @@
+/* Three Star Zoo - Game Layout */
+
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  background: linear-gradient(135deg, #e8f5e8 0%, #d4edda 50%, #c3e9c3 100%);
+  min-height: 100vh;
+}
+
+/* ===== ゲーム画面レイアウト ===== */
+/* 3列: メイン | マーケット | チャット/ログ (1/7幅) */
+.game-layout {
+  display: grid;
+  grid-template-columns: 1fr 480px calc(100vw / 7);
+  grid-template-rows: 1fr auto;
+  height: 100vh;
+  gap: 0;
+}
+
+/* 左側: メインエリア（他プレイヤー + ログ） */
+.main-area {
+  grid-column: 1;
+  grid-row: 1;
+  overflow-y: auto;
+  padding: 8px;
+}
+
+/* 中央右: マーケット（常に表示） */
+.market-area {
+  grid-column: 2;
+  grid-row: 1 / 3;
+  background: rgba(63, 81, 181, 0.08);
+  border-left: 3px solid #3F51B5;
+  overflow-y: auto;
+  padding: 10px;
+}
+
+/* 右端: チャット/ゲームログ */
+.chat-area {
+  grid-column: 3;
+  grid-row: 1 / 3;
+  background: #1a1a2e;
+  border-left: 2px solid #444;
+  display: flex;
+  flex-direction: column;
+  color: #ddd;
+  font-size: 12px;
+}
+
+.chat-header {
+  padding: 8px;
+  font-size: 13px;
+  font-weight: bold;
+  border-bottom: 1px solid #333;
+  color: #aaa;
+  flex-shrink: 0;
+}
+
+.chat-messages {
+  flex: 1;
+  overflow-y: auto;
+  padding: 6px 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.chat-msg {
+  font-size: 11px;
+  line-height: 1.4;
+  word-break: break-word;
+}
+
+.chat-msg.system {
+  color: #888;
+}
+
+.chat-msg.chat {
+  color: #e0e0e0;
+}
+
+.chat-input-row {
+  display: flex;
+  border-top: 1px solid #333;
+  flex-shrink: 0;
+}
+
+.chat-input-row input {
+  flex: 1;
+  background: #2a2a3e;
+  border: none;
+  color: #eee;
+  padding: 8px;
+  font-size: 12px;
+  outline: none;
+}
+
+.chat-input-row input::placeholder {
+  color: #666;
+}
+
+.chat-input-row button {
+  background: #3F51B5;
+  border: none;
+  color: #fff;
+  padding: 8px 12px;
+  font-size: 12px;
+  cursor: pointer;
+}
+
+.chat-input-row button:hover {
+  background: #5C6BC0;
+}
+
+/* 下部固定: 自分の盤面 + 操作 */
+.my-board-area {
+  grid-column: 1;
+  grid-row: 2;
+  background: #e8f5e9;
+  border-top: 3px solid #4CAF50;
+  padding: 8px;
+  color: #222;
+}
+
+/* ===== ステータスバー ===== */
+.status-bar {
+  background: #333;
+  color: #fff;
+  padding: 6px 12px;
+  border-radius: 6px;
+  margin-bottom: 8px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  font-size: 13px;
+}
+
+.status-bar .my-turn {
+  color: #7fff7f;
+  font-weight: bold;
+}
+
+/* ===== プログレスバー ===== */
+.progress-bar {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  padding: 4px 0;
+  margin-bottom: 8px;
+}
+
+.progress-step {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 3px 8px;
+  border-radius: 12px;
+  font-size: 12px;
+  color: #888;
+  background: #ddd;
+}
+
+.progress-step.active {
+  color: #fff;
+  background: #2196F3;
+  font-weight: bold;
+}
+
+.progress-line {
+  width: 20px;
+  height: 2px;
+  background: #ccc;
+}
+
+.progress-line.active {
+  background: #2196F3;
+}
+
+/* ===== プレイヤー情報 ===== */
+.player-info-row {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 8px;
+  flex-wrap: wrap;
+}
+
+.player-card {
+  border: 2px solid #ccc;
+  border-radius: 6px;
+  padding: 6px 10px;
+  background: #fff;
+  min-width: 140px;
+  font-size: 12px;
+}
+
+.player-card.current {
+  border-color: #e74c3c;
+}
+
+.player-card.me {
+  background: #eef6ff;
+}
+
+/* ===== 他プレイヤーのボード ===== */
+.other-player-section {
+  margin-bottom: 12px;
+  padding: 8px;
+  background: #FFF3E0;
+  border-radius: 8px;
+  border: 2px solid #FFB74D;
+}
+
+.other-player-name {
+  font-size: 14px;
+  font-weight: bold;
+  color: #E65100;
+  margin-bottom: 6px;
+}
+
+/* ===== ケージグリッド (4x3) ===== */
+.cage-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 3px;
+}
+
+.cage-grid.my-board {
+  gap: 4px;
+}
+
+/* ===== ケージ — 空は白、動物の色で背景が変わる ===== */
+.cage {
+  border: 2px solid #ccc;
+  border-radius: 6px;
+  padding: 4px;
+  background: #f8f8f8;
+  position: relative;
+  min-height: 60px;
+  font-size: 14px;
+  transition: all 0.2s;
+}
+
+.cage.rolled {
+  box-shadow: 0 0 0 3px #e74c3c, 0 0 12px rgba(231, 76, 60, 0.4);
+}
+
+/* ケージの色はインラインスタイルで動的に設定 */
+
+.cage-num {
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  background: #555;
+  color: #fff;
+  font-size: 11px;
+  font-weight: bold;
+  padding: 1px 5px;
+  border-radius: 4px;
+  line-height: 16px;
+}
+
+.cage-content {
+  padding-top: 18px;
+  display: flex;
+  flex-direction: row;
+  flex-wrap: wrap;
+  gap: 2px;
+}
+
+/* 檻の中の動物 — 2匹横並び */
+.cage-animal {
+  display: flex;
+  align-items: center;
+  gap: 3px;
+  font-size: 13px;
+  padding: 2px 4px;
+  border-radius: 4px;
+  background: rgba(255,255,255,0.7);
+  border: 1px solid rgba(0,0,0,0.08);
+  flex: 1 1 45%;
+  min-width: 0;
+}
+
+.cage-animal-icon {
+  font-size: 18px;
+  flex-shrink: 0;
+}
+
+.cage-animal-effect {
+  font-size: 11px;
+  color: #444;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  min-width: 0;
+}
+
+.cage-empty {
+  color: #bbb;
+  font-size: 14px;
+  text-align: center;
+  padding-top: 4px;
+  width: 100%;
+}
+
+/* ===== セットアップ中の配置ボタン — 大きく読みやすく ===== */
+.cage-place-btn {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 14px;
+  padding: 6px 10px;
+  margin-top: 4px;
+  cursor: pointer;
+  border: 2px solid #4CAF50;
+  border-radius: 6px;
+  background: #e8f5e9;
+  color: #1B5E20;
+  font-weight: bold;
+  width: 100%;
+}
+
+.cage-place-btn:hover {
+  background: #c8e6c9;
+  border-color: #388E3C;
+}
+
+.cage-place-btn .place-icon {
+  font-size: 20px;
+}
+
+.cage-place-btn .place-label {
+  font-size: 14px;
+  color: #222;
+  font-weight: bold;
+}
+
+/* ===== マーケット ===== */
+.market-title {
+  font-size: 15px;
+  font-weight: bold;
+  color: #1A237E;
+  text-align: center;
+  margin-bottom: 10px;
+  padding-bottom: 6px;
+  border-bottom: 2px solid #3F51B5;
+}
+
+/* 3列タイル配置 */
+.market-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
+}
+
+/* 縦長カード型デザイン */
+.market-card {
+  background: #fff;
+  border: 2px solid #bbb;
+  border-radius: 8px;
+  padding: 0;
+  cursor: pointer;
+  transition: all 0.2s;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+.market-card:hover {
+  transform: scale(1.03);
+  box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+}
+
+.market-card.sold-out {
+  opacity: 0.35;
+  pointer-events: none;
+}
+
+.market-card.buyable {
+  border-color: #3F51B5;
+  box-shadow: 0 0 0 1px #3F51B5;
+}
+
+/* ヘッダー: コスト(左) ターン(中) うんち(右) */
+.market-card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 4px 6px;
+  font-size: 10px;
+  font-weight: bold;
+  color: #fff;
+}
+
+.market-card-header.animal-red { background: #e57373; }
+.market-card-header.animal-blue { background: #4db6ac; }
+.market-card-header.animal-green { background: #66bb6a; }
+.market-card-header.animal-purple { background: #ba68c8; }
+.market-card-header.animal-orange { background: #ffb74d; }
+
+/* ボディ: アイコン大きく + 名前 */
+.market-card-body {
+  padding: 8px 6px 4px;
+  text-align: center;
+  flex: 1;
+}
+
+.market-card-icon {
+  font-size: 36px;
+  line-height: 1.1;
+}
+
+.market-card-name {
+  font-size: 12px;
+  font-weight: bold;
+  color: #333;
+  margin-top: 2px;
+}
+
+/* 効果テキスト: 普通の文量で読める */
+.market-card-effect {
+  font-size: 10px;
+  color: #555;
+  margin-top: 4px;
+  line-height: 1.4;
+  padding: 0 4px;
+  text-align: left;
+}
+
+/* フッター: 在庫 + 色 */
+.market-card-footer {
+  display: flex;
+  justify-content: space-between;
+  padding: 4px 6px;
+  background: #f5f5f5;
+  font-size: 10px;
+  color: #555;
+  border-top: 1px solid #eee;
+}
+
+/* ===== 操作パネル ===== */
+.my-stats {
+  display: flex;
+  gap: 20px;
+  margin-bottom: 8px;
+  font-size: 16px;
+}
+
+.my-stats span {
+  font-weight: bold;
+}
+
+.action-panel {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+  margin-top: 6px;
+  align-items: center;
+}
+
+.action-btn {
+  padding: 5px 12px;
+  border: 2px solid #4CAF50;
+  border-radius: 6px;
+  background: linear-gradient(145deg, #4CAF50, #45a049);
+  color: #fff;
+  font-size: 12px;
+  font-weight: bold;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.action-btn:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+}
+
+.action-btn:disabled {
+  background: #666;
+  border-color: #555;
+  cursor: not-allowed;
+  opacity: 0.6;
+  transform: none;
+}
+
+.action-btn.secondary {
+  background: linear-gradient(145deg, #607D8B, #546E7A);
+  border-color: #546E7A;
+}
+
+.action-btn.danger {
+  background: linear-gradient(145deg, #f44336, #d32f2f);
+  border-color: #d32f2f;
+}
+
+.action-btn.trade {
+  background: linear-gradient(145deg, #3F51B5, #303F9F);
+  border-color: #303F9F;
+}
+
+/* ===== 取引サブメニュー ===== */
+.trade-submenu {
+  background: #fff;
+  border: 1px solid #ccc;
+  border-radius: 6px;
+  padding: 8px;
+  margin-top: 6px;
+}
+
+.trade-submenu p {
+  color: #333;
+  font-size: 12px;
+  margin-bottom: 6px;
+}
+
+.trade-option {
+  display: inline-block;
+  padding: 5px 10px;
+  margin: 2px;
+  border: 1px solid #999;
+  border-radius: 4px;
+  background: #f5f5f5;
+  color: #333;
+  font-size: 12px;
+  cursor: pointer;
+}
+
+.trade-option:hover {
+  background: #e0e0e0;
+}
+
+.trade-done {
+  color: #888;
+  font-size: 11px;
+  margin: 0 4px;
+}
+
+/* ===== ログ ===== */
+.effect-log {
+  background: #fffde7;
+  padding: 6px 8px;
+  border-radius: 6px;
+  margin-top: 8px;
+  font-size: 11px;
+}
+
+.effect-log h4 {
+  font-size: 12px;
+  margin-bottom: 4px;
+}
+
+/* ===== ゲームオーバー ===== */
+.game-over {
+  padding: 12px;
+  background: #fffde7;
+  border: 3px solid #ffd600;
+  border-radius: 8px;
+  margin-bottom: 12px;
+  text-align: center;
+}
+
+/* ===== 動物色別ボーダー ===== */
+.animal-red { border-color: #ff6b6b !important; }
+.animal-blue { border-color: #4ecdc4 !important; }
+.animal-green { border-color: #66bb6a !important; }
+.animal-purple { border-color: #9c88ff !important; }
+.animal-orange { border-color: #ffa726 !important; }
+
+/* ===== 履歴パネル（右端オーバーレイ） ===== */
+
+/* トグルボタン: 右端に常時表示 */
+.history-toggle-btn {
+  position: fixed;
+  right: 0;
+  top: 50%;
+  transform: translateY(-50%);
+  z-index: 1000;
+  width: 28px;
+  height: 56px;
+  border: 2px solid #666;
+  border-right: none;
+  border-radius: 8px 0 0 8px;
+  background: rgba(50, 50, 50, 0.8);
+  color: #fff;
+  font-size: 14px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.history-toggle-btn:hover {
+  background: rgba(50, 50, 50, 0.95);
+}
+
+/* オーバーレイパネル: 上に重ねる、透過50% */
+.history-overlay {
+  position: fixed;
+  right: 0;
+  top: 0;
+  bottom: 0;
+  width: 260px;
+  z-index: 999;
+  background: rgba(30, 30, 30, 0.5);
+  backdrop-filter: blur(4px);
+  color: #fff;
+  padding: 20px 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.history-overlay h3 {
+  font-size: 16px;
+  margin: 0;
+  padding-bottom: 8px;
+  border-bottom: 1px solid rgba(255,255,255,0.2);
+}
+
+.history-info {
+  font-size: 13px;
+  color: rgba(255,255,255,0.8);
+}
+
+.history-buttons {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.history-btn {
+  padding: 10px 16px;
+  border: 2px solid rgba(255,255,255,0.3);
+  border-radius: 8px;
+  background: rgba(255,255,255,0.1);
+  color: #fff;
+  font-size: 15px;
+  font-weight: bold;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.history-btn:hover:not(:disabled) {
+  background: rgba(255,255,255,0.25);
+}
+
+.history-btn:disabled {
+  opacity: 0.3;
+  cursor: not-allowed;
+}
+
+.history-btn.danger {
+  border-color: rgba(244, 67, 54, 0.5);
+  color: #ff8a80;
+}
+
+.history-btn.danger:hover:not(:disabled) {
+  background: rgba(244, 67, 54, 0.2);
+}
