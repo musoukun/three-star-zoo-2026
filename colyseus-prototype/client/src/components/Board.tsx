@@ -1,4 +1,4 @@
-import { useState, useEffect, useContext, useMemo } from 'react';
+import { useState, useEffect, useContext, useMemo, useRef, lazy, Suspense } from 'react';
 import { ColyseusContext, PLAYER_COLORS } from '../App';
 import { ANIMALS, ANIMAL_ICONS, EFFECT_TEXT_FULL, EFFECT_TEXT_SHORT, STAR_COST } from '../game/animals';
 import { CHANCE_CARD_DATA } from '../game/chanceCards';
@@ -11,6 +11,8 @@ import {
   GameResultModal, BurstAnimation, RuleTooltip,
   MarketPanel, ChanceCardDrawUI, ChanceCardInteractionUI,
 } from './BoardPanels';
+
+const DiceAnimation = lazy(() => import('./Dice/DiceAnimation'));
 
 // ===== モバイル判定フック =====
 function useIsMobile(breakpoint = 768) {
@@ -25,11 +27,26 @@ function useIsMobile(breakpoint = 768) {
 
 // ===== メインBoard =====
 export function Board({ onLeave }: { onLeave: () => void }) {
-  const { state, sessionId, historyInfo, send } = useContext(ColyseusContext);
+  const { state, sessionId, historyInfo, isConnected, send } = useContext(ColyseusContext);
   const [historyOpen, setHistoryOpen] = useState(false);
   const isMobile = useIsMobile();
   const [marketOpen, setMarketOpen] = useState(false);
   const [chatOpen, setChatOpen] = useState(false);
+  const [diceAnimResults, setDiceAnimResults] = useState<number[] | null>(null);
+  const prevDiceRolledRef = useRef(false);
+
+  // サイコロが振られたらアニメーションを開始
+  useEffect(() => {
+    if (!state) return;
+    if (state.diceRolled && !prevDiceRolledRef.current) {
+      const results = state.diceCount === 1
+        ? [state.dice1]
+        : [state.dice1, state.dice2];
+      setDiceAnimResults(results);
+    }
+    prevDiceRolledRef.current = state.diceRolled;
+  }, [state?.diceRolled, state?.dice1, state?.dice2]);
+
   if (!state) return null;
 
   const isSetup = state.phase === 'setup';
@@ -61,6 +78,12 @@ export function Board({ onLeave }: { onLeave: () => void }) {
   // ===== モバイルレイアウト =====
   if (isMobile) return (
     <div className="game-layout-mobile">
+      {/* 切断警告 */}
+      {!isConnected && (
+        <div className="connection-warning">
+          ⚠ サーバーとの接続が切れています...再接続を試みています
+        </div>
+      )}
       {/* ステータスバー */}
       <div className="mobile-status-bar">
         <strong>
@@ -159,6 +182,14 @@ export function Board({ onLeave }: { onLeave: () => void }) {
           />
 
           {!isSetup && isMyTurn && !isEnded && <ActionPanel />}
+
+          {/* 他プレイヤーのターンでも自分宛の効果解決UIを表示 */}
+          {!isMyTurn && state.turnStep === 'income' && state.pendingEffects.length > 0 &&
+            state.pendingEffects[0].ownerPlayerId === sessionId && (
+            <div className="action-panel">
+              <PendingEffectUI />
+            </div>
+          )}
         </div>
 
         {state.effectLog.length > 0 && (
@@ -219,12 +250,26 @@ export function Board({ onLeave }: { onLeave: () => void }) {
 
       {isEnded && <GameResultModal onLeave={onLeave} />}
       <BurstAnimation />
+      {diceAnimResults && (
+        <Suspense fallback={null}>
+          <DiceAnimation
+            diceResults={diceAnimResults}
+            onComplete={() => setDiceAnimResults(null)}
+          />
+        </Suspense>
+      )}
     </div>
   );
 
   // ===== デスクトップレイアウト =====
   return (
     <div className="game-layout">
+      {/* 切断警告 */}
+      {!isConnected && (
+        <div className="connection-warning">
+          ⚠ サーバーとの接続が切れています...再接続を試みています
+        </div>
+      )}
       {/* ===== 左上: メインエリア ===== */}
       <div className="main-area">
         {isEnded && (
@@ -376,6 +421,14 @@ export function Board({ onLeave }: { onLeave: () => void }) {
           <ActionPanel />
         )}
 
+        {/* 他プレイヤーのターンでも自分宛の効果解決UIを表示 */}
+        {!isMyTurn && state.turnStep === 'income' && state.pendingEffects.length > 0 &&
+          state.pendingEffects[0].ownerPlayerId === sessionId && (
+          <div className="action-panel">
+            <PendingEffectUI />
+          </div>
+        )}
+
         <RuleTooltip />
       </div>
 
@@ -421,6 +474,14 @@ export function Board({ onLeave }: { onLeave: () => void }) {
 
       {isEnded && <GameResultModal onLeave={onLeave} />}
       <BurstAnimation />
+      {diceAnimResults && (
+        <Suspense fallback={null}>
+          <DiceAnimation
+            diceResults={diceAnimResults}
+            onComplete={() => setDiceAnimResults(null)}
+          />
+        </Suspense>
+      )}
     </div>
   );
 }
@@ -550,10 +611,7 @@ function ActionPanel() {
         </>
       )}
 
-      {state.turnStep === 'income' && state.pendingEffects.length > 0 &&
-        state.pendingEffects[0].ownerPlayerId === sessionId && (
-        <PendingEffectUI />
-      )}
+      {/* PendingEffectUIはActionPanel外で表示（他プレイヤーのターンでも操作が必要なため） */}
 
       {(state.chanceCardPhase === 'useOrKeep' || state.chanceCardPhase === 'forceUse') &&
         state.currentTurn === sessionId && (

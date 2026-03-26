@@ -20,6 +20,7 @@ interface ColyseusContextValue {
   historyInfo: HistoryInfo;
   myDrawnCardId: string;
   myHeldCardId: string;
+  isConnected: boolean;
   send: (type: string, data?: any) => void;
 }
 
@@ -29,13 +30,14 @@ export const ColyseusContext = createContext<ColyseusContextValue>({
   historyInfo: { undoCount: 0, redoCount: 0 },
   myDrawnCardId: '',
   myHeldCardId: '',
+  isConnected: true,
   send: () => {},
 });
 
 export function App() {
   const {
     state, sessionId, error, historyInfo, rooms,
-    myDrawnCardId, myHeldCardId, isReconnecting,
+    myDrawnCardId, myHeldCardId, isReconnecting, isConnected,
     fetchRooms, createRoom, joinRoomById, send, leave, tryReconnect,
   } = useColyseus();
 
@@ -282,7 +284,7 @@ export function App() {
   // ===== ゲーム画面（setup / main / ended のみ）=====
   if (state.phase === 'setup' || state.phase === 'main' || state.phase === 'ended') {
     return (
-      <ColyseusContext.Provider value={{ state, sessionId, historyInfo, myDrawnCardId, myHeldCardId, send }}>
+      <ColyseusContext.Provider value={{ state, sessionId, historyInfo, myDrawnCardId, myHeldCardId, isConnected, send }}>
         <Board onLeave={leave} />
       </ColyseusContext.Provider>
     );

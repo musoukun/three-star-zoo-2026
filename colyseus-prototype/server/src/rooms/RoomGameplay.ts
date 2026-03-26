@@ -84,7 +84,7 @@ export class RoomGameplay {
     if (this.extraTurnFlag) {
       this.extraTurnFlag = false;
       this.resetTurnState();
-      this.ctx.addGameLog(`🃏 再入園! ${this.ctx.getPlayerName(this.state.currentTurn)} のもう1ターン`);
+      this.ctx.logEffect(`🃏 再入園! ${this.ctx.getPlayerName(this.state.currentTurn)} のもう1ターン`);
       return;
     }
     const idx = this.state.turnOrder.indexOf(this.state.currentTurn);
@@ -157,7 +157,7 @@ export class RoomGameplay {
       this.state.chanceCardPhase = "useOrKeep";
     }
 
-    this.ctx.addGameLog(`🃏 ${this.ctx.getPlayerName(playerId)} がチャンスカードを引いた`);
+    this.ctx.logEffect(`🃏 ${this.ctx.getPlayerName(playerId)} がチャンスカードを引いた！`);
   }
 
   executeChanceCard(playerId: string, cardId: string) {
@@ -206,7 +206,7 @@ export class RoomGameplay {
     this.state.activeChanceCard = "";
     this.state.chanceCardPhase = "";
     this.drawnCardId = "";
-    this.ctx.addGameLog(`🃏 ${logMessage}`);
+    this.ctx.logEffect(`🃏 ${logMessage}`);
 
     if (this.state.turnStep !== "trade") {
       this.state.turnStep = "trade";
@@ -603,7 +603,7 @@ export class RoomGameplay {
     this.drawnCardId = "";
     this.state.chanceCardPhase = "";
     this.state.turnStep = "trade";
-    this.ctx.addGameLog(`🃏 ${this.ctx.getPlayerName(sessionId)} がチャンスカードを伏せた`);
+    this.ctx.logEffect(`🃏 ${this.ctx.getPlayerName(sessionId)} がチャンスカードを伏せた`);
   }
 
   handleUseDrawnChanceCard(sessionId: string) {

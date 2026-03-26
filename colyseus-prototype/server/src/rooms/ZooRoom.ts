@@ -103,6 +103,12 @@ export class ZooRoom extends Room<ZooState> {
     this.updateMetadata();
     this.addGameLog(`${player.name} が入室しました`);
 
+    // 履歴情報を送信（途中参加対応）
+    client.send("historyInfo", {
+      undoCount: this.history.undoCount,
+      redoCount: this.history.redoCount,
+    });
+
     console.log(`${player.name} (${client.sessionId}) joined. ${this.state.players.size} players in lobby`);
   }
 
@@ -122,6 +128,11 @@ export class ZooRoom extends Room<ZooState> {
         this.addGameLog(`${player.name} が再接続しました`);
         this.clearEmptyTimer();
         this.updateMetadata();
+        // 再接続したクライアントに履歴情報を送信
+        client.send("historyInfo", {
+          undoCount: this.history.undoCount,
+          redoCount: this.history.redoCount,
+        });
         console.log(`${player.name} reconnected`);
         return;
       } catch {

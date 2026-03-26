@@ -134,6 +134,7 @@ export function useColyseus() {
   const [myDrawnCardId, setMyDrawnCardId] = useState<string>('');
   const [myHeldCardId, setMyHeldCardId] = useState<string>('');
   const [isReconnecting, setIsReconnecting] = useState<boolean>(!!loadSession());
+  const [isConnected, setIsConnected] = useState<boolean>(false);
 
   useEffect(() => {
     clientRef.current = new Colyseus.Client(SERVER_URL);
@@ -141,6 +142,25 @@ export function useColyseus() {
       roomRef.current?.leave();
     };
   }, []);
+
+  // WebSocket接続状態を定期的に監視（サイレント切断検知）
+  useEffect(() => {
+    const interval = setInterval(() => {
+      const r = roomRef.current;
+      if (!r) {
+        setIsConnected(false);
+        return;
+      }
+      // colyseus.jsのroom.connectionでWebSocket readyState確認
+      const ws = (r.connection as any)?.ws as WebSocket | undefined;
+      const connected = ws?.readyState === WebSocket.OPEN;
+      setIsConnected(connected);
+      if (r && !connected && !isReconnecting) {
+        console.log('[Colyseus] サイレント切断を検知 (readyState:', ws?.readyState, ')');
+      }
+    }, 3000);
+    return () => clearInterval(interval);
+  }, [isReconnecting]);
 
   // ルーム一覧取得
   const fetchRooms = useCallback(async () => {
@@ -159,6 +179,7 @@ export function useColyseus() {
     setRoom(r);
     setSessionId(r.sessionId);
     setIsReconnecting(false);
+    setIsConnected(true);
     // E2Eテスト用: roomオブジェクトをwindowに公開
     (window as any).__colyseusRoom = r;
     setError('');
@@ -316,7 +337,7 @@ export function useColyseus() {
 
   return {
     room, state, sessionId, error, historyInfo, rooms,
-    myDrawnCardId, myHeldCardId, isReconnecting,
+    myDrawnCardId, myHeldCardId, isReconnecting, isConnected,
     fetchRooms, createRoom, joinRoomById, joinRoom, send, leave, tryReconnect,
   };
 }

@@ -1473,8 +1473,10 @@ body {
   grid-column: unset;
   grid-row: unset;
   flex: 1;
+  min-height: 0;
   border-left: none;
   border-radius: 0;
+  overflow: hidden;
 }
 
 /* ===== モバイル用リザルトモーダル調整 ===== */
@@ -1548,15 +1550,99 @@ body {
   width: 24px;
   height: 44px;
   font-size: 11px;
-  z-index: 50;
+  z-index: 1001;
 }
 
 .game-layout-mobile .history-overlay {
   width: 220px;
   padding: 16px 12px;
+  z-index: 1000;
 }
 
 .game-layout-mobile .history-btn {
   padding: 8px 12px;
   font-size: 13px;
+}
+
+/* ===== 接続切断警告 ===== */
+.connection-warning {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 10000;
+  background: #d32f2f;
+  color: #fff;
+  text-align: center;
+  padding: 8px 16px;
+  font-size: 13px;
+  font-weight: bold;
+  animation: connection-pulse 2s infinite;
+}
+
+@keyframes connection-pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.7; }
+}
+
+/* ===== サイコロ3Dアニメーション ===== */
+.dice-animation-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  z-index: 9999;
+  pointer-events: none;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+}
+
+.dice-animation-backdrop {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: radial-gradient(ellipse at center, rgba(0,0,0,0.45) 0%, rgba(0,0,0,0.15) 60%, transparent 80%);
+}
+
+.dice-canvas-container {
+  width: 420px;
+  height: 320px;
+  position: relative;
+  z-index: 1;
+}
+
+.dice-canvas-container canvas {
+  width: 100% !important;
+  height: 100% !important;
+}
+
+.dice-result-text {
+  position: relative;
+  z-index: 1;
+  font-size: 32px;
+  font-weight: bold;
+  color: #fff;
+  text-shadow: 0 2px 12px rgba(0, 0, 0, 0.8), 0 0 4px rgba(0,0,0,0.5);
+  margin-top: -10px;
+  animation: dice-result-pop 0.3s ease-out 0.6s both;
+}
+
+@keyframes dice-result-pop {
+  from { opacity: 0; transform: scale(0.5); }
+  to { opacity: 1; transform: scale(1); }
+}
+
+@media (max-width: 768px) {
+  .dice-canvas-container {
+    width: 280px;
+    height: 220px;
+  }
+  .dice-result-text {
+    font-size: 24px;
+  }
 }
