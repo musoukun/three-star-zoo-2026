@@ -66,139 +66,161 @@ export function App() {
     });
 
     return (
-      <div style={styles.container}>
-        <h1 style={styles.title}>🦁 三ツ星動物園</h1>
-
-        {error && <div style={styles.error}>{error}</div>}
-
-        {/* プレイヤー名入力 */}
-        <div style={styles.nameRow}>
-          <label>
-            プレイヤー名:
-            <input
-              value={name}
-              onChange={(e) => setName(e.target.value)}
-              placeholder="名前を入力"
-              style={styles.input}
-            />
-          </label>
-        </div>
-
-        {/* ルーム作成トグル */}
-        <div style={styles.section}>
-          <button
-            onClick={() => setShowCreateForm(!showCreateForm)}
-            style={styles.createToggle}
-          >
-            {showCreateForm ? '▼ ルーム作成を閉じる' : '＋ ルームを作成'}
-          </button>
-
-          {showCreateForm && (
-            <div style={styles.createForm}>
-              <input
-                value={newRoomName}
-                onChange={(e) => setNewRoomName(e.target.value)}
-                placeholder="ルーム名"
-                style={styles.input}
-              />
-              <label style={styles.checkLabel}>
-                <input
-                  type="checkbox"
-                  checked={isPrivate}
-                  onChange={(e) => setIsPrivate(e.target.checked)}
-                />
-                プライベートルーム
-              </label>
-              {isPrivate && (
-                <input
-                  type="password"
-                  value={newRoomPassword}
-                  onChange={(e) => setNewRoomPassword(e.target.value)}
-                  placeholder="パスワード"
-                  style={styles.input}
-                />
-              )}
-              <button
-                onClick={() => {
-                  const pName = name || 'ゲスト';
-                  const rName = newRoomName || `${pName}の部屋`;
-                  createRoom(pName, rName, isPrivate ? newRoomPassword : undefined);
-                }}
-                style={styles.primaryBtn}
-                disabled={isPrivate && !newRoomPassword}
-              >
-                作成して入室
-              </button>
+      <div style={S.page}>
+        {/* ヘッダー */}
+        <div style={S.header}>
+          <div style={S.headerInner}>
+            <div style={S.titleGroup}>
+              <span style={S.stars}>★★★</span>
+              <h1 style={S.title}>三ツ星動物園</h1>
+              <span style={S.subtitle}>Three Star Zoo - Online</span>
             </div>
-          )}
+            <div style={S.animals}>🐼 🦁 🐧 🦒 🐘</div>
+          </div>
         </div>
 
-        {/* ルーム一覧 */}
-        <div style={styles.section}>
-          <div style={styles.listHeader}>
-            <h2 style={{ margin: 0 }}>ルーム一覧</h2>
-            <input
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              placeholder="ルーム名で検索..."
-              style={{ ...styles.input, width: 200 }}
-            />
-            <button onClick={fetchRooms} style={styles.refreshBtn}>更新</button>
-          </div>
+        <div style={S.body}>
+          {error && <div style={S.error}>{error}</div>}
 
-          {filteredRooms.length === 0 ? (
-            <p style={styles.empty}>
-              {rooms.length === 0
-                ? 'ルームがありません。新しいルームを作成してください。'
-                : '検索結果がありません。'}
-            </p>
-          ) : (
-            <div style={styles.roomList}>
-              {filteredRooms.map((r) => (
-                <div key={r.roomId} style={styles.roomCard}>
-                  <div style={styles.roomInfo}>
-                    <span style={styles.roomName}>
-                      {r.metadata?.isPrivate ? '🔒 ' : ''}
-                      {r.metadata?.roomName || r.roomId}
-                    </span>
-                    <span style={styles.roomMeta}>
-                      {r.metadata?.playerCount ?? r.clients}人
-                      {r.locked ? ' | ゲーム中' : ' | 待機中'}
-                    </span>
+          {/* プレイヤー名 + ルーム作成 */}
+          <div style={S.card}>
+            <div style={S.cardHeader}>プレイヤー設定</div>
+            <div style={S.cardBody}>
+              <div style={S.field}>
+                <label style={S.label}>名前</label>
+                <input
+                  value={name}
+                  onChange={(e) => setName(e.target.value)}
+                  placeholder="名前を入力..."
+                  style={S.textInput}
+                />
+              </div>
+
+              <div style={{ borderTop: '1px solid #e0e0e0', margin: '12px 0' }} />
+
+              <button
+                onClick={() => setShowCreateForm(!showCreateForm)}
+                style={S.toggleBtn}
+              >
+                {showCreateForm ? '▲ 閉じる' : '＋ ルームを作成'}
+              </button>
+
+              {showCreateForm && (
+                <div style={S.createArea}>
+                  <div style={S.field}>
+                    <label style={S.label}>ルーム名</label>
+                    <input
+                      value={newRoomName}
+                      onChange={(e) => setNewRoomName(e.target.value)}
+                      placeholder="部屋の名前..."
+                      style={S.textInput}
+                    />
                   </div>
+                  <label style={S.checkRow}>
+                    <input
+                      type="checkbox"
+                      checked={isPrivate}
+                      onChange={(e) => setIsPrivate(e.target.checked)}
+                    />
+                    <span>🔒 プライベートルーム</span>
+                  </label>
+                  {isPrivate && (
+                    <input
+                      type="password"
+                      value={newRoomPassword}
+                      onChange={(e) => setNewRoomPassword(e.target.value)}
+                      placeholder="パスワード"
+                      style={S.textInput}
+                    />
+                  )}
                   <button
                     onClick={() => {
-                      if (r.locked) return;
-                      if (r.metadata?.isPrivate) {
-                        setPasswordTarget(r);
-                        setJoinPassword('');
-                      } else {
-                        joinRoomById(r.roomId, name || 'ゲスト');
-                      }
+                      const pName = name || 'ゲスト';
+                      const rName = newRoomName || `${pName}の部屋`;
+                      createRoom(pName, rName, isPrivate ? newRoomPassword : undefined);
                     }}
-                    style={r.locked ? styles.disabledBtn : styles.joinBtn}
-                    disabled={r.locked}
+                    style={S.goldBtn}
+                    disabled={isPrivate && !newRoomPassword}
                   >
-                    {r.locked ? '入室不可' : '入室'}
+                    🎲 作成して入室
                   </button>
                 </div>
-              ))}
+              )}
             </div>
-          )}
+          </div>
+
+          {/* ルーム一覧 */}
+          <div style={S.card}>
+            <div style={S.cardHeader}>
+              <span>ルーム一覧</span>
+              <div style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
+                <input
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  placeholder="検索..."
+                  style={{ ...S.textInput, width: 160, padding: '4px 8px', fontSize: 12 }}
+                />
+                <button onClick={fetchRooms} style={S.refreshBtn}>↻</button>
+              </div>
+            </div>
+            <div style={S.cardBody}>
+              {filteredRooms.length === 0 ? (
+                <p style={S.empty}>
+                  {rooms.length === 0
+                    ? '🏠 ルームがありません。新しいルームを作成しましょう！'
+                    : '検索結果がありません。'}
+                </p>
+              ) : (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+                  {filteredRooms.map((r) => (
+                    <div key={r.roomId} style={S.roomRow}>
+                      <div>
+                        <div style={S.roomName}>
+                          {r.metadata?.isPrivate ? '🔒 ' : '🏠 '}
+                          {r.metadata?.roomName || r.roomId}
+                        </div>
+                        <div style={S.roomMeta}>
+                          👥 {r.metadata?.playerCount ?? r.clients}人
+                          {r.locked ? ' ・ 🎮 ゲーム中' : ' ・ ⏳ 待機中'}
+                        </div>
+                      </div>
+                      <button
+                        onClick={() => {
+                          if (r.locked) return;
+                          if (r.metadata?.isPrivate) {
+                            setPasswordTarget(r);
+                            setJoinPassword('');
+                          } else {
+                            joinRoomById(r.roomId, name || 'ゲスト');
+                          }
+                        }}
+                        style={r.locked ? S.disabledBtn : S.joinBtn}
+                        disabled={r.locked}
+                      >
+                        {r.locked ? '入室不可' : '入室 →'}
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          </div>
         </div>
 
         {/* パスワード入力ダイアログ */}
         {passwordTarget && (
-          <div style={styles.overlay}>
-            <div style={styles.dialog}>
-              <h3>🔒 パスワードを入力</h3>
-              <p>{passwordTarget.metadata?.roomName || passwordTarget.roomId}</p>
+          <div style={S.overlay}>
+            <div style={S.dialog}>
+              <h3 style={{ margin: '0 0 8px' }}>🔒 パスワードを入力</h3>
+              <p style={{ margin: '0 0 12px', color: '#666' }}>
+                {passwordTarget.metadata?.roomName || passwordTarget.roomId}
+              </p>
               <input
                 type="password"
                 value={joinPassword}
                 onChange={(e) => setJoinPassword(e.target.value)}
                 placeholder="パスワード"
-                style={styles.input}
+                style={S.textInput}
                 autoFocus
                 onKeyDown={(e) => {
                   if (e.key === 'Enter' && joinPassword) {
@@ -207,19 +229,14 @@ export function App() {
                   }
                 }}
               />
-              <div style={styles.dialogBtns}>
-                <button
-                  onClick={() => setPasswordTarget(null)}
-                  style={styles.cancelBtn}
-                >
-                  キャンセル
-                </button>
+              <div style={{ display: 'flex', gap: 8, marginTop: 12, justifyContent: 'flex-end' }}>
+                <button onClick={() => setPasswordTarget(null)} style={S.cancelBtn}>キャンセル</button>
                 <button
                   onClick={() => {
                     joinRoomById(passwordTarget.roomId, name || 'ゲスト', joinPassword);
                     setPasswordTarget(null);
                   }}
-                  style={styles.primaryBtn}
+                  style={S.goldBtn}
                   disabled={!joinPassword}
                 >
                   入室
@@ -229,9 +246,10 @@ export function App() {
           </div>
         )}
 
-        <p style={styles.hint}>
-          サーバー (colyseus-prototype/server) を起動してから接続してください。
-        </p>
+        {/* フッター */}
+        <div style={S.footer}>
+          <span>🐾 Three Star Zoo Online &copy; 2026</span>
+        </div>
       </div>
     );
   }
@@ -347,11 +365,243 @@ export function App() {
   );
 }
 
-// ===== スタイル =====
+// ===== トップページ用スタイル（ボードゲーム風） =====
+const S: Record<string, React.CSSProperties> = {
+  page: {
+    minHeight: '100vh',
+    background: 'linear-gradient(135deg, #b2dfdb 0%, #e0f2f1 40%, #fff8e1 100%)',
+    fontFamily: "'Zen Maru Gothic', 'Segoe UI', 'Hiragino Sans', sans-serif",
+  },
+  header: {
+    background: 'linear-gradient(90deg, #00695c, #00897b)',
+    padding: '20px 0',
+    textAlign: 'center',
+    boxShadow: '0 4px 12px rgba(0,0,0,0.15)',
+  },
+  headerInner: {
+    maxWidth: 700,
+    margin: '0 auto',
+    padding: '0 16px',
+  },
+  titleGroup: {
+    display: 'flex',
+    flexDirection: 'column',
+    alignItems: 'center',
+    gap: 2,
+  },
+  stars: {
+    color: '#fdd835',
+    fontSize: 22,
+    letterSpacing: 4,
+    textShadow: '0 2px 4px rgba(0,0,0,0.3)',
+  },
+  title: {
+    fontSize: 32,
+    fontWeight: 'bold',
+    color: '#fff',
+    margin: 0,
+    textShadow: '0 2px 8px rgba(0,0,0,0.25)',
+    letterSpacing: 3,
+  },
+  subtitle: {
+    color: '#b2dfdb',
+    fontSize: 12,
+    letterSpacing: 2,
+  },
+  animals: {
+    marginTop: 8,
+    fontSize: 24,
+    letterSpacing: 8,
+    filter: 'drop-shadow(0 2px 2px rgba(0,0,0,0.2))',
+  },
+  body: {
+    maxWidth: 600,
+    margin: '0 auto',
+    padding: '20px 16px',
+    display: 'flex',
+    flexDirection: 'column',
+    gap: 16,
+  },
+  error: {
+    color: '#fff',
+    background: '#c62828',
+    padding: '10px 14px',
+    borderRadius: 8,
+    fontSize: 14,
+    boxShadow: '0 2px 8px rgba(198,40,40,0.3)',
+  },
+  card: {
+    background: '#fff',
+    borderRadius: 12,
+    overflow: 'hidden',
+    boxShadow: '0 2px 12px rgba(0,0,0,0.08)',
+    border: '1px solid #e0e0e0',
+  },
+  cardHeader: {
+    background: '#f5f5f5',
+    padding: '10px 16px',
+    fontWeight: 'bold',
+    fontSize: 14,
+    color: '#333',
+    borderBottom: '1px solid #e0e0e0',
+    display: 'flex',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+  cardBody: {
+    padding: 16,
+  },
+  field: {
+    marginBottom: 10,
+  },
+  label: {
+    display: 'block',
+    fontSize: 12,
+    color: '#666',
+    marginBottom: 4,
+    fontWeight: 600,
+  },
+  textInput: {
+    width: '100%',
+    padding: '8px 12px',
+    borderRadius: 6,
+    border: '1.5px solid #ccc',
+    fontSize: 14,
+    outline: 'none',
+    boxSizing: 'border-box',
+    transition: 'border-color 0.2s',
+  },
+  toggleBtn: {
+    width: '100%',
+    padding: '8px',
+    background: 'transparent',
+    border: '1.5px dashed #80cbc4',
+    borderRadius: 8,
+    color: '#00796b',
+    fontSize: 13,
+    fontWeight: 600,
+    cursor: 'pointer',
+  },
+  createArea: {
+    marginTop: 12,
+    display: 'flex',
+    flexDirection: 'column',
+    gap: 10,
+  },
+  checkRow: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: 6,
+    fontSize: 13,
+    cursor: 'pointer',
+  },
+  goldBtn: {
+    padding: '10px 20px',
+    background: 'linear-gradient(135deg, #f9a825, #fdd835)',
+    color: '#5d4037',
+    border: 'none',
+    borderRadius: 8,
+    fontSize: 14,
+    fontWeight: 'bold',
+    cursor: 'pointer',
+    boxShadow: '0 2px 8px rgba(249,168,37,0.3)',
+    transition: 'transform 0.1s',
+  },
+  refreshBtn: {
+    width: 32,
+    height: 32,
+    borderRadius: '50%',
+    border: '1px solid #ccc',
+    background: '#fff',
+    fontSize: 16,
+    cursor: 'pointer',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  empty: {
+    textAlign: 'center',
+    color: '#999',
+    padding: '20px 0',
+    fontSize: 14,
+  },
+  roomRow: {
+    display: 'flex',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    padding: '10px 12px',
+    background: '#fafafa',
+    borderRadius: 8,
+    border: '1px solid #e8e8e8',
+    transition: 'background 0.15s',
+  },
+  roomName: {
+    fontWeight: 600,
+    fontSize: 14,
+    color: '#333',
+  },
+  roomMeta: {
+    fontSize: 11,
+    color: '#888',
+    marginTop: 2,
+  },
+  joinBtn: {
+    padding: '6px 16px',
+    background: '#00897b',
+    color: '#fff',
+    border: 'none',
+    borderRadius: 6,
+    fontSize: 13,
+    fontWeight: 600,
+    cursor: 'pointer',
+    whiteSpace: 'nowrap',
+  },
+  disabledBtn: {
+    padding: '6px 16px',
+    background: '#e0e0e0',
+    color: '#999',
+    border: 'none',
+    borderRadius: 6,
+    fontSize: 13,
+    cursor: 'not-allowed',
+  },
+  overlay: {
+    position: 'fixed',
+    top: 0, left: 0, right: 0, bottom: 0,
+    background: 'rgba(0,0,0,0.5)',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    zIndex: 1000,
+  },
+  dialog: {
+    background: '#fff',
+    padding: 24,
+    borderRadius: 12,
+    minWidth: 320,
+    boxShadow: '0 8px 32px rgba(0,0,0,0.2)',
+  },
+  cancelBtn: {
+    padding: '8px 16px',
+    background: '#fff',
+    border: '1px solid #ccc',
+    borderRadius: 6,
+    cursor: 'pointer',
+    fontSize: 13,
+  },
+  footer: {
+    textAlign: 'center',
+    padding: '16px 0',
+    color: '#80cbc4',
+    fontSize: 12,
+  },
+};
+
+// ===== ロビー/その他のスタイル =====
 const styles: Record<string, React.CSSProperties> = {
   container: {
     padding: 24,
-    fontFamily: "'Segoe UI', 'Hiragino Sans', sans-serif",
+    fontFamily: "'Zen Maru Gothic', 'Segoe UI', 'Hiragino Sans', sans-serif",
     maxWidth: 700,
     margin: '0 auto',
   },
