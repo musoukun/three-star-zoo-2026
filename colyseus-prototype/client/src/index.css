@@ -408,8 +408,8 @@ body {
   display: flex;
   align-items: center;
   gap: 6px;
-  font-size: 14px;
-  padding: 6px 10px;
+  font-size: 10px;
+  padding: 4px 8px;
   margin-top: 4px;
   cursor: pointer;
   border: 2px solid #4CAF50;
@@ -426,11 +426,11 @@ body {
 }
 
 .cage-place-btn .place-icon {
-  font-size: 20px;
+  font-size: 16px;
 }
 
 .cage-place-btn .place-label {
-  font-size: 14px;
+  font-size: 10px;
   color: #222;
   font-weight: bold;
 }
