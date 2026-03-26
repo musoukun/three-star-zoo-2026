@@ -363,7 +363,7 @@ body {
 .cage {
   border: 2px solid #ccc;
   border-radius: 6px;
-  padding: 6px;
+  padding: 9px;
   background: #f8f8f8;
   position: relative;
   min-height: 50px;
