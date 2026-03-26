@@ -26,6 +26,7 @@ export interface PlayerInfo {
   poopTokens: number;
   totalPoopCleaned: number;
   totalCoinsEarned: number;
+  hasHeldCard: boolean;
   cages: CageState[];
 }
 
@@ -59,6 +60,10 @@ export interface ZooRoomState {
   setupInventory: Record<string, string>;
   winnerId: string;
   burstPlayerId: string;
+  chanceDeckCount: number;
+  chanceDiscardCount: number;
+  chanceCardPhase: string;
+  activeChanceCard: string;
   gameLog: string[];
 }
 
@@ -89,6 +94,8 @@ export function useColyseus() {
   const [error, setError] = useState<string>('');
   const [historyInfo, setHistoryInfo] = useState<HistoryInfo>({ undoCount: 0, redoCount: 0 });
   const [rooms, setRooms] = useState<RoomListing[]>([]);
+  const [myDrawnCardId, setMyDrawnCardId] = useState<string>('');
+  const [myHeldCardId, setMyHeldCardId] = useState<string>('');
 
   useEffect(() => {
     clientRef.current = new Colyseus.Client(SERVER_URL);
@@ -113,6 +120,8 @@ export function useColyseus() {
     roomRef.current = r;
     setRoom(r);
     setSessionId(r.sessionId);
+    // E2Eテスト用: roomオブジェクトをwindowに公開
+    (window as any).__colyseusRoom = r;
     setError('');
 
     // 初回の状態を即座に読み取る
@@ -130,6 +139,17 @@ export function useColyseus() {
 
     r.onMessage("historyInfo", (info: HistoryInfo) => {
       setHistoryInfo(info);
+    });
+
+    // チャンスカード秘匿情報
+    r.onMessage("chanceCardDrawn", (data: { cardId: string }) => {
+      setMyDrawnCardId(data.cardId);
+    });
+    r.onMessage("heldCardInfo", (data: { cardId: string }) => {
+      setMyHeldCardId(data.cardId);
+    });
+    r.onMessage("heldCardCleared", () => {
+      setMyHeldCardId('');
     });
 
     r.onError((code: number, message?: string) => {
@@ -193,6 +213,7 @@ export function useColyseus() {
 
   return {
     room, state, sessionId, error, historyInfo, rooms,
+    myDrawnCardId, myHeldCardId,
     fetchRooms, createRoom, joinRoomById, joinRoom, send, leave,
   };
 }

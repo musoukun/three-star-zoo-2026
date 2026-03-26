@@ -18,6 +18,8 @@ interface ColyseusContextValue {
   state: ZooRoomState | null;
   sessionId: string;
   historyInfo: HistoryInfo;
+  myDrawnCardId: string;
+  myHeldCardId: string;
   send: (type: string, data?: any) => void;
 }
 
@@ -25,12 +27,15 @@ export const ColyseusContext = createContext<ColyseusContextValue>({
   state: null,
   sessionId: '',
   historyInfo: { undoCount: 0, redoCount: 0 },
+  myDrawnCardId: '',
+  myHeldCardId: '',
   send: () => {},
 });
 
 export function App() {
   const {
     state, sessionId, error, historyInfo, rooms,
+    myDrawnCardId, myHeldCardId,
     fetchRooms, createRoom, joinRoomById, send, leave,
   } = useColyseus();
 
@@ -257,7 +262,7 @@ export function App() {
   // ===== ゲーム画面（setup / main / ended のみ）=====
   if (state.phase === 'setup' || state.phase === 'main' || state.phase === 'ended') {
     return (
-      <ColyseusContext.Provider value={{ state, sessionId, historyInfo, send }}>
+      <ColyseusContext.Provider value={{ state, sessionId, historyInfo, myDrawnCardId, myHeldCardId, send }}>
         <Board onLeave={leave} />
       </ColyseusContext.Provider>
     );

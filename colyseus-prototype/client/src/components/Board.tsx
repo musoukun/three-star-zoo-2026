@@ -2,7 +2,24 @@ import { useState, useEffect, useContext, useMemo } from 'react';
 import { ColyseusContext } from '../App';
 import { PLAYER_COLORS } from '../App';
 import { ANIMALS, ANIMAL_ICONS, ANIMAL_CARD_IMAGES, ANIMAL_FACE_IMAGES, EFFECT_TEXT_FULL, EFFECT_TEXT_SHORT, COLOR_CLASS, STAR_COST } from '../game/animals';
+import { CHANCE_CARD_DATA } from '../game/chanceCards';
 import type { CageState, PlayerInfo } from '../hooks/useColyseus';
+
+// ===== 隣接マップ（サーバーと同一） =====
+const ADJACENCY: Record<number, number[]> = {
+  1:  [2, 11, 12],
+  2:  [1, 3, 11, 12, 10],
+  3:  [2, 4, 10, 9],
+  4:  [3, 5, 9, 8],
+  5:  [4, 6, 8, 7],
+  6:  [5, 7],
+  7:  [8, 5, 6],
+  8:  [7, 9, 4, 5],
+  9:  [8, 10, 3, 4],
+  10: [9, 11, 12, 2, 3],
+  11: [12, 10, 1, 2],
+  12: [11, 10, 1, 2],
+};
 
 // ===== 定数 =====
 const TURN_STEPS = [
@@ -84,6 +101,9 @@ export function Board({ onLeave }: { onLeave: () => void }) {
               {state.diceCount === 1 && ' (1個)'}
             </span>
           )}
+          {state.phase === 'main' && state.chanceDeckCount > 0 && (
+            <span style={{ fontSize: 11, color: '#777' }}>🃏{state.chanceDeckCount}</span>
+          )}
           {isMyTurn && <span className="my-turn">← あなた</span>}
           <button onClick={onLeave} style={{ marginLeft: 'auto', padding: '2px 8px', cursor: 'pointer', fontSize: 11 }}>
             退出
@@ -116,7 +136,10 @@ export function Board({ onLeave }: { onLeave: () => void }) {
                   {pid === sessionId && <span style={{ fontSize: 10, color: '#666' }}>(自分)</span>}
                   {pid === state.currentTurn && <span style={{ fontSize: 10 }}>🎯</span>}
                 </div>
-                <div>💰{p.coins} ⭐{'★'.repeat(p.stars)}{'☆'.repeat(3 - p.stars)} 💩{p.poopTokens}</div>
+                <div>
+                  💰{p.coins} ⭐{'★'.repeat(p.stars)}{'☆'.repeat(3 - p.stars)} 💩{p.poopTokens}
+                  {p.hasHeldCard && <span title="伏せカード保持中"> 🃏</span>}
+                </div>
               </div>
             );
           })}
@@ -393,19 +416,33 @@ function BurstAnimation() {
 }
 
 // ===== クライアント側の配置バリデーション =====
-function canPlaceOnCage(animalId: string, cage: CageState): boolean {
+type PlaceResult = { ok: true } | { ok: false; reason: string };
+
+function checkPlacement(animalId: string, cage: CageState, allCages: CageState[]): PlaceResult {
   const animalDef = ANIMALS[animalId];
-  if (!animalDef) return false;
-  if (cage.slots.length >= 2) return false;
-  // 同一動物制約
-  if (cage.slots.some(s => s.animalId === animalId)) return false;
-  // 色制約: 既に動物がいる場合、共通色が必要
+  if (!animalDef) return { ok: false, reason: '' };
+  if (cage.slots.length >= 2) return { ok: false, reason: '満員' };
+  if (cage.slots.some(s => s.animalId === animalId)) return { ok: false, reason: '同じ動物は不可' };
   if (cage.slots.length > 0) {
     const firstAnimal = ANIMALS[cage.slots[0].animalId];
-    if (!firstAnimal) return false;
-    if (!animalDef.colors.some(c => firstAnimal.colors.includes(c))) return false;
+    if (!firstAnimal) return { ok: false, reason: '' };
+    if (!animalDef.colors.some(c => firstAnimal.colors.includes(c)))
+      return { ok: false, reason: '色が合わない' };
   }
-  return true;
+  // 隣接制約: 既に同じ動物を持っている場合、隣接ケージにのみ配置可能
+  const hasExisting = allCages.some(c => c.slots.some(s => s.animalId === animalId));
+  if (hasExisting) {
+    const adjacent = ADJACENCY[cage.num] || [];
+    const isAdjacentToExisting = allCages.some(c =>
+      c.slots.some(s => s.animalId === animalId) && adjacent.includes(c.num)
+    );
+    if (!isAdjacentToExisting) return { ok: false, reason: '隣接エリアのみ配置可' };
+  }
+  return { ok: true };
+}
+
+function canPlaceOnCage(animalId: string, cage: CageState, allCages?: CageState[]): boolean {
+  return checkPlacement(animalId, cage, allCages ?? []).ok;
 }
 
 // ===== ケージの色 → 背景・ボーダーのスタイル =====
@@ -553,9 +590,9 @@ function CageGrid({
               </div>
             );
           })}
-          {/* セットアップ配置ボタン（色・同一動物制約でフィルタ） */}
+          {/* セットアップ配置ボタン（色・同一動物・隣接制約でフィルタ） */}
           {isSetup && isMyTurn && cage.slots.length < 2 && invAnimals
-            .filter(aid => canPlaceOnCage(aid, cage))
+            .filter(aid => canPlaceOnCage(aid, cage, cages))
             .map(aid => {
               const a = ANIMALS[aid];
               return (
@@ -601,17 +638,12 @@ function MarketPanel() {
     const myCages = me?.cages ?? [];
     const animalDef = ANIMALS[buying];
 
-    const validCages = myCages.filter((cage: CageState) => {
-      if (cage.slots.length >= 2) return false;
-      if (!animalDef) return false;
-      if (cage.slots.length > 0) {
-        const firstAnimal = ANIMALS[cage.slots[0].animalId];
-        if (!firstAnimal) return false;
-        if (!animalDef.colors.some(col => firstAnimal.colors.includes(col))) return false;
-      }
-      if (cage.slots.some(s => s.animalId === buying)) return false;
-      return true;
-    });
+    const cageResults = myCages.map((cage: CageState) => ({
+      cage,
+      result: checkPlacement(buying, cage, myCages),
+    }));
+    const placeable = cageResults.filter(r => r.result.ok);
+    const notPlaceable = cageResults.filter(r => !r.result.ok && (r.result as { reason: string }).reason);
 
     return (
       <div>
@@ -621,7 +653,7 @@ function MarketPanel() {
         <button className="action-btn secondary" style={{ width: '100%', marginBottom: 8 }} onClick={() => setBuying(null)}>
           ← 戻る
         </button>
-        {validCages.map((cage: CageState) => (
+        {placeable.map(({ cage }) => (
           <button
             key={cage.num}
             className="trade-option"
@@ -635,7 +667,21 @@ function MarketPanel() {
             {cage.slots.length > 0 && ` (${cage.slots.map(s => ANIMAL_ICONS[s.animalId] + ANIMALS[s.animalId]?.name).join(', ')})`}
           </button>
         ))}
-        {validCages.length === 0 && <p style={{ color: '#999', fontSize: 12 }}>配置可能なケージがありません</p>}
+        {notPlaceable.map(({ cage, result }) => (
+          <button
+            key={cage.num}
+            className="trade-option"
+            disabled
+            style={{ display: 'block', width: '100%', marginBottom: 4, padding: 8, textAlign: 'left', color: '#aaa', background: '#f5f5f5', cursor: 'not-allowed' }}
+          >
+            ケージ #{cage.num}
+            {cage.slots.length > 0 && ` (${cage.slots.map(s => ANIMAL_ICONS[s.animalId] + ANIMALS[s.animalId]?.name).join(', ')})`}
+            <span style={{ fontSize: 11, marginLeft: 8, color: '#e57373' }}>
+              {(result as { reason: string }).reason}
+            </span>
+          </button>
+        ))}
+        {placeable.length === 0 && <p style={{ color: '#999', fontSize: 12 }}>配置可能なケージがありません</p>}
       </div>
     );
   }
@@ -721,8 +767,27 @@ function ActionPanel() {
         <PendingEffectUI />
       )}
 
+      {/* チャンスカード選択UI */}
+      {(state.chanceCardPhase === 'useOrKeep' || state.chanceCardPhase === 'forceUse') &&
+        state.currentTurn === sessionId && (
+        <ChanceCardDrawUI />
+      )}
+
+      {/* チャンスカード効果解決UI */}
+      {state.chanceCardPhase?.startsWith('using_') && state.currentTurn === sessionId && (
+        <ChanceCardInteractionUI />
+      )}
+
+      {/* チャンスカード使用中の表示（全員に見える） */}
+      {state.activeChanceCard && !state.chanceCardPhase?.startsWith('using_') && (
+        <div className="trade-submenu" style={{ textAlign: 'center' }}>
+          <span style={{ fontSize: 20 }}>{CHANCE_CARD_DATA[state.activeChanceCard]?.icon}</span>
+          {' '}{CHANCE_CARD_DATA[state.activeChanceCard]?.name}
+        </div>
+      )}
+
       {/* 取引 */}
-      {state.turnStep === 'trade' && (
+      {state.turnStep === 'trade' && !state.chanceCardPhase && (
         <TradeActions />
       )}
 
@@ -803,6 +868,12 @@ function TradeActions() {
       )}
       {state.boughtStar && <span className="trade-done">✓ 星購入済み</span>}
 
+      {me.hasHeldCard && (
+        <button className="action-btn trade" onClick={() => send('useHeldCardInTrade')}>
+          🃏 伏せカードを使う
+        </button>
+      )}
+
       <button className="action-btn secondary" onClick={() => setReturning(true)}>
         🔄 動物を返す
       </button>
@@ -865,6 +936,192 @@ function PendingEffectUI() {
             </button>
           ))}
         </div>
+      </div>
+    );
+  }
+
+  return null;
+}
+
+// ===== チャンスカード: 引いた直後の選択UI =====
+function ChanceCardDrawUI() {
+  const { state, sessionId, send, myDrawnCardId, myHeldCardId } = useContext(ColyseusContext);
+  if (!state) return null;
+
+  const drawnCard = CHANCE_CARD_DATA[myDrawnCardId];
+  const heldCard = myHeldCardId ? CHANCE_CARD_DATA[myHeldCardId] : null;
+  const isForceUse = state.chanceCardPhase === 'forceUse';
+
+  return (
+    <div className="trade-submenu">
+      <p style={{ fontWeight: 'bold', marginBottom: 6 }}>🃏 チャンスカードを引いた!</p>
+      {drawnCard && (
+        <div style={{ padding: '6px 10px', background: '#fff8e1', borderRadius: 6, marginBottom: 8, border: '1px solid #ffd54f' }}>
+          <span style={{ fontSize: 18 }}>{drawnCard.icon}</span>{' '}
+          <strong>{drawnCard.name}</strong>
+          <div style={{ fontSize: 11, color: '#555', marginTop: 2 }}>{drawnCard.description}</div>
+        </div>
+      )}
+
+      {isForceUse && heldCard && (
+        <>
+          <p style={{ fontSize: 11, color: '#888', margin: '4px 0' }}>伏せカード:</p>
+          <div style={{ padding: '4px 10px', background: '#e8eaf6', borderRadius: 6, marginBottom: 8, border: '1px solid #9fa8da' }}>
+            <span style={{ fontSize: 16 }}>{heldCard.icon}</span>{' '}
+            <strong>{heldCard.name}</strong>
+            <span style={{ fontSize: 11, color: '#555', marginLeft: 6 }}>{heldCard.description}</span>
+          </div>
+        </>
+      )}
+
+      <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
+        <button className="action-btn trade" onClick={() => send('useDrawnChanceCard')}>
+          ▶ 引いたカードを使う
+        </button>
+        {!isForceUse && (
+          <button className="action-btn secondary" onClick={() => send('keepChanceCard')}>
+            📥 伏せる
+          </button>
+        )}
+        {isForceUse && (
+          <button className="action-btn" onClick={() => send('useHeldChanceCard')}>
+            ▶ 伏せカードを使う
+          </button>
+        )}
+      </div>
+      {isForceUse && (
+        <p style={{ fontSize: 10, color: '#888', marginTop: 4 }}>
+          ※ 伏せカードがあるため、どちらか1枚を必ず使ってください
+        </p>
+      )}
+    </div>
+  );
+}
+
+// ===== チャンスカード: インタラクティブ効果解決UI =====
+function ChanceCardInteractionUI() {
+  const { state, sessionId, send } = useContext(ColyseusContext);
+  const [compostCount, setCompostCount] = useState(0);
+  const [distributions, setDistributions] = useState<Record<string, number>>({});
+  const [evictionTarget, setEvictionTarget] = useState<string>('');
+
+  if (!state) return null;
+  const me = state.players[sessionId];
+  if (!me) return null;
+  const cardData = CHANCE_CARD_DATA[state.activeChanceCard];
+  const getPlayerName = (id: string) => state.players[id]?.name ?? id;
+  const otherPlayers = Object.keys(state.players).filter(p => p !== sessionId);
+
+  // 堆肥化
+  if (state.chanceCardPhase === 'using_compost') {
+    const maxCount = Math.min(5, me.poopTokens);
+    return (
+      <div className="trade-submenu">
+        <p>{cardData?.icon} {cardData?.name}: 💩を金に変換</p>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8, margin: '6px 0' }}>
+          <button className="action-btn secondary" style={{ padding: '2px 8px' }}
+            onClick={() => setCompostCount(Math.max(0, compostCount - 1))} disabled={compostCount <= 0}>−</button>
+          <span style={{ fontWeight: 'bold', minWidth: 30, textAlign: 'center' }}>💩 {compostCount}個 → {compostCount}💰</span>
+          <button className="action-btn secondary" style={{ padding: '2px 8px' }}
+            onClick={() => setCompostCount(Math.min(maxCount, compostCount + 1))} disabled={compostCount >= maxCount}>+</button>
+        </div>
+        <div style={{ display: 'flex', gap: 6 }}>
+          <button className="action-btn trade" onClick={() => send('resolveCompost', { count: compostCount })}
+            disabled={compostCount <= 0}>
+            確定
+          </button>
+          <button className="action-btn secondary" onClick={() => send('cancelChanceCard')}>
+            キャンセル
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  // 堆肥提供
+  if (state.chanceCardPhase === 'using_compostGive') {
+    const maxGive = Math.min(6, me.poopTokens);
+    const totalGiven = Object.values(distributions).reduce((a, b) => a + b, 0);
+    return (
+      <div className="trade-submenu">
+        <p>{cardData?.icon} {cardData?.name}: 💩を他プレイヤーに分配 (最大{maxGive}個)</p>
+        {otherPlayers.map(pid => (
+          <div key={pid} style={{ display: 'flex', alignItems: 'center', gap: 6, margin: '3px 0' }}>
+            <span style={{ minWidth: 80, fontSize: 12 }}>{getPlayerName(pid)}</span>
+            <button className="action-btn secondary" style={{ padding: '1px 6px', fontSize: 11 }}
+              onClick={() => setDistributions(d => ({ ...d, [pid]: Math.max(0, (d[pid] ?? 0) - 1) }))}
+              disabled={(distributions[pid] ?? 0) <= 0}>−</button>
+            <span style={{ minWidth: 20, textAlign: 'center', fontSize: 12 }}>{distributions[pid] ?? 0}</span>
+            <button className="action-btn secondary" style={{ padding: '1px 6px', fontSize: 11 }}
+              onClick={() => setDistributions(d => ({ ...d, [pid]: (d[pid] ?? 0) + 1 }))}
+              disabled={totalGiven >= maxGive}>+</button>
+          </div>
+        ))}
+        <div style={{ fontSize: 11, color: '#555', margin: '4px 0' }}>合計: 💩 {totalGiven}/{maxGive}</div>
+        <div style={{ display: 'flex', gap: 6 }}>
+          <button className="action-btn trade" onClick={() => {
+            const dists = Object.entries(distributions)
+              .filter(([, c]) => c > 0)
+              .map(([targetId, count]) => ({ targetId, count }));
+            send('resolveCompostGive', { distributions: dists });
+          }} disabled={totalGiven <= 0}>
+            確定
+          </button>
+          <button className="action-btn secondary" onClick={() => send('cancelChanceCard')}>
+            キャンセル
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  // お引っ越し
+  if (state.chanceCardPhase === 'using_eviction') {
+    if (!evictionTarget) {
+      return (
+        <div className="trade-submenu">
+          <p>{cardData?.icon} {cardData?.name}: 対象プレイヤーを選択</p>
+          {otherPlayers.map(pid => {
+            const p = state.players[pid];
+            const animalCount = p.cages.reduce((sum, c) => sum + c.slots.length, 0);
+            return (
+              <button key={pid} className="trade-option" onClick={() => setEvictionTarget(pid)}
+                disabled={animalCount === 0}>
+                {getPlayerName(pid)} (動物{animalCount}頭)
+              </button>
+            );
+          })}
+          <button className="action-btn secondary" style={{ marginTop: 4 }} onClick={() => send('cancelChanceCard')}>
+            キャンセル
+          </button>
+        </div>
+      );
+    }
+
+    const targetPlayer = state.players[evictionTarget];
+    const animals: { animalId: string; cageNum: number }[] = [];
+    for (const cage of targetPlayer?.cages ?? []) {
+      for (const slot of cage.slots) {
+        animals.push({ animalId: slot.animalId, cageNum: cage.num });
+      }
+    }
+
+    return (
+      <div className="trade-submenu">
+        <p>{cardData?.icon} {cardData?.name}: {getPlayerName(evictionTarget)}の動物を選択</p>
+        <button className="action-btn secondary" style={{ fontSize: 10, padding: '1px 6px', marginBottom: 4 }}
+          onClick={() => setEvictionTarget('')}>← 戻る</button>
+        {animals.map((a, i) => (
+          <button key={i} className="trade-option" onClick={() => {
+            send('resolveEviction', { targetPlayerId: evictionTarget, animalId: a.animalId, cageNum: a.cageNum });
+            setEvictionTarget('');
+          }}>
+            <AnimalIcon id={a.animalId} size={18} /> {ANIMALS[a.animalId]?.name ?? a.animalId} (ケージ{a.cageNum})
+          </button>
+        ))}
+        <button className="action-btn secondary" style={{ marginTop: 4 }} onClick={() => { setEvictionTarget(''); send('cancelChanceCard'); }}>
+          キャンセル
+        </button>
       </div>
     );
   }

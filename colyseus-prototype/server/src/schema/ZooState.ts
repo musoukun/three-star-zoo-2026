@@ -20,6 +20,7 @@ export class PlayerState extends Schema {
   @type("number") poopTokens: number = 0;
   @type("number") totalPoopCleaned: number = 0;   // 累計うんち掃除量
   @type("number") totalCoinsEarned: number = 0;   // 累計コイン獲得量
+  @type("boolean") hasHeldCard: boolean = false;  // チャンスカード伏せカード保持
   @type([Cage]) cages = new ArraySchema<Cage>();
 }
 
@@ -65,6 +66,12 @@ export class ZooState extends Schema {
 
   @type("string") winnerId: string = "";
   @type("string") burstPlayerId: string = "";      // バースト発生プレイヤー（アニメ用、一時的）
+
+  // チャンスカード
+  @type("number") chanceDeckCount: number = 0;      // 山札残数
+  @type("number") chanceDiscardCount: number = 0;  // 捨て札枚数
+  @type("string") chanceCardPhase: string = "";     // "" | "useOrKeep" | "forceUse" | "using_compost" | "using_compostGive" | "using_eviction"
+  @type("string") activeChanceCard: string = "";    // 使用中カードID（使用時に全員に公開）
 
   // チャット+ゲームログ（全員に表示）
   @type(["string"]) gameLog = new ArraySchema<string>();

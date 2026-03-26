@@ -1,6 +1,7 @@
 import { Room, Client } from "colyseus";
 import { ZooState, PlayerState, Cage, CageSlot, PendingEffect } from "../schema/ZooState";
 import { ANIMALS, STARTING_ANIMALS, STARTING_COINS, STAR_COST, STARS_TO_WIN } from "../game/animals";
+import { CHANCE_CARDS, createChanceDeck, shuffle } from "../game/chanceCards";
 import type { AnimalColor, Effect } from "../game/types";
 import { ArraySchema } from "@colyseus/schema";
 
@@ -43,14 +44,33 @@ export class ZooRoom extends Room<ZooState> {
   private emptyTimeout: ReturnType<typeof setTimeout> | null = null;
   private static EMPTY_ROOM_TTL = 15 * 60 * 1000; // 15分
 
+  // ===== デバッグ用: 次のサイコロの出目を固定 =====
+  private _debugForcedDice: number[] | null = null;
+
+  // ===== チャンスカード（秘匿情報はスキーマ外で管理） =====
+  private chanceDeck: string[] = [];
+  private chanceDiscard: string[] = [];
+  private heldCards: Map<string, string> = new Map();  // sessionId → cardId
+  private shouldDrawChance: boolean = false;
+  private extraTurnFlag: boolean = false;
+  private drawnCardId: string = "";  // 引いたカードID（サーバー内部保持）
+
   // ===== 履歴管理（スナップショット方式） =====
   private undoStack: any[] = [];
   private redoStack: any[] = [];
   private static MAX_HISTORY = 200;
 
-  /** 現在のstateのスナップショットを保存 */
+  /** 現在のstateのスナップショットを保存（チャンスカード秘匿データ含む） */
   private pushSnapshot() {
-    this.undoStack.push(this.state.toJSON());
+    this.undoStack.push({
+      state: this.state.toJSON(),
+      chanceDeck: [...this.chanceDeck],
+      chanceDiscard: [...this.chanceDiscard],
+      heldCards: Object.fromEntries(this.heldCards),
+      shouldDrawChance: this.shouldDrawChance,
+      extraTurnFlag: this.extraTurnFlag,
+      drawnCardId: this.drawnCardId,
+    });
     if (this.undoStack.length > ZooRoom.MAX_HISTORY) {
       this.undoStack.shift();
     }
@@ -72,6 +92,7 @@ export class ZooRoom extends Room<ZooState> {
         p.poopTokens = pj.poopTokens ?? 0;
         p.totalPoopCleaned = pj.totalPoopCleaned ?? 0;
         p.totalCoinsEarned = pj.totalCoinsEarned ?? 0;
+        p.hasHeldCard = pj.hasHeldCard ?? false;
         p.cages.clear();
         if (pj.cages) {
           for (const cj of pj.cages) {
@@ -116,6 +137,10 @@ export class ZooRoom extends Room<ZooState> {
     this.state.boughtStar = json.boughtStar ?? false;
     this.state.winnerId = json.winnerId ?? "";
     this.state.burstPlayerId = json.burstPlayerId ?? "";
+    this.state.chanceDeckCount = json.chanceDeckCount ?? 0;
+    this.state.chanceDiscardCount = json.chanceDiscardCount ?? 0;
+    this.state.chanceCardPhase = json.chanceCardPhase ?? "";
+    this.state.activeChanceCard = json.activeChanceCard ?? "";
 
     // pendingEffects
     this.state.pendingEffects.clear();
@@ -156,6 +181,48 @@ export class ZooRoom extends Room<ZooState> {
     if (json.setupInventory) {
       for (const [k, v] of Object.entries(json.setupInventory)) {
         this.state.setupInventory.set(k, v as string);
+      }
+    }
+  }
+
+  /** スナップショットオブジェクトを作成 */
+  private createSnapshotObj() {
+    return {
+      state: this.state.toJSON(),
+      chanceDeck: [...this.chanceDeck],
+      chanceDiscard: [...this.chanceDiscard],
+      heldCards: Object.fromEntries(this.heldCards),
+      shouldDrawChance: this.shouldDrawChance,
+      extraTurnFlag: this.extraTurnFlag,
+      drawnCardId: this.drawnCardId,
+    };
+  }
+
+  /** スナップショットオブジェクトから完全復元 */
+  private restoreSnapshot(snapshot: any) {
+    this.restoreFromJSON(snapshot.state);
+    this.chanceDeck = snapshot.chanceDeck ?? [];
+    this.chanceDiscard = snapshot.chanceDiscard ?? [];
+    this.heldCards = new Map(Object.entries(snapshot.heldCards ?? {}));
+    this.shouldDrawChance = snapshot.shouldDrawChance ?? false;
+    this.extraTurnFlag = snapshot.extraTurnFlag ?? false;
+    this.drawnCardId = snapshot.drawnCardId ?? "";
+  }
+
+  /** 伏せカード情報を各プレイヤーに個別通知 */
+  private notifyHeldCards() {
+    for (const client of this.clients) {
+      if (this.heldCards.has(client.sessionId)) {
+        client.send("heldCardInfo", { cardId: this.heldCards.get(client.sessionId)! });
+      } else {
+        client.send("heldCardCleared", {});
+      }
+    }
+    // チャンスカードフェーズ中なら引いたカード情報も再通知
+    if (this.drawnCardId && this.state.chanceCardPhase) {
+      const currentClient = this.clients.find(c => c.sessionId === this.state.currentTurn);
+      if (currentClient) {
+        currentClient.send("chanceCardDrawn", { cardId: this.drawnCardId });
       }
     }
   }
@@ -385,6 +452,12 @@ export class ZooRoom extends Room<ZooState> {
   private startMainPhase() {
     this.state.phase = "main";
     this.state.currentTurn = this.state.turnOrder.at(0)!;
+    // チャンスカード山札初期化
+    this.chanceDeck = createChanceDeck();
+    this.chanceDiscard = [];
+    this.heldCards.clear();
+    this.state.chanceDeckCount = this.chanceDeck.length;
+    this.extraTurnFlag = false;
     this.resetTurnState();
     console.log("Main phase started");
   }
@@ -400,13 +473,133 @@ export class ZooRoom extends Room<ZooState> {
     this.state.effectLog.clear();
     this.state.boughtAnimal = false;
     this.state.boughtStar = false;
+    this.state.chanceCardPhase = "";
+    this.state.activeChanceCard = "";
+    this.shouldDrawChance = false;
+    this.drawnCardId = "";
+    // heldCards, extraTurnFlag はターンをまたいで保持するためリセットしない
   }
 
   private nextTurn() {
+    if (this.extraTurnFlag) {
+      // 再入園: ターン順を進めず同じプレイヤーのターンを繰り返す
+      this.extraTurnFlag = false;
+      this.resetTurnState();
+      this.addGameLog(`🃏 再入園! ${this.getPlayerName(this.state.currentTurn)} のもう1ターン`);
+      return;
+    }
     const idx = this.state.turnOrder.indexOf(this.state.currentTurn);
     const nextIdx = (idx + 1) % this.state.turnOrder.length;
     this.state.currentTurn = this.state.turnOrder.at(nextIdx)!;
     this.resetTurnState();
+  }
+
+  // ===== チャンスカード処理 =====
+
+  /** income完了後の遷移: チャンスカードドローまたはtradeへ */
+  private advanceAfterIncome() {
+    if (this.shouldDrawChance) {
+      this.drawChanceCard();
+    } else {
+      this.state.turnStep = "trade";
+    }
+  }
+
+  /** チャンスカードを1枚ドロー */
+  private drawChanceCard() {
+    // 山札が空なら捨て札をシャッフルして再構築
+    if (this.chanceDeck.length === 0) {
+      if (this.chanceDiscard.length === 0) {
+        // カードが全くない
+        this.shouldDrawChance = false;
+        this.state.turnStep = "trade";
+        return;
+      }
+      this.chanceDeck = shuffle(this.chanceDiscard);
+      this.chanceDiscard = [];
+    }
+
+    const cardId = this.chanceDeck.pop()!;
+    this.state.chanceDeckCount = this.chanceDeck.length;
+    this.drawnCardId = cardId;
+    this.shouldDrawChance = false;
+
+    const playerId = this.state.currentTurn;
+
+    // 手番プレイヤーにのみカードIDを送信（秘匿）
+    const currentClient = this.clients.find(c => c.sessionId === playerId);
+    if (currentClient) {
+      currentClient.send("chanceCardDrawn", { cardId });
+    }
+
+    const hasHeld = this.heldCards.has(playerId);
+    if (hasHeld) {
+      // 既に伏せカードあり → 強制使用モード
+      this.state.chanceCardPhase = "forceUse";
+      // 保持カードIDも再通知
+      if (currentClient) {
+        currentClient.send("heldCardInfo", { cardId: this.heldCards.get(playerId)! });
+      }
+    } else {
+      this.state.chanceCardPhase = "useOrKeep";
+    }
+
+    this.addGameLog(`🃏 ${this.getPlayerName(playerId)} がチャンスカードを引いた`);
+  }
+
+  /** チャンスカード効果を実行（使用時に全員に公開） */
+  private executeChanceCard(playerId: string, cardId: string) {
+    const player = this.state.players.get(playerId)!;
+    const cardDef = CHANCE_CARDS[cardId];
+    this.state.activeChanceCard = cardId;  // 全員に公開
+
+    switch (cardId) {
+      case 'menuHit':
+        player.coins += 3;
+        player.totalCoinsEarned += 3;
+        this.finishChanceCard(playerId, cardId,
+          `${this.getPlayerName(playerId)}: ${cardDef.name} → +3金`);
+        break;
+
+      case 'productHit':
+        player.coins += 5;
+        player.totalCoinsEarned += 5;
+        this.finishChanceCard(playerId, cardId,
+          `${this.getPlayerName(playerId)}: ${cardDef.name} → +5金`);
+        break;
+
+      case 'compost':
+        this.state.chanceCardPhase = "using_compost";
+        break;
+
+      case 'compostGive':
+        this.state.chanceCardPhase = "using_compostGive";
+        break;
+
+      case 'extraTurn':
+        this.extraTurnFlag = true;
+        this.finishChanceCard(playerId, cardId,
+          `${this.getPlayerName(playerId)}: ${cardDef.name} → もう1ターン!`);
+        break;
+
+      case 'eviction':
+        this.state.chanceCardPhase = "using_eviction";
+        break;
+    }
+  }
+
+  /** チャンスカード効果完了 */
+  private finishChanceCard(playerId: string, cardId: string, logMessage: string) {
+    this.chanceDiscard.push(cardId);
+    this.state.chanceDiscardCount = this.chanceDiscard.length;
+    this.state.activeChanceCard = "";
+    this.state.chanceCardPhase = "";
+    this.drawnCardId = "";
+    this.addGameLog(`🃏 ${logMessage}`);
+
+    if (this.state.turnStep !== "trade") {
+      this.state.turnStep = "trade";
+    }
   }
 
   private checkWin(): boolean {
@@ -740,19 +933,21 @@ export class ZooRoom extends Room<ZooState> {
     // --- 履歴操作 ---
     this.onMessage("undo", (_client) => {
       if (this.undoStack.length === 0) return;
-      this.redoStack.push(this.state.toJSON());
+      this.redoStack.push(this.createSnapshotObj());
       const snapshot = this.undoStack.pop()!;
-      this.restoreFromJSON(snapshot);
+      this.restoreSnapshot(snapshot);
       this.broadcastHistoryInfo();
+      this.notifyHeldCards();
       console.log(`Undo (残り${this.undoStack.length})`);
     });
 
     this.onMessage("redo", (_client) => {
       if (this.redoStack.length === 0) return;
-      this.undoStack.push(this.state.toJSON());
+      this.undoStack.push(this.createSnapshotObj());
       const snapshot = this.redoStack.pop()!;
-      this.restoreFromJSON(snapshot);
+      this.restoreSnapshot(snapshot);
       this.broadcastHistoryInfo();
+      this.notifyHeldCards();
       console.log(`Redo (残り${this.redoStack.length})`);
     });
 
@@ -767,6 +962,7 @@ export class ZooRoom extends Room<ZooState> {
         p.poopTokens = 0;
         p.totalPoopCleaned = 0;
         p.totalCoinsEarned = 0;
+        p.hasHeldCard = false;
         p.cages.clear();
         for (let i = 1; i <= 12; i++) {
           const cage = new Cage();
@@ -793,6 +989,16 @@ export class ZooRoom extends Room<ZooState> {
       this.state.effectLog.clear();
       this.state.setupInventory.clear();
       this.state.gameLog.clear();
+      this.state.chanceDeckCount = 0;
+      this.state.chanceDiscardCount = 0;
+      this.state.chanceCardPhase = "";
+      this.state.activeChanceCard = "";
+      this.chanceDeck = [];
+      this.chanceDiscard = [];
+      this.heldCards.clear();
+      this.shouldDrawChance = false;
+      this.extraTurnFlag = false;
+      this.drawnCardId = "";
       this.undoStack = [];
       this.redoStack = [];
 
@@ -804,11 +1010,12 @@ export class ZooRoom extends Room<ZooState> {
 
     this.onMessage("resetGame", (_client) => {
       if (this.undoStack.length === 0) return;
-      this.redoStack.push(this.state.toJSON());
+      this.redoStack.push(this.createSnapshotObj());
       const firstSnapshot = this.undoStack[0];
       this.undoStack = [];
-      this.restoreFromJSON(firstSnapshot);
+      this.restoreSnapshot(firstSnapshot);
       this.broadcastHistoryInfo();
+      this.notifyHeldCards();
       console.log("Reset to initial state");
     });
 
@@ -880,22 +1087,33 @@ export class ZooRoom extends Room<ZooState> {
       const diceCount = (data?.diceCount === 1) ? 1 : 2;
       this.state.diceCount = diceCount;
 
-      this.state.dice1 = Math.floor(Math.random() * 6) + 1;
+      if (this._debugForcedDice && this._debugForcedDice.length >= diceCount) {
+        // デバッグ用: 固定値を使用
+        this.state.dice1 = this._debugForcedDice[0];
+        this.state.dice2 = diceCount === 2 ? this._debugForcedDice[1] : 0;
+        this._debugForcedDice = null;
+      } else {
+        this.state.dice1 = Math.floor(Math.random() * 6) + 1;
+        this.state.dice2 = diceCount === 2 ? Math.floor(Math.random() * 6) + 1 : 0;
+      }
       if (diceCount === 2) {
-        this.state.dice2 = Math.floor(Math.random() * 6) + 1;
         this.state.diceSum = this.state.dice1 + this.state.dice2;
       } else {
-        this.state.dice2 = 0;
         this.state.diceSum = this.state.dice1;
       }
       this.state.diceRolled = true;
       this.state.turnStep = "income";
       this.addGameLog(`🎲 ${this.getPlayerName(client.sessionId)} がサイコロ ${diceCount}個 → ${this.state.diceSum}`);
 
+      // 出目11/12ならチャンスカードドローフラグを立てる
+      if (this.state.diceSum >= 11) {
+        this.shouldDrawChance = true;
+      }
+
       this.processEffects();
 
       if (this.state.pendingEffects.length === 0) {
-        this.state.turnStep = "trade";
+        this.advanceAfterIncome();
       }
     });
 
@@ -925,7 +1143,7 @@ export class ZooRoom extends Room<ZooState> {
 
       this.state.pendingEffects.shift();
       if (this.state.pendingEffects.length === 0) {
-        this.state.turnStep = "trade";
+        this.advanceAfterIncome();
       }
     });
 
@@ -954,7 +1172,7 @@ export class ZooRoom extends Room<ZooState> {
 
       this.state.pendingEffects.shift();
       if (this.state.pendingEffects.length === 0) {
-        this.state.turnStep = "trade";
+        this.advanceAfterIncome();
       }
     });
 
@@ -993,7 +1211,7 @@ export class ZooRoom extends Room<ZooState> {
 
       this.state.pendingEffects.shift();
       if (this.state.pendingEffects.length === 0) {
-        this.state.turnStep = "trade";
+        this.advanceAfterIncome();
       }
     });
 
@@ -1072,9 +1290,141 @@ export class ZooRoom extends Room<ZooState> {
     // お買い物終了 → 掃除フェーズへ
     this.onMessage("endTrade", (client) => {
       if (!this.validateMainAction(client, "trade")) return;
+      if (this.state.chanceCardPhase) return;  // チャンスカード処理中は終了不可
       this.pushSnapshot();
       this.state.effectLog.clear();
       this.state.turnStep = "clean";
+    });
+
+    // --- チャンスカード: 引いたカードを伏せる ---
+    this.onMessage("keepChanceCard", (client) => {
+      if (this.state.currentTurn !== client.sessionId) return;
+      if (this.state.chanceCardPhase !== "useOrKeep") return;
+      this.pushSnapshot();
+
+      this.heldCards.set(client.sessionId, this.drawnCardId);
+      this.state.players.get(client.sessionId)!.hasHeldCard = true;
+      this.drawnCardId = "";
+      this.state.chanceCardPhase = "";
+      this.state.turnStep = "trade";
+      this.addGameLog(`🃏 ${this.getPlayerName(client.sessionId)} がチャンスカードを伏せた`);
+    });
+
+    // --- チャンスカード: 引いたカードを使う ---
+    this.onMessage("useDrawnChanceCard", (client) => {
+      if (this.state.currentTurn !== client.sessionId) return;
+      if (this.state.chanceCardPhase !== "useOrKeep" && this.state.chanceCardPhase !== "forceUse") return;
+      this.pushSnapshot();
+
+      const cardId = this.drawnCardId;
+      this.drawnCardId = "";
+      this.executeChanceCard(client.sessionId, cardId);
+    });
+
+    // --- チャンスカード: forceUseモードで保持カードを使う ---
+    this.onMessage("useHeldChanceCard", (client) => {
+      if (this.state.currentTurn !== client.sessionId) return;
+      if (this.state.chanceCardPhase !== "forceUse") return;
+      this.pushSnapshot();
+
+      const heldCardId = this.heldCards.get(client.sessionId)!;
+      // 引いたカードを新しい伏せカードにする
+      this.heldCards.set(client.sessionId, this.drawnCardId);
+      this.drawnCardId = "";
+      // 保持していた方を使う
+      this.executeChanceCard(client.sessionId, heldCardId);
+    });
+
+    // --- チャンスカード: tradeフェーズで伏せカードを使う ---
+    this.onMessage("useHeldCardInTrade", (client) => {
+      if (!this.validateMainAction(client, "trade")) return;
+      if (!this.heldCards.has(client.sessionId)) return;
+      this.pushSnapshot();
+
+      const cardId = this.heldCards.get(client.sessionId)!;
+      this.heldCards.delete(client.sessionId);
+      this.state.players.get(client.sessionId)!.hasHeldCard = false;
+      this.executeChanceCard(client.sessionId, cardId);
+    });
+
+    // --- チャンスカード: 効果解決中のキャンセル（Undoで戻す） ---
+    this.onMessage("cancelChanceCard", (client) => {
+      if (this.state.currentTurn !== client.sessionId) return;
+      if (!this.state.chanceCardPhase?.startsWith('using_')) return;
+      if (this.undoStack.length === 0) return;
+      // Undoと同じ処理: 直前のスナップショットに復元
+      this.redoStack.push(this.createSnapshotObj());
+      const snapshot = this.undoStack.pop()!;
+      this.restoreSnapshot(snapshot);
+      this.broadcastHistoryInfo();
+      this.notifyHeldCards();
+      console.log(`Chance card cancelled by ${client.sessionId}`);
+    });
+
+    // --- チャンスカード効果解決: 堆肥化 ---
+    this.onMessage("resolveCompost", (client, data: { count: number }) => {
+      if (this.state.currentTurn !== client.sessionId) return;
+      if (this.state.chanceCardPhase !== "using_compost") return;
+      this.pushSnapshot();
+
+      const player = this.state.players.get(client.sessionId)!;
+      const count = Math.min(data.count, 5, player.poopTokens);
+      if (count < 0) return;
+      player.poopTokens -= count;
+      player.coins += count;
+      player.totalCoinsEarned += count;
+      this.finishChanceCard(client.sessionId, 'compost',
+        `${this.getPlayerName(client.sessionId)}: うんちの堆肥化 → 💩${count}個 → +${count}金`);
+    });
+
+    // --- チャンスカード効果解決: 堆肥提供 ---
+    this.onMessage("resolveCompostGive", (client, data: { distributions: { targetId: string; count: number }[] }) => {
+      if (this.state.currentTurn !== client.sessionId) return;
+      if (this.state.chanceCardPhase !== "using_compostGive") return;
+      this.pushSnapshot();
+
+      const player = this.state.players.get(client.sessionId)!;
+      const maxGive = Math.min(6, player.poopTokens);
+      let totalGiven = 0;
+
+      for (const { targetId, count } of data.distributions) {
+        if (targetId === client.sessionId) continue;
+        const target = this.state.players.get(targetId);
+        if (!target || count <= 0) continue;
+        const give = Math.min(count, maxGive - totalGiven);
+        if (give <= 0) break;
+        player.poopTokens -= give;
+        target.poopTokens += give;
+        totalGiven += give;
+      }
+
+      this.finishChanceCard(client.sessionId, 'compostGive',
+        `${this.getPlayerName(client.sessionId)}: 堆肥の提供 → 💩${totalGiven}個を分配`);
+    });
+
+    // --- チャンスカード効果解決: お引っ越し ---
+    this.onMessage("resolveEviction", (client, data: { targetPlayerId: string; animalId: string; cageNum: number }) => {
+      if (this.state.currentTurn !== client.sessionId) return;
+      if (this.state.chanceCardPhase !== "using_eviction") return;
+      this.pushSnapshot();
+
+      const { targetPlayerId, animalId, cageNum } = data;
+      const target = this.state.players.get(targetPlayerId);
+      if (!target || targetPlayerId === client.sessionId) return;
+
+      const normalizedCage = normalizeCageNum(cageNum);
+      const cage = target.cages.at(normalizedCage - 1);
+      if (!cage) return;
+
+      const idx = cage.slots.toArray().findIndex(s => s.animalId === animalId && s.playerId === targetPlayerId);
+      if (idx === -1) return;
+
+      cage.slots.splice(idx, 1);
+      const stock = this.state.market.get(animalId) ?? 0;
+      this.state.market.set(animalId, stock + 1);
+
+      this.finishChanceCard(client.sessionId, 'eviction',
+        `${this.getPlayerName(client.sessionId)}: お引っ越し → ${this.getPlayerName(targetPlayerId)}の${ANIMALS[animalId].name}を市場へ`);
     });
 
     // ステップ5: うんち掃除（1コインで2個）
@@ -1138,6 +1488,25 @@ export class ZooRoom extends Room<ZooState> {
       this.pushSnapshot();
       this.state.burstPlayerId = "";  // バーストアニメクリア
       this.nextTurn();
+    });
+
+    // デバッグ用: 次のサイコロの出目を固定（E2Eテスト用）
+    this.onMessage("__debugSetDice", (_client, data: { dice: number[] }) => {
+      if (data?.dice && Array.isArray(data.dice)) {
+        this._debugForcedDice = data.dice;
+      }
+    });
+
+    // デバッグ用: プレイヤーのコインを設定（E2Eテスト用）
+    this.onMessage("__debugSetCoins", (_client, data: { playerId: string; coins: number }) => {
+      const player = this.state.players.get(data.playerId);
+      if (player) player.coins = data.coins;
+    });
+
+    // デバッグ用: プレイヤーの星を設定（E2Eテスト用）
+    this.onMessage("__debugSetStars", (_client, data: { playerId: string; stars: number }) => {
+      const player = this.state.players.get(data.playerId);
+      if (player) player.stars = data.stars;
     });
   }
 
