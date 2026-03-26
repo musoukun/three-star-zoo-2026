@@ -1,6 +1,19 @@
 import type { AnimalDef } from './types';
 
-/** 動物アイコン（絵文字） */
+// カード用画像
+import imgRessaPanda from '../assets/animals_card/RessaPanda.png';
+import imgRosyFacedLovebird from '../assets/animals_card/RosyFacedLovebird.png';
+import imgPenguin from '../assets/animals_card/Penguin.png';
+import imgLion from '../assets/animals_card/Lion.png';
+import imgGiantPanda from '../assets/animals_card/GiantPanda.png';
+import imgCaliforniaSeaLion from '../assets/animals_card/CaliforniaSeaLion.png';
+import imgReticulatedGiraffe from '../assets/animals_card/ReticulatedGiraffe.png';
+import imgCheetah from '../assets/animals_card/Cheetah.png';
+import imgAfricanElephant from '../assets/animals_card/AfricanElephant.png';
+import imgSouthernWhiteRhino from '../assets/animals_card/SouthernWhiteRhino.png';
+import imgBottlenoseDolphin from '../assets/animals_card/BottlenoseDolphin.png';
+
+/** 動物アイコン（絵文字・フォールバック用） */
 export const ANIMAL_ICONS: Record<string, string> = {
   RessaPanda: '🐼',
   RosyFacedLovebird: '🦜',
@@ -13,6 +26,21 @@ export const ANIMAL_ICONS: Record<string, string> = {
   AfricanElephant: '🐘',
   SouthernWhiteRhino: '🦏',
   BottlenoseDolphin: '🐬',
+};
+
+/** カード用画像パス */
+export const ANIMAL_CARD_IMAGES: Record<string, string> = {
+  RessaPanda: imgRessaPanda,
+  RosyFacedLovebird: imgRosyFacedLovebird,
+  Penguin: imgPenguin,
+  Lion: imgLion,
+  GiantPanda: imgGiantPanda,
+  CaliforniaSeaLion: imgCaliforniaSeaLion,
+  ReticulatedGiraffe: imgReticulatedGiraffe,
+  Cheetah: imgCheetah,
+  AfricanElephant: imgAfricanElephant,
+  SouthernWhiteRhino: imgSouthernWhiteRhino,
+  BottlenoseDolphin: imgBottlenoseDolphin,
 };
 
 /** 動物の効果テキスト（マーケットカード用、普通の文量） */

@@ -1,7 +1,7 @@
 import { useState, useEffect, useContext, useMemo } from 'react';
 import { ColyseusContext } from '../App';
 import { PLAYER_COLORS } from '../App';
-import { ANIMALS, ANIMAL_ICONS, EFFECT_TEXT_FULL, EFFECT_TEXT_SHORT, COLOR_CLASS, STAR_COST } from '../game/animals';
+import { ANIMALS, ANIMAL_ICONS, ANIMAL_CARD_IMAGES, EFFECT_TEXT_FULL, EFFECT_TEXT_SHORT, COLOR_CLASS, STAR_COST } from '../game/animals';
 import type { CageState, PlayerInfo } from '../hooks/useColyseus';
 
 // ===== 定数 =====
@@ -537,7 +537,11 @@ function CageGrid({
             if (!a) return null;
             return (
               <div key={si} className="cage-animal" title={EFFECT_TEXT_FULL[slot.animalId] || a.name}>
-                <span className="cage-animal-icon">{ANIMAL_ICONS[slot.animalId] || '🐾'}</span>
+                <span className="cage-animal-icon">
+                  {ANIMAL_CARD_IMAGES[slot.animalId]
+                    ? <img src={ANIMAL_CARD_IMAGES[slot.animalId]} alt={slot.animalId} className="cage-animal-img" />
+                    : (ANIMAL_ICONS[slot.animalId] || '🐾')}
+                </span>
                 <span className="cage-animal-effect">{EFFECT_TEXT_SHORT[slot.animalId]}</span>
               </div>
             );
@@ -655,7 +659,11 @@ function MarketPanel() {
             </div>
             {/* ボディ: アイコン + 名前 */}
             <div className="market-card-body">
-              <div className="market-card-icon">{ANIMAL_ICONS[a.id]}</div>
+              <div className="market-card-icon">
+                {ANIMAL_CARD_IMAGES[a.id]
+                  ? <img src={ANIMAL_CARD_IMAGES[a.id]} alt={a.name} className="market-card-img" />
+                  : ANIMAL_ICONS[a.id]}
+              </div>
               <div className="market-card-name">{a.name}</div>
               <div className="market-card-effect">{EFFECT_TEXT_FULL[a.id]}</div>
             </div>

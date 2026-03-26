@@ -541,6 +541,19 @@ body {
   line-height: 1.1;
 }
 
+.market-card-img {
+  width: 80px;
+  height: 80px;
+  object-fit: contain;
+}
+
+.cage-animal-img {
+  width: 28px;
+  height: 28px;
+  object-fit: contain;
+  vertical-align: middle;
+}
+
 .market-card-name {
   font-size: 12px;
   font-weight: bold;
