@@ -212,7 +212,7 @@ export class ZooRoom extends Room<ZooState> {
   }
 
   private addGameLog(message: string) {
-    const timestamp = new Date().toLocaleTimeString('ja-JP', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+    const timestamp = new Date().toLocaleTimeString('ja-JP', { hour: '2-digit', minute: '2-digit', second: '2-digit', timeZone: 'Asia/Tokyo' });
     this.state.gameLog.push(`[${timestamp}] ${message}`);
     if (this.state.gameLog.length > 500) {
       this.state.gameLog.shift();
