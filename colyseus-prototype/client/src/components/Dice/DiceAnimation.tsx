@@ -8,14 +8,14 @@ type DiceAnimationProps = {
   duration?: number;
 };
 
-export default function DiceAnimation({ diceResults, onComplete, duration = 0.8 }: DiceAnimationProps) {
+export default function DiceAnimation({ diceResults, onComplete, duration = 0.9 }: DiceAnimationProps) {
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => {
     // アニメーション完了後 + 結果表示0.8秒
     timerRef.current = setTimeout(() => {
       onComplete();
-    }, duration * 1000 + 800);
+    }, duration * 1000 + 1000);
 
     return () => {
       if (timerRef.current) clearTimeout(timerRef.current);
