@@ -14,6 +14,15 @@ const TURN_STEPS = [
   { key: 'flush', icon: '✅', label: '終了' },
 ];
 
+/** 動物アイコン表示ヘルパー: 顔画像があればimg、なければ絵文字 */
+function AnimalIcon({ id, size = 28, className = '' }: { id: string; size?: number; className?: string }) {
+  const src = ANIMAL_FACE_IMAGES[id];
+  if (src) {
+    return <img src={src} alt={id} className={`animal-icon-img ${className}`} style={{ width: size, height: size }} />;
+  }
+  return <span style={{ fontSize: size * 0.7 }}>{ANIMAL_ICONS[id] || '🐾'}</span>;
+}
+
 // ===== メインBoard =====
 export function Board({ onLeave }: { onLeave: () => void }) {
   const { state, sessionId, historyInfo, send } = useContext(ColyseusContext);
@@ -274,11 +283,11 @@ function GameResultModal({ onLeave }: { onLeave: () => void }) {
   const winnerColor = winner.color ? PLAYER_COLORS[winner.color] : null;
 
   // 勝者の動物一覧
-  const animals: { name: string; icon: string; cageNum: number }[] = [];
+  const animals: { name: string; animalId: string; cageNum: number }[] = [];
   for (const cage of winner.cages) {
     for (const slot of cage.slots) {
       const a = ANIMALS[slot.animalId];
-      if (a) animals.push({ name: a.name, icon: ANIMAL_ICONS[slot.animalId] || '🐾', cageNum: cage.num });
+      if (a) animals.push({ name: a.name, animalId: slot.animalId, cageNum: cage.num });
     }
   }
 
@@ -319,7 +328,7 @@ function GameResultModal({ onLeave }: { onLeave: () => void }) {
               ) : (
                 animals.map((a, i) => (
                   <span key={i} className="result-animal-chip">
-                    {a.icon} {a.name} <span style={{ fontSize: 10, color: '#888' }}>#{a.cageNum}</span>
+                    <AnimalIcon id={a.animalId} size={20} /> {a.name} <span style={{ fontSize: 10, color: '#888' }}>#{a.cageNum}</span>
                   </span>
                 ))
               )}
@@ -538,9 +547,7 @@ function CageGrid({
             return (
               <div key={si} className="cage-animal" title={EFFECT_TEXT_FULL[slot.animalId] || a.name}>
                 <span className="cage-animal-icon">
-                  {ANIMAL_FACE_IMAGES[slot.animalId]
-                    ? <img src={ANIMAL_FACE_IMAGES[slot.animalId]} alt={slot.animalId} className="cage-animal-img" />
-                    : (ANIMAL_ICONS[slot.animalId] || '🐾')}
+                  <AnimalIcon id={slot.animalId} size={32} className="cage-animal-img" />
                 </span>
                 <span className="cage-animal-effect">{EFFECT_TEXT_SHORT[slot.animalId]}</span>
               </div>
@@ -557,7 +564,7 @@ function CageGrid({
                   className="cage-place-btn"
                   onClick={() => send('placeAnimal', { animalId: aid, cageNum: cage.num })}
                 >
-                  <span className="place-icon">{ANIMAL_ICONS[aid]}</span>
+                  <span className="place-icon"><AnimalIcon id={aid} size={20} /></span>
                   <span className="place-label">{a?.name ?? aid}を配置</span>
                 </button>
               );
@@ -609,7 +616,7 @@ function MarketPanel() {
     return (
       <div>
         <div className="market-title">
-          {ANIMAL_ICONS[buying]} {animalDef?.name}を配置
+          <AnimalIcon id={buying} size={24} /> {animalDef?.name}を配置
         </div>
         <button className="action-btn secondary" style={{ width: '100%', marginBottom: 8 }} onClick={() => setBuying(null)}>
           ← 戻る
@@ -775,7 +782,7 @@ function TradeActions() {
               setReturning(false);
             }}
           >
-            {ANIMAL_ICONS[a.animalId]} {ANIMALS[a.animalId]?.name} (#{a.cageNum})
+            <AnimalIcon id={a.animalId} size={20} /> {ANIMALS[a.animalId]?.name} (#{a.cageNum})
           </button>
         ))}
       </div>
@@ -814,13 +821,13 @@ function PendingEffectUI() {
   const effect = state.pendingEffects[0];
   const otherPlayers = Object.keys(state.players).filter(p => p !== effect.ownerPlayerId);
   const animalName = ANIMALS[effect.animalId]?.name ?? effect.animalId;
-  const animalIcon = ANIMAL_ICONS[effect.animalId] || '🐾';
+  const animalIconEl = <AnimalIcon id={effect.animalId} size={20} />;
   const getPlayerName = (id: string) => state.players[id]?.name ?? id;
 
   if (effect.effectType === 'steal') {
     return (
       <div className="trade-submenu">
-        <p>{animalIcon} {animalName}: {effect.stealAmount}コイン奪取 - 対象:</p>
+        <p>{animalIconEl} {animalName}: {effect.stealAmount}コイン奪取 - 対象:</p>
         {otherPlayers.map(pid => (
           <button key={pid} className="trade-option" onClick={() => send('resolveSteal', { targetPlayerId: pid })}>
             {getPlayerName(pid)} (💰{state.players[pid].coins})
@@ -833,7 +840,7 @@ function PendingEffectUI() {
   if (effect.effectType === 'stealStar') {
     return (
       <div className="trade-submenu">
-        <p>{animalIcon} {animalName}: 星奪取 - 対象:</p>
+        <p>{animalIconEl} {animalName}: 星奪取 - 対象:</p>
         {otherPlayers.map(pid => (
           <button key={pid} className="trade-option" onClick={() => send('resolveStealStar', { targetPlayerId: pid })}>
             {getPlayerName(pid)} (⭐{state.players[pid].stars})
@@ -846,7 +853,7 @@ function PendingEffectUI() {
   if (effect.effectType === 'choice') {
     return (
       <div className="trade-submenu">
-        <p>{animalIcon} {animalName}: 効果を選択:</p>
+        <p>{animalIconEl} {animalName}: 効果を選択:</p>
         <button className="trade-option" onClick={() => send('resolveChoice', { choice: 'creation' })}>
           💰 {effect.creationAmount}コイン獲得
         </button>

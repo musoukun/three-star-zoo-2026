@@ -548,9 +548,18 @@ body {
 }
 
 .cage-animal-img {
-  width: 28px;
-  height: 28px;
-  object-fit: contain;
+  width: 32px;
+  height: 32px;
+  object-fit: cover;
+  object-position: center;
+  border-radius: 4px;
+  vertical-align: middle;
+}
+
+.animal-icon-img {
+  object-fit: cover;
+  object-position: center;
+  border-radius: 3px;
   vertical-align: middle;
 }
 
