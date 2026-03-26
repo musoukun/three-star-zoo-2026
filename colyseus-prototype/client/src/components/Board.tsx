@@ -1,4 +1,4 @@
-import { useState, useContext, useMemo } from 'react';
+import { useState, useEffect, useContext, useMemo } from 'react';
 import { ColyseusContext, PLAYER_COLORS } from '../App';
 import { ANIMALS, ANIMAL_ICONS, EFFECT_TEXT_FULL, EFFECT_TEXT_SHORT, STAR_COST } from '../game/animals';
 import { CHANCE_CARD_DATA } from '../game/chanceCards';
@@ -12,10 +12,24 @@ import {
   MarketPanel, ChanceCardDrawUI, ChanceCardInteractionUI,
 } from './BoardPanels';
 
+// ===== モバイル判定フック =====
+function useIsMobile(breakpoint = 768) {
+  const [isMobile, setIsMobile] = useState(window.innerWidth < breakpoint);
+  useEffect(() => {
+    const handler = () => setIsMobile(window.innerWidth < breakpoint);
+    window.addEventListener('resize', handler);
+    return () => window.removeEventListener('resize', handler);
+  }, [breakpoint]);
+  return isMobile;
+}
+
 // ===== メインBoard =====
 export function Board({ onLeave }: { onLeave: () => void }) {
   const { state, sessionId, historyInfo, send } = useContext(ColyseusContext);
   const [historyOpen, setHistoryOpen] = useState(false);
+  const isMobile = useIsMobile();
+  const [marketOpen, setMarketOpen] = useState(false);
+  const [chatOpen, setChatOpen] = useState(false);
   if (!state) return null;
 
   const isSetup = state.phase === 'setup';
@@ -44,6 +58,171 @@ export function Board({ onLeave }: { onLeave: () => void }) {
       });
   }, [state.players, state.currentTurn, sessionId]);
 
+  // ===== モバイルレイアウト =====
+  if (isMobile) return (
+    <div className="game-layout-mobile">
+      {/* ステータスバー */}
+      <div className="mobile-status-bar">
+        <strong>
+          {isSetup ? `${getPlayerName(state.currentTurn)} 配置中` : getPlayerName(state.currentTurn)}
+        </strong>
+        {state.diceRolled && (
+          <span>🎲{state.diceCount === 1 ? `${state.dice1}` : `${state.dice1}+${state.dice2}`}={state.diceSum}</span>
+        )}
+        {state.phase === 'main' && state.chanceDeckCount > 0 && (
+          <span style={{ fontSize: 10, color: 'rgba(255,255,255,0.6)' }}>🃏{state.chanceDeckCount}</span>
+        )}
+        {isMyTurn && <span className="my-turn">あなた</span>}
+        <button onClick={onLeave} className="mobile-leave-btn">退出</button>
+      </div>
+
+      {/* プレイヤーサマリー横スクロール */}
+      <div className="mobile-player-strip">
+        {sortedPlayers.map(([pid, p]) => {
+          const c = p.color ? PLAYER_COLORS[p.color] : null;
+          return (
+            <div key={pid} className={`mobile-player-chip ${pid === state.currentTurn ? 'active' : ''}`}
+              style={{ background: c?.light, borderColor: pid === state.currentTurn ? (c?.bg || '#e74c3c') : 'transparent' }}>
+              {c && <span className="mobile-player-dot" style={{ background: c.bg }} />}
+              <span className={pid === sessionId ? 'mobile-player-name me' : 'mobile-player-name'}>{p.name}</span>
+              <span className="mobile-player-stats">
+                💰{p.coins} ⭐{p.stars} 💩{p.poopTokens}
+                {p.hasHeldCard && ' 🃏'}
+              </span>
+            </div>
+          );
+        })}
+      </div>
+
+      {/* スクロールコンテンツ */}
+      <div className="mobile-content">
+        {isEnded && (
+          <div className="game-over" style={{ padding: 8, marginBottom: 8 }}>
+            <h2 style={{ fontSize: 16, margin: 0 }}>🏆 ゲーム終了!</h2>
+          </div>
+        )}
+
+        {/* 他プレイヤー ミニ盤面 */}
+        {otherPlayers.map(([pid, player]) => {
+          const pc = player.color ? PLAYER_COLORS[player.color] : null;
+          return (
+            <div key={pid} className="mobile-other-player" style={pc ? { borderLeftColor: pc.bg } : undefined}>
+              <div className="mobile-other-name" style={pc ? { color: pc.bg } : undefined}>
+                {pc && <span className="mobile-player-dot" style={{ background: pc.bg }} />}
+                {player.name}
+                <span className="mobile-other-stats">💰{player.coins} ⭐{player.stars} 💩{player.poopTokens}</span>
+              </div>
+              <MiniCageGrid cages={player.cages ?? []} diceSum={state.diceRolled ? state.diceSum : 0} />
+            </div>
+          );
+        })}
+
+        {/* 自分の盤面 */}
+        <div className="mobile-my-board" style={(() => {
+          const mc = me?.color ? PLAYER_COLORS[me.color] : null;
+          return mc ? { background: mc.light, borderTopColor: mc.bg } : {};
+        })()}>
+          <div className="mobile-my-header">
+            <span className="mobile-my-label">自分の動物園</span>
+            {me && (
+              <div className="mobile-my-stats">
+                <span>💰 {me.coins}</span>
+                <span>⭐ {'★'.repeat(me.stars)}{'☆'.repeat(3 - me.stars)}</span>
+                <span>💩 {me.poopTokens}{me.poopTokens >= 7 ? ' ⚠バースト!' : ''}</span>
+              </div>
+            )}
+          </div>
+
+          {!isSetup && !isEnded && (
+            <div className="mobile-progress">
+              {TURN_STEPS.map((step, i) => {
+                const stepIdx = TURN_STEPS.findIndex(s => s.key === state.turnStep);
+                const isActive = step.key === state.turnStep;
+                return (
+                  <span key={step.key} className="mobile-progress-item">
+                    {i > 0 && <span className={`progress-line ${i <= stepIdx ? 'active' : ''}`} />}
+                    <span className={`mobile-progress-step ${isActive ? 'active' : ''}`}
+                      title={step.label}>{step.icon}</span>
+                  </span>
+                );
+              })}
+            </div>
+          )}
+
+          <CageGrid
+            cages={me?.cages ?? []}
+            diceSum={state.diceRolled ? state.diceSum : 0}
+            isSetup={isSetup}
+            isMyTurn={isMyTurn}
+            setupInventory={state.setupInventory[sessionId] ?? ''}
+            send={send}
+          />
+
+          {!isSetup && isMyTurn && !isEnded && <ActionPanel />}
+        </div>
+
+        {state.effectLog.length > 0 && (
+          <div className="effect-log">
+            <h4>📝 ログ</h4>
+            {state.effectLog.map((log: string, i: number) => <div key={i}>{log}</div>)}
+          </div>
+        )}
+
+        <RuleTooltip />
+      </div>
+
+      {/* マーケットFAB + ドロワー */}
+      <button className="mobile-fab market-fab" onClick={() => setMarketOpen(true)}>🏪</button>
+      {marketOpen && <div className="drawer-overlay" onClick={() => setMarketOpen(false)} />}
+      <div className={`market-drawer ${marketOpen ? 'open' : ''}`}>
+        <div className="market-drawer-header">
+          <span>🏪 動物マーケット</span>
+          <button onClick={() => setMarketOpen(false)} className="drawer-close-btn">✕</button>
+        </div>
+        <div className="market-drawer-body">
+          <MarketPanel />
+        </div>
+      </div>
+
+      {/* チャットFAB + ボトムシート */}
+      <button className="mobile-fab chat-fab" onClick={() => setChatOpen(!chatOpen)}>
+        💬
+      </button>
+      {chatOpen && (
+        <>
+          <div className="drawer-overlay" onClick={() => setChatOpen(false)} />
+          <div className="chat-bottom-sheet">
+            <div className="chat-sheet-handle" onClick={() => setChatOpen(false)}>
+              <div className="handle-bar" />
+            </div>
+            <ChatPanel />
+          </div>
+        </>
+      )}
+
+      {/* 履歴 */}
+      <button className="history-toggle-btn" onClick={() => setHistoryOpen(!historyOpen)} title="履歴">
+        {historyOpen ? '▶' : '◀'}
+      </button>
+      {historyOpen && (
+        <div className="history-overlay">
+          <h3>📜 履歴操作</h3>
+          <div className="history-info">Undo: {historyInfo.undoCount} / Redo: {historyInfo.redoCount}</div>
+          <div className="history-buttons">
+            <button className="history-btn" disabled={historyInfo.undoCount === 0} onClick={() => send('undo')}>↩ Undo</button>
+            <button className="history-btn" disabled={historyInfo.redoCount === 0} onClick={() => send('redo')}>↪ Redo</button>
+            <button className="history-btn danger" disabled={historyInfo.undoCount === 0}
+              onClick={() => { if (confirm('ゲームを初期状態に戻しますか？')) send('resetGame'); }}>🔄 Reset</button>
+          </div>
+        </div>
+      )}
+
+      {isEnded && <GameResultModal onLeave={onLeave} />}
+      <BurstAnimation />
+    </div>
+  );
+
+  // ===== デスクトップレイアウト =====
   return (
     <div className="game-layout">
       {/* ===== 左上: メインエリア ===== */}
@@ -315,6 +494,31 @@ function CageGrid({
       <div className="cage-row bottom-row">
         {BOTTOM_ROW.map(n => renderCage(n, n === 11))}
       </div>
+    </div>
+  );
+}
+
+// ===== ミニケージグリッド（モバイル他プレイヤー用） =====
+function MiniCageGrid({ cages, diceSum }: { cages: CageState[]; diceSum: number }) {
+  const renderMiniCage = (cageNum: number, isMerged = false) => {
+    const cage = cages.find(c => c.num === cageNum);
+    if (!cage) return null;
+    const isRolled = diceSum === cageNum || (isMerged && (diceSum === 11 || diceSum === 12));
+    const cageStyle = getCageStyle(cage);
+    return (
+      <div key={cageNum}
+        className={`mini-cage ${isRolled ? 'rolled' : ''} ${isMerged ? 'mini-cage-merged' : ''}`}
+        style={cageStyle}>
+        {cage.slots.map((slot, si) => (
+          <AnimalIcon key={si} id={slot.animalId} size={16} />
+        ))}
+      </div>
+    );
+  };
+  return (
+    <div className="mini-cage-grid">
+      <div className="mini-cage-row mini-top">{TOP_ROW.map(n => renderMiniCage(n))}</div>
+      <div className="mini-cage-row mini-bottom">{BOTTOM_ROW.map(n => renderMiniCage(n, n === 11))}</div>
     </div>
   );
 }
