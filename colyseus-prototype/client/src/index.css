@@ -542,9 +542,11 @@ body {
 }
 
 .market-card-img {
-  width: 84px;
-  height: 84px;
-  object-fit: contain;
+  width: 100px;
+  height: 100px;
+  object-fit: cover;
+  object-position: center;
+  border-radius: 6px;
 }
 
 .cage-animal-img {
