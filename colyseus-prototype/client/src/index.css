@@ -237,8 +237,14 @@ body {
   background: #37474f;
 }
 
+.rule-tooltip-overlay {
+  position: fixed;
+  top: 0; left: 0; right: 0; bottom: 0;
+  background: rgba(0,0,0,0.15);
+  z-index: 99;
+}
+
 .rule-tooltip-content {
-  display: none;
   position: absolute;
   bottom: 40px;
   right: 0;
@@ -248,15 +254,35 @@ body {
   background: #fff;
   border: 1px solid #ccc;
   border-radius: 8px;
-  padding: 12px;
+  padding: 12px 12px 12px 12px;
   font-size: 12px;
   line-height: 1.5;
   box-shadow: 0 4px 20px rgba(0,0,0,0.2);
   color: #333;
+  z-index: 101;
 }
 
-.rule-tooltip-container:hover .rule-tooltip-content {
-  display: block;
+.rule-close-btn {
+  position: sticky;
+  top: 0;
+  float: right;
+  background: rgba(0,0,0,0.15);
+  border: none;
+  border-radius: 50%;
+  width: 26px;
+  height: 26px;
+  font-size: 14px;
+  cursor: pointer;
+  color: #555;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 102;
+}
+
+.rule-close-btn:hover {
+  background: rgba(0,0,0,0.3);
+  color: #222;
 }
 
 .rule-section {

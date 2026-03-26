@@ -325,12 +325,15 @@ function getCageStyle(cage: CageState): React.CSSProperties {
   };
 }
 
-// ===== ルール早見表（ホバーで表示） =====
+// ===== ルール早見表（クリックで展開、✖で閉じる） =====
 function RuleTooltip() {
+  const [open, setOpen] = useState(false);
   return (
     <div className="rule-tooltip-container">
-      <div className="rule-tooltip-trigger">📖 ルール</div>
+      <div className="rule-tooltip-trigger" onClick={() => setOpen(!open)}>📖 ルール</div>
+      {open && <><div className="rule-tooltip-overlay" onClick={() => setOpen(false)} />
       <div className="rule-tooltip-content">
+        <button className="rule-close-btn" onClick={() => setOpen(false)}>✕</button>
         <h4 style={{ margin: '0 0 6px' }}>ルール早見表</h4>
         <div className="rule-section">
           <strong>ターンの流れ</strong>
@@ -363,7 +366,7 @@ function RuleTooltip() {
           <strong>効果処理順</strong>
           <p>手番の左隣から時計回り→手番が最後</p>
         </div>
-      </div>
+      </div></>}
     </div>
   );
 }
