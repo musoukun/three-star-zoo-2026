@@ -601,7 +601,11 @@ function ActionPanel() {
         </>
       )}
 
-      {/* PendingEffectUIはActionPanel外で表示（他プレイヤーのターンでも操作が必要なため） */}
+      {/* 手番プレイヤー自身の保留効果解決UI */}
+      {state.turnStep === 'income' && state.pendingEffects.length > 0 &&
+        state.pendingEffects[0].ownerPlayerId === sessionId && (
+        <PendingEffectUI />
+      )}
 
       {(state.chanceCardPhase === 'useOrKeep' || state.chanceCardPhase === 'forceUse') &&
         state.currentTurn === sessionId && (
