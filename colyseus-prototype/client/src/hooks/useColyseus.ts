@@ -134,6 +134,7 @@ export function useColyseus() {
   const [myDrawnCardId, setMyDrawnCardId] = useState<string>('');
   const [myHeldCardId, setMyHeldCardId] = useState<string>('');
   const [isReconnecting, setIsReconnecting] = useState<boolean>(!!loadSession());
+  const [isLoading, setIsLoading] = useState(false);
 
   useEffect(() => {
     clientRef.current = new Colyseus.Client(SERVER_URL);
@@ -266,7 +267,8 @@ export function useColyseus() {
 
   // ルーム作成
   const createRoom = useCallback(async (name: string, roomName: string, password?: string) => {
-    if (!clientRef.current) return;
+    if (!clientRef.current || isLoading) return;
+    setIsLoading(true);
     try {
       const options: any = { name, roomName };
       if (password) options.password = password;
@@ -274,12 +276,15 @@ export function useColyseus() {
       setupRoom(r, name);
     } catch (e: any) {
       setError(e.message || 'ルーム作成に失敗しました');
+    } finally {
+      setIsLoading(false);
     }
-  }, [setupRoom]);
+  }, [setupRoom, isLoading]);
 
   // ルームに参加（IDで）
   const joinRoomById = useCallback(async (roomId: string, name: string, password?: string) => {
-    if (!clientRef.current) return;
+    if (!clientRef.current || isLoading) return;
+    setIsLoading(true);
     try {
       const options: any = { name };
       if (password) options.password = password;
@@ -287,35 +292,43 @@ export function useColyseus() {
       setupRoom(r, name);
     } catch (e: any) {
       setError(e.message || 'ルーム参加に失敗しました');
+    } finally {
+      setIsLoading(false);
     }
-  }, [setupRoom]);
+  }, [setupRoom, isLoading]);
 
   // 後方互換: joinOrCreate（テスト用）
   const joinRoom = useCallback(async (name: string, minClients?: number) => {
-    if (!clientRef.current) return;
+    if (!clientRef.current || isLoading) return;
+    setIsLoading(true);
     try {
       const r = await clientRef.current.joinOrCreate('zoo_room', { name, roomName: '三ツ星動物園', minClients });
       setupRoom(r, name);
     } catch (e: any) {
       setError(e.message || 'Failed to join room');
+    } finally {
+      setIsLoading(false);
     }
-  }, [setupRoom]);
+  }, [setupRoom, isLoading]);
 
   const send = useCallback((type: string, data?: any) => {
     roomRef.current?.send(type, data);
   }, []);
 
   const leave = useCallback(() => {
+    if (isLoading) return;
+    setIsLoading(true);
     clearSession();
     roomRef.current?.leave();
     roomRef.current = null;
     setRoom(null);
     setState(null);
-  }, []);
+    setIsLoading(false);
+  }, [isLoading]);
 
   return {
     room, state, sessionId, error, historyInfo, rooms,
-    myDrawnCardId, myHeldCardId, isReconnecting,
+    myDrawnCardId, myHeldCardId, isReconnecting, isLoading,
     fetchRooms, createRoom, joinRoomById, joinRoom, send, leave, tryReconnect,
   };
 }

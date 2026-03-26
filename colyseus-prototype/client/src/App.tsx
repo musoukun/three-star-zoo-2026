@@ -35,7 +35,7 @@ export const ColyseusContext = createContext<ColyseusContextValue>({
 export function App() {
   const {
     state, sessionId, error, historyInfo, rooms,
-    myDrawnCardId, myHeldCardId, isReconnecting,
+    myDrawnCardId, myHeldCardId, isReconnecting, isLoading,
     fetchRooms, createRoom, joinRoomById, send, leave, tryReconnect,
   } = useColyseus();
 
@@ -164,10 +164,10 @@ export function App() {
                       const rName = newRoomName || `${pName}の部屋`;
                       createRoom(pName, rName, isPrivate ? newRoomPassword : undefined);
                     }}
-                    style={S.goldBtn}
-                    disabled={isPrivate && !newRoomPassword}
+                    style={isLoading ? S.disabledBtn : S.goldBtn}
+                    disabled={isLoading || (isPrivate && !newRoomPassword)}
                   >
-                    🎲 作成して入室
+                    {isLoading ? '接続中...' : '🎲 作成して入室'}
                   </button>
                 </div>
               )}
@@ -219,10 +219,10 @@ export function App() {
                             joinRoomById(r.roomId, name || 'ゲスト');
                           }
                         }}
-                        style={r.locked ? S.disabledBtn : S.joinBtn}
-                        disabled={r.locked}
+                        style={(r.locked || isLoading) ? S.disabledBtn : S.joinBtn}
+                        disabled={r.locked || isLoading}
                       >
-                        {r.locked ? '入室不可' : '入室 →'}
+                        {r.locked ? '入室不可' : isLoading ? '接続中...' : '入室 →'}
                       </button>
                     </div>
                   ))}
@@ -261,10 +261,10 @@ export function App() {
                     joinRoomById(passwordTarget.roomId, name || 'ゲスト', joinPassword);
                     setPasswordTarget(null);
                   }}
-                  style={S.goldBtn}
-                  disabled={!joinPassword}
+                  style={(isLoading || !joinPassword) ? S.disabledBtn : S.goldBtn}
+                  disabled={!joinPassword || isLoading}
                 >
-                  入室
+                  {isLoading ? '接続中...' : '入室'}
                 </button>
               </div>
             </div>
@@ -366,12 +366,12 @@ export function App() {
           <>
             <button
               onClick={() => send('startGame')}
-              style={canStart ? styles.startBtn : styles.disabledStartBtn}
-              disabled={!canStart}
+              style={(canStart && !isLoading) ? styles.startBtn : styles.disabledStartBtn}
+              disabled={!canStart || isLoading}
             >
-              {canStart
-                ? `ゲーム開始 (${players.length}人で対戦)`
-                : 'ゲーム開始（2人以上必要）'}
+              {!canStart
+                ? 'ゲーム開始（2人以上必要）'
+                : `ゲーム開始 (${players.length}人で対戦)`}
             </button>
             {!canStart && (
               <p style={{ color: '#ff9800', fontSize: 13, margin: '4px 0' }}>
@@ -384,7 +384,7 @@ export function App() {
             ホスト ({state.players[state.hostId]?.name}) のゲーム開始を待っています...
           </p>
         )}
-        <button onClick={leave} style={styles.leaveBtn}>退出</button>
+        <button onClick={leave} style={styles.leaveBtn} disabled={isLoading}>退出</button>
       </div>
     </div>
   );
