@@ -121,8 +121,8 @@ body {
 .my-board-area {
   grid-column: 1;
   grid-row: 2;
-  background: #e8f5e9;
-  border-top: 3px solid #4CAF50;
+  background: #fff;
+  border-top: 3px solid #ccc;
   padding: 8px;
   color: #222;
   position: relative;
@@ -284,9 +284,9 @@ body {
 .other-player-section {
   margin-bottom: 12px;
   padding: 8px;
-  background: #FFF3E0;
+  background: #fff;
   border-radius: 8px;
-  border: 2px solid #FFB74D;
+  border: 2px solid #ddd;
 }
 
 .other-player-name {
