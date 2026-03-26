@@ -106,21 +106,28 @@ export function Board({ onLeave }: { onLeave: () => void }) {
         </div>
 
         {/* 他プレイヤーのボード */}
-        {otherPlayers.map(([pid, player]) => (
-          <div key={pid} className="other-player-section">
-            <div className="other-player-name">
-              {player.name}の動物園 (💰{player.coins} ⭐{player.stars} 💩{player.poopTokens})
+        {otherPlayers.map(([pid, player]) => {
+          const pc = player.color ? PLAYER_COLORS[player.color] : null;
+          return (
+            <div key={pid} className="other-player-section" style={pc ? {
+              background: pc.light,
+              borderLeft: `4px solid ${pc.bg}`,
+            } : undefined}>
+              <div className="other-player-name" style={pc ? { color: pc.bg } : undefined}>
+                {pc && <span style={{ display: 'inline-block', width: 10, height: 10, borderRadius: '50%', background: pc.bg, marginRight: 4, verticalAlign: 'middle' }} />}
+                {player.name}の動物園 (💰{player.coins} ⭐{player.stars} 💩{player.poopTokens})
+              </div>
+              <CageGrid
+                cages={player.cages ?? []}
+                diceSum={state.diceRolled ? state.diceSum : 0}
+                isSetup={false}
+                isMyTurn={false}
+                setupInventory=""
+                send={send}
+              />
             </div>
-            <CageGrid
-              cages={player.cages ?? []}
-              diceSum={state.diceRolled ? state.diceSum : 0}
-              isSetup={false}
-              isMyTurn={false}
-              setupInventory=""
-              send={send}
-            />
-          </div>
-        ))}
+          );
+        })}
 
         {/* 効果ログ */}
         {state.effectLog.length > 0 && (
@@ -143,7 +150,10 @@ export function Board({ onLeave }: { onLeave: () => void }) {
       <ChatPanel />
 
       {/* ===== 下部固定: 自分の盤面 + 操作 ===== */}
-      <div className="my-board-area">
+      <div className="my-board-area" style={(() => {
+        const mc = me?.color ? PLAYER_COLORS[me.color] : null;
+        return mc ? { background: mc.light, borderTopColor: mc.bg } : {};
+      })()}>
         {/* プログレスバー */}
         {!isSetup && !isEnded && (
           <div className="progress-bar">
