@@ -370,7 +370,7 @@ const S: Record<string, React.CSSProperties> = {
   page: {
     minHeight: '100vh',
     background: 'linear-gradient(135deg, #b2dfdb 0%, #e0f2f1 40%, #fff8e1 100%)',
-    fontFamily: "'Zen Maru Gothic', 'Segoe UI', 'Hiragino Sans', sans-serif",
+    fontFamily: "'M PLUS Rounded 1c', 'Segoe UI', 'Hiragino Sans', sans-serif",
   },
   header: {
     background: 'linear-gradient(90deg, #00695c, #00897b)',
@@ -601,7 +601,7 @@ const S: Record<string, React.CSSProperties> = {
 const styles: Record<string, React.CSSProperties> = {
   container: {
     padding: 24,
-    fontFamily: "'Zen Maru Gothic', 'Segoe UI', 'Hiragino Sans', sans-serif",
+    fontFamily: "'M PLUS Rounded 1c', 'Segoe UI', 'Hiragino Sans', sans-serif",
     maxWidth: 700,
     margin: '0 auto',
   },
@@ -795,11 +795,12 @@ const styles: Record<string, React.CSSProperties> = {
     padding: '12px 32px',
     fontSize: 16,
     cursor: 'pointer',
-    background: '#ff9800',
-    color: '#fff',
+    background: 'linear-gradient(135deg, #f9a825, #fdd835)',
+    color: '#5d4037',
     border: 'none',
-    borderRadius: 6,
+    borderRadius: 8,
     fontWeight: 'bold',
+    boxShadow: '0 2px 8px rgba(249,168,37,0.3)',
   },
   disabledStartBtn: {
     padding: '12px 32px',
