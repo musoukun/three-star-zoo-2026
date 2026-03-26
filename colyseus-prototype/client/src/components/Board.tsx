@@ -37,8 +37,16 @@ export function Board({ onLeave }: { onLeave: () => void }) {
     });
   }, [state.players, state.currentTurn]);
 
-  // 他プレイヤー
-  const otherPlayers = Object.entries(state.players).filter(([pid]) => pid !== sessionId);
+  // 他プレイヤー（ターン中が先頭）
+  const otherPlayers = useMemo(() => {
+    return Object.entries(state.players)
+      .filter(([pid]) => pid !== sessionId)
+      .sort((a, b) => {
+        if (a[0] === state.currentTurn) return -1;
+        if (b[0] === state.currentTurn) return 1;
+        return 0;
+      });
+  }, [state.players, state.currentTurn, sessionId]);
 
   return (
     <div className="game-layout">
