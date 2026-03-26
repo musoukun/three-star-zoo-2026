@@ -280,13 +280,11 @@ export class ZooRoom extends Room<ZooState> {
       const idx = this.state.turnOrder.indexOf(client.sessionId);
       if (idx !== -1) this.state.turnOrder.splice(idx, 1);
       this.state.players.delete(client.sessionId);
+    }
 
-      // ホスト引き継ぎ
-      if (this.state.hostId === client.sessionId) {
-        this.state.hostId = this.state.turnOrder.length > 0
-          ? this.state.turnOrder.at(0)!
-          : "";
-      }
+    // ホスト引き継ぎ（ロビー/ゲーム中共通）
+    if (this.state.hostId === client.sessionId) {
+      this.reassignHost();
     }
 
     this.updateMetadata();
@@ -340,6 +338,21 @@ export class ZooRoom extends Room<ZooState> {
       playerCount: connectedCount,
       phase: this.state.phase,
     });
+  }
+
+  /** ホスト引き継ぎ: turnOrder順に接続中のプレイヤーを探す */
+  private reassignHost() {
+    // turnOrder順に接続中プレイヤーを探す
+    for (const id of this.state.turnOrder) {
+      const p = this.state.players.get(id);
+      if (p && p.connected) {
+        this.state.hostId = id;
+        this.addGameLog(`${p.name} がホストになりました`);
+        return;
+      }
+    }
+    // 全員切断ならホスト空に
+    this.state.hostId = "";
   }
 
   /** ゲームログに追記（チャット+システムログ共用、最大500件） */
