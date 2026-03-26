@@ -226,7 +226,7 @@ export function useColyseus() {
     });
   }, []);
 
-  // 再接続を試行
+  // 再接続を試行（reconnectionTokenで最大3回リトライ）
   const tryReconnect = useCallback(async (): Promise<boolean> => {
     const saved = loadSession();
     if (!saved || !clientRef.current) {
@@ -236,27 +236,26 @@ export function useColyseus() {
 
     console.log('[Colyseus] 再接続を試行中...', saved.roomId);
 
-    // 1. まずreconnectionTokenで再接続を試みる（ゲーム中の場合に有効）
-    try {
-      const r = await clientRef.current.reconnect(saved.reconnectionToken);
-      console.log('[Colyseus] reconnectionTokenで再接続成功');
-      setupRoom(r, saved.playerName);
-      return true;
-    } catch (e) {
-      console.log('[Colyseus] reconnectionToken再接続失敗:', e);
+    // reconnectionTokenで再接続（抜け殻セッションに復帰する正しい方法）
+    const maxRetries = 3;
+    for (let i = 0; i < maxRetries; i++) {
+      try {
+        const r = await clientRef.current.reconnect(saved.reconnectionToken);
+        console.log(`[Colyseus] reconnectionTokenで再接続成功 (試行${i + 1})`);
+        setupRoom(r, saved.playerName);
+        return true;
+      } catch (e) {
+        console.log(`[Colyseus] reconnectionToken再接続失敗 (試行${i + 1}/${maxRetries}):`, e);
+        if (i < maxRetries - 1) {
+          // リトライ前に少し待つ（サーバー側のallowReconnection準備を待つ）
+          await new Promise(resolve => setTimeout(resolve, 1000));
+        }
+      }
     }
 
-    // 2. reconnectが失敗した場合、joinByIdで同じ部屋に再入室を試みる（ロビーの場合）
-    try {
-      const r = await clientRef.current.joinById(saved.roomId, { name: saved.playerName });
-      console.log('[Colyseus] joinByIdで再入室成功');
-      setupRoom(r, saved.playerName);
-      return true;
-    } catch (e) {
-      console.log('[Colyseus] joinById再入室失敗（ルームが存在しない可能性）:', e);
-    }
-
-    // 3. すべて失敗 → セッション情報をクリアしてトップページへ
+    // reconnectが全て失敗 → セッション情報をクリアしてトップページへ
+    // ※ joinByIdは新規sessionIdで入室し抜け殻が残るため使わない
+    console.log('[Colyseus] 再接続失敗。セッションをクリアします。');
     clearSession();
     setIsReconnecting(false);
     return false;
