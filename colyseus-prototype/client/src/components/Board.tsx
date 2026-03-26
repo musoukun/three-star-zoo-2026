@@ -27,7 +27,7 @@ function useIsMobile(breakpoint = 768) {
 
 // ===== メインBoard =====
 export function Board({ onLeave }: { onLeave: () => void }) {
-  const { state, sessionId, historyInfo, isConnected, send } = useContext(ColyseusContext);
+  const { state, sessionId, historyInfo, send } = useContext(ColyseusContext);
   const [historyOpen, setHistoryOpen] = useState(false);
   const isMobile = useIsMobile();
   const [marketOpen, setMarketOpen] = useState(false);
@@ -78,12 +78,7 @@ export function Board({ onLeave }: { onLeave: () => void }) {
   // ===== モバイルレイアウト =====
   if (isMobile) return (
     <div className="game-layout-mobile">
-      {/* 切断警告 */}
-      {!isConnected && (
-        <div className="connection-warning">
-          ⚠ サーバーとの接続が切れています...再接続を試みています
-        </div>
-      )}
+
       {/* ステータスバー */}
       <div className="mobile-status-bar">
         <strong>
@@ -264,12 +259,7 @@ export function Board({ onLeave }: { onLeave: () => void }) {
   // ===== デスクトップレイアウト =====
   return (
     <div className="game-layout">
-      {/* 切断警告 */}
-      {!isConnected && (
-        <div className="connection-warning">
-          ⚠ サーバーとの接続が切れています...再接続を試みています
-        </div>
-      )}
+
       {/* ===== 左上: メインエリア ===== */}
       <div className="main-area">
         {isEnded && (

@@ -1564,27 +1564,6 @@ body {
   font-size: 13px;
 }
 
-/* ===== 接続切断警告 ===== */
-.connection-warning {
-  position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  z-index: 10000;
-  background: #d32f2f;
-  color: #fff;
-  text-align: center;
-  padding: 8px 16px;
-  font-size: 13px;
-  font-weight: bold;
-  animation: connection-pulse 2s infinite;
-}
-
-@keyframes connection-pulse {
-  0%, 100% { opacity: 1; }
-  50% { opacity: 0.7; }
-}
-
 /* ===== サイコロ3Dアニメーション ===== */
 .dice-animation-overlay {
   position: fixed;
