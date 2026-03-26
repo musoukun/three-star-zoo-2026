@@ -226,7 +226,7 @@ body {
   width: 36px;
   height: 36px;
   border-radius: 50%;
-  background: rgba(0,0,0,0.08);
+  background: rgba(0,0,0,0.2);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -238,7 +238,7 @@ body {
 }
 
 .rule-tooltip-trigger:hover {
-  background: rgba(0,0,0,0.16);
+  background: rgba(0,0,0,0.3);
 }
 
 .rule-tooltip-overlay {
