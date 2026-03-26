@@ -438,5 +438,10 @@ export class ZooRoom extends Room<ZooState> {
       const player = this.state.players.get(data.playerId);
       if (player) player.stars = data.stars;
     });
+
+    this.onMessage("__debugSetPoop", (_client, data: { playerId: string; poop: number }) => {
+      const player = this.state.players.get(data.playerId);
+      if (player) player.poopTokens = data.poop;
+    });
   }
 }
