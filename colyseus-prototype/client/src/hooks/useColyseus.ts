@@ -24,6 +24,8 @@ export interface PlayerInfo {
   stars: number;
   connected: boolean;
   poopTokens: number;
+  totalPoopCleaned: number;
+  totalCoinsEarned: number;
   cages: CageState[];
 }
 
@@ -56,6 +58,7 @@ export interface ZooRoomState {
   turnOrder: string[];
   setupInventory: Record<string, string>;
   winnerId: string;
+  burstPlayerId: string;
   gameLog: string[];
 }
 

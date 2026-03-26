@@ -70,6 +70,8 @@ export class ZooRoom extends Room<ZooState> {
         p.id = pj.id; p.name = pj.name; p.color = pj.color ?? ""; p.coins = pj.coins;
         p.stars = pj.stars; p.connected = pj.connected;
         p.poopTokens = pj.poopTokens ?? 0;
+        p.totalPoopCleaned = pj.totalPoopCleaned ?? 0;
+        p.totalCoinsEarned = pj.totalCoinsEarned ?? 0;
         p.cages.clear();
         if (pj.cages) {
           for (const cj of pj.cages) {
@@ -113,6 +115,7 @@ export class ZooRoom extends Room<ZooState> {
     this.state.boughtAnimal = json.boughtAnimal ?? false;
     this.state.boughtStar = json.boughtStar ?? false;
     this.state.winnerId = json.winnerId ?? "";
+    this.state.burstPlayerId = json.burstPlayerId ?? "";
 
     // pendingEffects
     this.state.pendingEffects.clear();
@@ -753,6 +756,52 @@ export class ZooRoom extends Room<ZooState> {
       console.log(`Redo (残り${this.redoStack.length})`);
     });
 
+    // --- ゲーム終了後: もう1試合（ロビーに戻る） ---
+    this.onMessage("restartGame", (_client) => {
+      if (this.state.phase !== "ended") return;
+
+      // 全プレイヤーをリセット
+      this.state.players.forEach((p) => {
+        p.coins = STARTING_COINS;
+        p.stars = 0;
+        p.poopTokens = 0;
+        p.totalPoopCleaned = 0;
+        p.totalCoinsEarned = 0;
+        p.cages.clear();
+        for (let i = 1; i <= 12; i++) {
+          const cage = new Cage();
+          cage.num = i;
+          p.cages.push(cage);
+        }
+      });
+
+      // マーケットリセット
+      for (const [id, animal] of Object.entries(ANIMALS)) {
+        this.state.market.set(id, animal.inventory);
+      }
+
+      // 状態リセット
+      this.state.phase = "lobby";
+      this.state.currentTurn = "";
+      this.state.winnerId = "";
+      this.state.burstPlayerId = "";
+      this.state.turnStep = "poop";
+      this.state.dice1 = 0; this.state.dice2 = 0;
+      this.state.diceSum = 0; this.state.diceRolled = false;
+      this.state.boughtAnimal = false; this.state.boughtStar = false;
+      this.state.pendingEffects.clear();
+      this.state.effectLog.clear();
+      this.state.setupInventory.clear();
+      this.state.gameLog.clear();
+      this.undoStack = [];
+      this.redoStack = [];
+
+      this.unlock(); // 新規参加を再許可
+      this.updateMetadata();
+      this.addGameLog("ゲームがリスタートされました");
+      console.log("Game restarted to lobby");
+    });
+
     this.onMessage("resetGame", (_client) => {
       if (this.undoStack.length === 0) return;
       this.redoStack.push(this.state.toJSON());
@@ -1039,6 +1088,7 @@ export class ZooRoom extends Room<ZooState> {
       player.coins -= 1;
       const cleaned = Math.min(2, player.poopTokens);
       player.poopTokens -= cleaned;
+      player.totalPoopCleaned += cleaned;
 
       this.state.effectLog.clear();
       this.logEffect(
@@ -1058,6 +1108,7 @@ export class ZooRoom extends Room<ZooState> {
 
       // バースト判定: 7個以上でペナルティ
       if (player.poopTokens >= POOP_BURST_THRESHOLD) {
+        this.state.burstPlayerId = playerId;
         this.logEffect(`${this.getPlayerName(playerId)}: うんちバースト! (${player.poopTokens}個)`);
 
         if (player.stars > 0) {
@@ -1085,6 +1136,7 @@ export class ZooRoom extends Room<ZooState> {
     this.onMessage("endTurn", (client) => {
       if (!this.validateMainAction(client, "flush")) return;
       this.pushSnapshot();
+      this.state.burstPlayerId = "";  // バーストアニメクリア
       this.nextTurn();
     });
   }

@@ -1,4 +1,4 @@
-import { useState, useContext, useMemo } from 'react';
+import { useState, useEffect, useContext, useMemo } from 'react';
 import { ColyseusContext } from '../App';
 import { PLAYER_COLORS } from '../App';
 import { ANIMALS, ANIMAL_ICONS, EFFECT_TEXT_FULL, EFFECT_TEXT_SHORT, COLOR_CLASS, STAR_COST } from '../game/animals';
@@ -52,10 +52,10 @@ export function Board({ onLeave }: { onLeave: () => void }) {
     <div className="game-layout">
       {/* ===== 左上: メインエリア ===== */}
       <div className="main-area">
-        {/* ゲームオーバー */}
+        {/* ゲームオーバー (小バナー) */}
         {isEnded && (
           <div className="game-over">
-            <h2>🏆 ゲーム終了! {getPlayerName(state.winnerId)} の勝利!</h2>
+            <h2>🏆 ゲーム終了!</h2>
           </div>
         )}
 
@@ -253,6 +253,132 @@ export function Board({ onLeave }: { onLeave: () => void }) {
           </div>
         </div>
       )}
+
+      {/* ===== リザルトモーダル ===== */}
+      {isEnded && <GameResultModal onLeave={onLeave} />}
+
+      {/* ===== バーストアニメーション ===== */}
+      <BurstAnimation />
+    </div>
+  );
+}
+
+// ===== リザルト画面 =====
+function GameResultModal({ onLeave }: { onLeave: () => void }) {
+  const { state, send } = useContext(ColyseusContext);
+  if (!state || state.phase !== 'ended') return null;
+
+  const winner = state.players[state.winnerId];
+  if (!winner) return null;
+
+  const winnerColor = winner.color ? PLAYER_COLORS[winner.color] : null;
+
+  // 勝者の動物一覧
+  const animals: { name: string; icon: string; cageNum: number }[] = [];
+  for (const cage of winner.cages) {
+    for (const slot of cage.slots) {
+      const a = ANIMALS[slot.animalId];
+      if (a) animals.push({ name: a.name, icon: ANIMAL_ICONS[slot.animalId] || '🐾', cageNum: cage.num });
+    }
+  }
+
+  return (
+    <div className="result-overlay">
+      <div className="result-modal" style={winnerColor ? { borderColor: winnerColor.bg } : {}}>
+        <div className="result-header" style={winnerColor ? { background: winnerColor.bg } : {}}>
+          🏆 ゲーム終了
+        </div>
+        <div className="result-body">
+          <div className="result-winner">
+            {winnerColor && (
+              <span style={{ display: 'inline-block', width: 16, height: 16, borderRadius: '50%', background: winnerColor.bg, marginRight: 6, verticalAlign: 'middle' }} />
+            )}
+            <strong>{winner.name}</strong> の勝利！
+          </div>
+
+          <div className="result-stats">
+            <div className="result-stat">
+              <span className="result-stat-icon">⭐</span>
+              <span>星 {winner.stars}つ</span>
+            </div>
+            <div className="result-stat">
+              <span className="result-stat-icon">💰</span>
+              <span>残りコイン {winner.coins}枚</span>
+            </div>
+            <div className="result-stat">
+              <span className="result-stat-icon">💩</span>
+              <span>掃除した💩 {winner.totalPoopCleaned}個</span>
+            </div>
+          </div>
+
+          <div className="result-section">
+            <div className="result-section-title">盤面</div>
+            <div className="result-animals">
+              {animals.length === 0 ? (
+                <span style={{ color: '#999' }}>動物なし</span>
+              ) : (
+                animals.map((a, i) => (
+                  <span key={i} className="result-animal-chip">
+                    {a.icon} {a.name} <span style={{ fontSize: 10, color: '#888' }}>#{a.cageNum}</span>
+                  </span>
+                ))
+              )}
+            </div>
+          </div>
+
+          {/* 全プレイヤースコア */}
+          <div className="result-section">
+            <div className="result-section-title">全プレイヤー</div>
+            {Object.values(state.players).map((p) => {
+              const pc = p.color ? PLAYER_COLORS[p.color] : null;
+              return (
+                <div key={p.id} className="result-player-row" style={pc ? { borderLeft: `3px solid ${pc.bg}` } : {}}>
+                  <span>{p.name} {p.id === state.winnerId && '🏆'}</span>
+                  <span>⭐{p.stars} 💰{p.coins} 💩掃除{p.totalPoopCleaned}</span>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+
+        <div className="result-actions">
+          <button className="result-btn restart" onClick={() => send('restartGame')}>
+            🔄 もう1試合
+          </button>
+          <button className="result-btn leave" onClick={onLeave}>
+            🚪 退室する
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ===== バーストアニメーション =====
+function BurstAnimation() {
+  const { state } = useContext(ColyseusContext);
+  const [visible, setVisible] = useState(false);
+  const [playerName, setPlayerName] = useState('');
+
+  useEffect(() => {
+    if (state?.burstPlayerId) {
+      const p = state.players[state.burstPlayerId];
+      setPlayerName(p?.name || '');
+      setVisible(true);
+      const timer = setTimeout(() => setVisible(false), 3000);
+      return () => clearTimeout(timer);
+    }
+  }, [state?.burstPlayerId]);
+
+  if (!visible) return null;
+
+  return (
+    <div className="burst-animation">
+      <div className="burst-slide">
+        <span className="burst-icon">💩💥</span>
+        <span className="burst-text">うんちバースト！</span>
+        <span className="burst-name">{playerName}</span>
+      </div>
     </div>
   );
 }

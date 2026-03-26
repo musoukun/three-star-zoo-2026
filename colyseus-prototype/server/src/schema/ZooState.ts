@@ -18,6 +18,8 @@ export class PlayerState extends Schema {
   @type("number") stars: number = 0;
   @type("boolean") connected: boolean = true;
   @type("number") poopTokens: number = 0;
+  @type("number") totalPoopCleaned: number = 0;   // 累計うんち掃除量
+  @type("number") totalCoinsEarned: number = 0;   // 累計コイン獲得量
   @type([Cage]) cages = new ArraySchema<Cage>();
 }
 
@@ -62,6 +64,7 @@ export class ZooState extends Schema {
   @type("boolean") boughtStar: boolean = false;
 
   @type("string") winnerId: string = "";
+  @type("string") burstPlayerId: string = "";      // バースト発生プレイヤー（アニメ用、一時的）
 
   // チャット+ゲームログ（全員に表示）
   @type(["string"]) gameLog = new ArraySchema<string>();
