@@ -363,7 +363,7 @@ body {
 .cage {
   border: 2px solid #ccc;
   border-radius: 6px;
-  padding: 9px;
+  padding: 6px;
   background: #f8f8f8;
   position: relative;
   min-height: 50px;
@@ -372,12 +372,13 @@ body {
 }
 
 .cage.rolled {
+  border-color: #e74c3c;
   animation: cage-blink 1.5s ease-in-out infinite;
 }
 
 @keyframes cage-blink {
-  0%, 100% { box-shadow: 0 0 0 3px #e74c3c, 0 0 16px rgba(231, 76, 60, 0.5); }
-  50% { box-shadow: 0 0 0 3px rgba(231, 76, 60, 0.25), 0 0 4px rgba(231, 76, 60, 0.1); }
+  0%, 100% { box-shadow: 0 0 0 4px #e74c3c, 0 0 18px rgba(231, 76, 60, 0.5); }
+  50% { box-shadow: 0 0 0 4px rgba(231, 76, 60, 0.2), 0 0 4px rgba(231, 76, 60, 0.1); }
 }
 
 /* ケージの色はインラインスタイルで動的に設定 */
