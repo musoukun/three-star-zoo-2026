@@ -67,7 +67,7 @@ export class ZooRoom extends Room<ZooState> {
     if (json.players) {
       for (const [pid, pj] of Object.entries(json.players) as [string, any][]) {
         const p = new PlayerState();
-        p.id = pj.id; p.name = pj.name; p.coins = pj.coins;
+        p.id = pj.id; p.name = pj.name; p.color = pj.color ?? ""; p.coins = pj.coins;
         p.stars = pj.stars; p.connected = pj.connected;
         p.poopTokens = pj.poopTokens ?? 0;
         p.cages.clear();
@@ -690,6 +690,22 @@ export class ZooRoom extends Room<ZooState> {
   // ===== メッセージハンドラ =====
 
   private registerMessages() {
+    // --- ロビー: プレイヤーカラー変更 ---
+    this.onMessage("setColor", (client, data: { color: string }) => {
+      if (this.state.phase !== "lobby") return;
+      const player = this.state.players.get(client.sessionId);
+      if (!player) return;
+      const validColors = ["red", "blue", "green", "orange", "purple", "pink"];
+      if (!validColors.includes(data.color)) return;
+      // 他プレイヤーが使用中の色は選択不可
+      let taken = false;
+      this.state.players.forEach((p) => {
+        if (p.id !== client.sessionId && p.color === data.color) taken = true;
+      });
+      if (taken) return;
+      player.color = data.color;
+    });
+
     // --- ロビー: ゲーム開始 ---
     this.onMessage("startGame", (client) => {
       if (this.state.phase !== "lobby") return;

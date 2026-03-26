@@ -19,6 +19,7 @@ export interface CageState {
 export interface PlayerInfo {
   id: string;
   name: string;
+  color: string;
   coins: number;
   stars: number;
   connected: boolean;

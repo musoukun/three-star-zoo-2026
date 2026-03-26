@@ -125,6 +125,7 @@ body {
   border-top: 3px solid #4CAF50;
   padding: 8px;
   color: #222;
+  position: relative;
 }
 
 /* ===== ステータスバー ===== */
@@ -197,14 +198,86 @@ body {
   background: #fff;
   min-width: 140px;
   font-size: 12px;
+  transition: all 0.4s ease, order 0.4s ease;
+  order: 1;
 }
 
 .player-card.current {
   border-color: #e74c3c;
+  border-width: 3px;
+  order: 0;
+  transform: scale(1.03);
+  box-shadow: 0 2px 8px rgba(0,0,0,0.12);
 }
 
 .player-card.me {
   background: #eef6ff;
+}
+
+/* ===== ルール早見表 ===== */
+.rule-tooltip-container {
+  position: absolute;
+  bottom: 8px;
+  right: 8px;
+  z-index: 100;
+}
+
+.rule-tooltip-trigger {
+  background: #455a64;
+  color: #fff;
+  padding: 6px 14px;
+  border-radius: 20px;
+  font-size: 13px;
+  cursor: pointer;
+  user-select: none;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+}
+
+.rule-tooltip-trigger:hover {
+  background: #37474f;
+}
+
+.rule-tooltip-content {
+  display: none;
+  position: absolute;
+  bottom: 40px;
+  right: 0;
+  width: 320px;
+  max-height: 420px;
+  overflow-y: auto;
+  background: #fff;
+  border: 1px solid #ccc;
+  border-radius: 8px;
+  padding: 12px;
+  font-size: 12px;
+  line-height: 1.5;
+  box-shadow: 0 4px 20px rgba(0,0,0,0.2);
+  color: #333;
+}
+
+.rule-tooltip-container:hover .rule-tooltip-content {
+  display: block;
+}
+
+.rule-section {
+  margin-bottom: 8px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid #eee;
+}
+
+.rule-section:last-child {
+  border-bottom: none;
+  margin-bottom: 0;
+  padding-bottom: 0;
+}
+
+.rule-section ol {
+  margin: 4px 0;
+  padding-left: 18px;
+}
+
+.rule-section p {
+  margin: 4px 0;
 }
 
 /* ===== 他プレイヤーのボード ===== */

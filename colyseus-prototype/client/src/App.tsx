@@ -3,6 +3,16 @@ import { useColyseus } from './hooks/useColyseus';
 import type { ZooRoomState, HistoryInfo, RoomListing } from './hooks/useColyseus';
 import { Board } from './components/Board';
 
+// プレイヤーカラー定義（ロビー＆ゲーム中共通）
+export const PLAYER_COLORS: Record<string, { bg: string; light: string; label: string }> = {
+  red:    { bg: '#e53935', light: '#ffcdd2', label: '赤' },
+  blue:   { bg: '#1e88e5', light: '#bbdefb', label: '青' },
+  green:  { bg: '#43a047', light: '#c8e6c9', label: '緑' },
+  orange: { bg: '#fb8c00', light: '#ffe0b2', label: 'オレンジ' },
+  purple: { bg: '#8e24aa', light: '#e1bee7', label: '紫' },
+  pink:   { bg: '#d81b60', light: '#f8bbd0', label: 'ピンク' },
+};
+
 // Context
 interface ColyseusContextValue {
   state: ZooRoomState | null;
@@ -249,12 +259,23 @@ export function App() {
         <h3>参加者 ({players.length}人)</h3>
         <ul style={styles.playerList}>
           {players.map((p) => (
-            <li key={p.id} style={styles.playerItem}>
-              <span>
-                {p.name}
-                {p.id === sessionId && ' (あなた)'}
-                {p.id === state.hostId && ' ⭐ホスト'}
-              </span>
+            <li key={p.id} style={{
+              ...styles.playerItem,
+              borderLeft: p.color ? `4px solid ${PLAYER_COLORS[p.color]?.bg || '#ccc'}` : '4px solid transparent',
+            }}>
+              <div>
+                <span style={{
+                  display: 'inline-block',
+                  width: 12, height: 12, borderRadius: '50%',
+                  background: p.color ? PLAYER_COLORS[p.color]?.bg : '#ddd',
+                  marginRight: 6, verticalAlign: 'middle',
+                }} />
+                <span>
+                  {p.name}
+                  {p.id === sessionId && ' (あなた)'}
+                  {p.id === state.hostId && ' ⭐ホスト'}
+                </span>
+              </div>
               {p.connected
                 ? <span style={{ color: '#4caf50' }}>●</span>
                 : <span style={{ color: '#f44336' }}>○ 切断中</span>
@@ -262,6 +283,30 @@ export function App() {
             </li>
           ))}
         </ul>
+
+        {/* カラー選択（自分用） */}
+        <div style={{ marginTop: 8 }}>
+          <span style={{ fontSize: 13, color: '#666' }}>あなたの色: </span>
+          {Object.entries(PLAYER_COLORS).map(([key, c]) => {
+            const taken = players.some(p => p.id !== sessionId && p.color === key);
+            const isSelected = state.players[sessionId]?.color === key;
+            return (
+              <button
+                key={key}
+                onClick={() => !taken && send('setColor', { color: key })}
+                disabled={taken}
+                title={taken ? '使用中' : c.label}
+                style={{
+                  width: 28, height: 28, borderRadius: '50%', margin: '0 3px',
+                  background: c.bg,
+                  border: isSelected ? '3px solid #333' : '2px solid #ccc',
+                  cursor: taken ? 'not-allowed' : 'pointer',
+                  opacity: taken ? 0.3 : 1,
+                }}
+              />
+            );
+          })}
+        </div>
       </div>
 
       {/* ログ */}

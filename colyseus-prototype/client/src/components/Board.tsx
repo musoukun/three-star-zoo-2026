@@ -1,5 +1,6 @@
-import { useState, useContext } from 'react';
+import { useState, useContext, useMemo } from 'react';
 import { ColyseusContext } from '../App';
+import { PLAYER_COLORS } from '../App';
 import { ANIMALS, ANIMAL_ICONS, EFFECT_TEXT_FULL, EFFECT_TEXT_SHORT, COLOR_CLASS, STAR_COST } from '../game/animals';
 import type { CageState, PlayerInfo } from '../hooks/useColyseus';
 
@@ -25,6 +26,16 @@ export function Board({ onLeave }: { onLeave: () => void }) {
   const me = state.players[sessionId];
 
   const getPlayerName = (id: string) => state.players[id]?.name ?? id;
+
+  // プレイヤーをターン中が先頭にソート
+  const sortedPlayers = useMemo(() => {
+    const entries = Object.entries(state.players);
+    return entries.sort((a, b) => {
+      if (a[0] === state.currentTurn) return -1;
+      if (b[0] === state.currentTurn) return 1;
+      return 0;
+    });
+  }, [state.players, state.currentTurn]);
 
   // 他プレイヤー
   const otherPlayers = Object.entries(state.players).filter(([pid]) => pid !== sessionId);
@@ -62,14 +73,36 @@ export function Board({ onLeave }: { onLeave: () => void }) {
           </button>
         </div>
 
-        {/* プレイヤー情報 */}
+        {/* プレイヤー情報（ターン中が先頭、アニメーション付き） */}
         <div className="player-info-row">
-          {Object.entries(state.players).map(([pid, p]) => (
-            <div key={pid} className={`player-card ${pid === state.currentTurn ? 'current' : ''} ${pid === sessionId ? 'me' : ''}`}>
-              <strong>{p.name}</strong> {pid === sessionId && '(自分)'}
-              <div>💰{p.coins} ⭐{'★'.repeat(p.stars)}{'☆'.repeat(3 - p.stars)} 💩{p.poopTokens}</div>
-            </div>
-          ))}
+          {sortedPlayers.map(([pid, p]) => {
+            const colorDef = p.color ? PLAYER_COLORS[p.color] : null;
+            return (
+              <div
+                key={pid}
+                className={`player-card ${pid === state.currentTurn ? 'current' : ''} ${pid === sessionId ? 'me' : ''}`}
+                style={{
+                  background: colorDef ? colorDef.light : (pid === sessionId ? '#eef6ff' : '#fff'),
+                  borderColor: pid === state.currentTurn
+                    ? (colorDef ? colorDef.bg : '#e74c3c')
+                    : (colorDef ? colorDef.bg + '80' : '#ccc'),
+                }}
+              >
+                <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+                  {colorDef && (
+                    <span style={{
+                      display: 'inline-block', width: 10, height: 10, borderRadius: '50%',
+                      background: colorDef.bg, flexShrink: 0,
+                    }} />
+                  )}
+                  <strong>{p.name}</strong>
+                  {pid === sessionId && <span style={{ fontSize: 10, color: '#666' }}>(自分)</span>}
+                  {pid === state.currentTurn && <span style={{ fontSize: 10 }}>🎯</span>}
+                </div>
+                <div>💰{p.coins} ⭐{'★'.repeat(p.stars)}{'☆'.repeat(3 - p.stars)} 💩{p.poopTokens}</div>
+              </div>
+            );
+          })}
         </div>
 
         {/* 他プレイヤーのボード */}
@@ -158,6 +191,9 @@ export function Board({ onLeave }: { onLeave: () => void }) {
         {!isSetup && isMyTurn && !isEnded && (
           <ActionPanel />
         )}
+
+        {/* ルール早見表（ホバーで表示） */}
+        <RuleTooltip />
       </div>
 
       {/* ===== 履歴パネル（右端オーバーレイ、トグル式） ===== */}
@@ -269,6 +305,49 @@ function getCageStyle(cage: CageState): React.CSSProperties {
     borderWidth: '3px',
     borderStyle: 'solid',
   };
+}
+
+// ===== ルール早見表（ホバーで表示） =====
+function RuleTooltip() {
+  return (
+    <div className="rule-tooltip-container">
+      <div className="rule-tooltip-trigger">📖 ルール</div>
+      <div className="rule-tooltip-content">
+        <h4 style={{ margin: '0 0 6px' }}>ルール早見表</h4>
+        <div className="rule-section">
+          <strong>ターンの流れ</strong>
+          <ol>
+            <li>💩 うんちコマを受け取る</li>
+            <li>🎲 サイコロを振る（1個 or 2個）</li>
+            <li>💰 対応する檻の効果が発動</li>
+            <li>🛒 お買い物（動物1匹 + 星1つまで）</li>
+            <li>🧹 掃除（1コインで2個除去）</li>
+            <li>✅ ターン終了</li>
+          </ol>
+        </div>
+        <div className="rule-section">
+          <strong>勝利条件</strong>
+          <p>⭐星3つ + 💩6個以下でターン終了</p>
+        </div>
+        <div className="rule-section">
+          <strong>バースト</strong>
+          <p>ターン終了時に💩7個以上 →<br/>
+          星あり: 星-1 / 星なし: 最高コスト動物を返却<br/>
+          その後、全コイン＆全うんちを返却</p>
+        </div>
+        <div className="rule-section">
+          <strong>配置ルール</strong>
+          <p>1檻に2匹まで / 同じ動物は不可<br/>
+          色が1つ以上一致する必要あり<br/>
+          2匹目は隣接檻のみ</p>
+        </div>
+        <div className="rule-section">
+          <strong>効果処理順</strong>
+          <p>手番の左隣から時計回り→手番が最後</p>
+        </div>
+      </div>
+    </div>
+  );
 }
 
 // ===== ケージレイアウト定義 =====

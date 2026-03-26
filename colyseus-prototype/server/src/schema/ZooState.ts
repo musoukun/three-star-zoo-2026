@@ -13,6 +13,7 @@ export class Cage extends Schema {
 export class PlayerState extends Schema {
   @type("string") id: string = "";
   @type("string") name: string = "";
+  @type("string") color: string = "";  // プレイヤーカラー (red/blue/green/orange)
   @type("number") coins: number = 0;
   @type("number") stars: number = 0;
   @type("boolean") connected: boolean = true;
