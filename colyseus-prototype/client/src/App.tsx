@@ -35,8 +35,8 @@ export const ColyseusContext = createContext<ColyseusContextValue>({
 export function App() {
   const {
     state, sessionId, error, historyInfo, rooms,
-    myDrawnCardId, myHeldCardId,
-    fetchRooms, createRoom, joinRoomById, send, leave,
+    myDrawnCardId, myHeldCardId, isReconnecting,
+    fetchRooms, createRoom, joinRoomById, send, leave, tryReconnect,
   } = useColyseus();
 
   const [name, setName] = useState('');
@@ -50,14 +50,34 @@ export function App() {
   const [passwordTarget, setPasswordTarget] = useState<RoomListing | null>(null);
   const [joinPassword, setJoinPassword] = useState('');
 
+  // 起動時に前回のセッションへ自動再接続を試行
+  useEffect(() => {
+    if (isReconnecting) {
+      tryReconnect();
+    }
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+
   // ルーム一覧の自動更新
   useEffect(() => {
-    if (!state) {
+    if (!state && !isReconnecting) {
       fetchRooms();
       const interval = setInterval(fetchRooms, 3000);
       return () => clearInterval(interval);
     }
-  }, [state, fetchRooms]);
+  }, [state, isReconnecting, fetchRooms]);
+
+  // ===== 再接続中 =====
+  if (isReconnecting) {
+    return (
+      <div style={{ ...S.page, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+        <div style={{ textAlign: 'center', color: '#fff' }}>
+          <div style={{ fontSize: 48, marginBottom: 16 }}>🔄</div>
+          <h2 style={{ margin: '0 0 8px' }}>再接続中...</h2>
+          <p style={{ color: '#aaa', margin: 0 }}>前回のセッションに復帰しています</p>
+        </div>
+      </div>
+    );
+  }
 
   // ===== メインロビー画面（ルーム未参加）=====
   if (!state) {
@@ -375,7 +395,7 @@ const S: Record<string, React.CSSProperties> = {
   page: {
     minHeight: '100vh',
     background: 'linear-gradient(135deg, #b2dfdb 0%, #e0f2f1 40%, #fff8e1 100%)',
-    fontFamily: "'M PLUS Rounded 1c', 'Segoe UI', 'Hiragino Sans', sans-serif",
+    fontFamily: "'Zen Kaku Gothic New', 'Segoe UI', 'Hiragino Sans', sans-serif",
   },
   header: {
     background: 'linear-gradient(90deg, #00695c, #00897b)',
@@ -606,7 +626,7 @@ const S: Record<string, React.CSSProperties> = {
 const styles: Record<string, React.CSSProperties> = {
   container: {
     padding: 24,
-    fontFamily: "'M PLUS Rounded 1c', 'Segoe UI', 'Hiragino Sans', sans-serif",
+    fontFamily: "'Zen Kaku Gothic New', 'Segoe UI', 'Hiragino Sans', sans-serif",
     maxWidth: 700,
     margin: '0 auto',
   },

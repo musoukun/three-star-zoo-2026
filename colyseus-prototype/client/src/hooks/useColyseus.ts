@@ -4,6 +4,42 @@ import * as Colyseus from 'colyseus.js';
 // 本番: wss://your-railway-app.up.railway.app  開発: ws://localhost:2567
 const SERVER_URL = import.meta.env.VITE_SERVER_URL || 'ws://localhost:2567';
 
+// localStorage キー
+const LS_KEY = 'zoo_room_session';
+
+interface SavedSession {
+  roomId: string;
+  reconnectionToken: string;
+  playerName: string;
+  savedAt: number;
+}
+
+function saveSession(roomId: string, reconnectionToken: string, playerName: string) {
+  const data: SavedSession = { roomId, reconnectionToken, playerName, savedAt: Date.now() };
+  localStorage.setItem(LS_KEY, JSON.stringify(data));
+}
+
+function loadSession(): SavedSession | null {
+  try {
+    const raw = localStorage.getItem(LS_KEY);
+    if (!raw) return null;
+    const data: SavedSession = JSON.parse(raw);
+    // 15分以上前のセッションは無効
+    if (Date.now() - data.savedAt > 15 * 60 * 1000) {
+      localStorage.removeItem(LS_KEY);
+      return null;
+    }
+    return data;
+  } catch {
+    localStorage.removeItem(LS_KEY);
+    return null;
+  }
+}
+
+function clearSession() {
+  localStorage.removeItem(LS_KEY);
+}
+
 // Colyseus Schema state をプレーンオブジェクトに変換するヘルパー
 function schemaToPlain(state: any): any {
   if (!state) return state;
@@ -96,6 +132,7 @@ export function useColyseus() {
   const [rooms, setRooms] = useState<RoomListing[]>([]);
   const [myDrawnCardId, setMyDrawnCardId] = useState<string>('');
   const [myHeldCardId, setMyHeldCardId] = useState<string>('');
+  const [isReconnecting, setIsReconnecting] = useState<boolean>(!!loadSession());
 
   useEffect(() => {
     clientRef.current = new Colyseus.Client(SERVER_URL);
@@ -116,13 +153,17 @@ export function useColyseus() {
   }, []);
 
   // ルーム接続時の共通セットアップ
-  const setupRoom = useCallback((r: Colyseus.Room) => {
+  const setupRoom = useCallback((r: Colyseus.Room, playerName?: string) => {
     roomRef.current = r;
     setRoom(r);
     setSessionId(r.sessionId);
+    setIsReconnecting(false);
     // E2Eテスト用: roomオブジェクトをwindowに公開
     (window as any).__colyseusRoom = r;
     setError('');
+
+    // localStorageにセッション情報を保存（再接続用）
+    saveSession(r.roomId, r.reconnectionToken, playerName || '');
 
     // 初回の状態を即座に読み取る
     if (r.state) {
@@ -158,10 +199,52 @@ export function useColyseus() {
 
     r.onLeave((code: number) => {
       console.log('Left room', code);
+      roomRef.current = null;
       setRoom(null);
       setState(null);
+      // 正常退出(1000)や意図的退出(4000)の場合のみセッション情報をクリア
+      // 異常切断(1006等)やページリロードではセッション情報を残す
+      if (code === 1000 || code === 4000) {
+        clearSession();
+      }
     });
   }, []);
+
+  // 再接続を試行
+  const tryReconnect = useCallback(async (): Promise<boolean> => {
+    const saved = loadSession();
+    if (!saved || !clientRef.current) {
+      setIsReconnecting(false);
+      return false;
+    }
+
+    console.log('[Colyseus] 再接続を試行中...', saved.roomId);
+
+    // 1. まずreconnectionTokenで再接続を試みる（ゲーム中の場合に有効）
+    try {
+      const r = await clientRef.current.reconnect(saved.reconnectionToken);
+      console.log('[Colyseus] reconnectionTokenで再接続成功');
+      setupRoom(r, saved.playerName);
+      return true;
+    } catch (e) {
+      console.log('[Colyseus] reconnectionToken再接続失敗:', e);
+    }
+
+    // 2. reconnectが失敗した場合、joinByIdで同じ部屋に再入室を試みる（ロビーの場合）
+    try {
+      const r = await clientRef.current.joinById(saved.roomId, { name: saved.playerName });
+      console.log('[Colyseus] joinByIdで再入室成功');
+      setupRoom(r, saved.playerName);
+      return true;
+    } catch (e) {
+      console.log('[Colyseus] joinById再入室失敗（ルームが存在しない可能性）:', e);
+    }
+
+    // 3. すべて失敗 → セッション情報をクリアしてトップページへ
+    clearSession();
+    setIsReconnecting(false);
+    return false;
+  }, [setupRoom]);
 
   // ルーム作成
   const createRoom = useCallback(async (name: string, roomName: string, password?: string) => {
@@ -170,7 +253,7 @@ export function useColyseus() {
       const options: any = { name, roomName };
       if (password) options.password = password;
       const r = await clientRef.current.create('zoo_room', options);
-      setupRoom(r);
+      setupRoom(r, name);
     } catch (e: any) {
       setError(e.message || 'ルーム作成に失敗しました');
     }
@@ -183,7 +266,7 @@ export function useColyseus() {
       const options: any = { name };
       if (password) options.password = password;
       const r = await clientRef.current.joinById(roomId, options);
-      setupRoom(r);
+      setupRoom(r, name);
     } catch (e: any) {
       setError(e.message || 'ルーム参加に失敗しました');
     }
@@ -194,7 +277,7 @@ export function useColyseus() {
     if (!clientRef.current) return;
     try {
       const r = await clientRef.current.joinOrCreate('zoo_room', { name, roomName: '三ツ星動物園', minClients });
-      setupRoom(r);
+      setupRoom(r, name);
     } catch (e: any) {
       setError(e.message || 'Failed to join room');
     }
@@ -205,6 +288,7 @@ export function useColyseus() {
   }, []);
 
   const leave = useCallback(() => {
+    clearSession();
     roomRef.current?.leave();
     roomRef.current = null;
     setRoom(null);
@@ -213,7 +297,7 @@ export function useColyseus() {
 
   return {
     room, state, sessionId, error, historyInfo, rooms,
-    myDrawnCardId, myHeldCardId,
-    fetchRooms, createRoom, joinRoomById, joinRoom, send, leave,
+    myDrawnCardId, myHeldCardId, isReconnecting,
+    fetchRooms, createRoom, joinRoomById, joinRoom, send, leave, tryReconnect,
   };
 }

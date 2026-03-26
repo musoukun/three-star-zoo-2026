@@ -1,41 +1,9 @@
 import { Room, Client } from "colyseus";
-import { ZooState, PlayerState, Cage, CageSlot, PendingEffect } from "../schema/ZooState";
-import { ANIMALS, STARTING_ANIMALS, STARTING_COINS, STAR_COST, STARS_TO_WIN } from "../game/animals";
-import { CHANCE_CARDS, createChanceDeck, shuffle } from "../game/chanceCards";
-import type { AnimalColor, Effect } from "../game/types";
-import { ArraySchema } from "@colyseus/schema";
-
-/** 2行グリッドの隣接マップ (上下左右、斜めなし)
- *  上段:  1    2    3    4    5    6
- *  下段: [11&12]  10    9    8    7
- *
- *  11と12は結合された1つの大きな檻
- *  11&12は上段の1,2の下に位置する（2列幅）
- */
-const ADJACENCY: Record<number, number[]> = {
-  // 上段
-  1:  [2, 11, 12],        // 右=2, 下=11&12
-  2:  [1, 3, 11, 12, 10], // 左=1, 右=3, 下=11&12と10
-  3:  [2, 4, 10, 9],      // 左=2, 右=4, 下=10と9
-  4:  [3, 5, 9, 8],       // 左=3, 右=5, 下=9と8
-  5:  [4, 6, 8, 7],       // 左=4, 右=6, 下=8と7
-  6:  [5, 7],             // 左=5, 下=7
-  // 下段 (右から左: 7,8,9,10,11&12)
-  7:  [8, 5, 6],          // 左=8, 上=5,6
-  8:  [7, 9, 4, 5],       // 左隣=9, 右隣=7, 上=4,5
-  9:  [8, 10, 3, 4],      // 左隣=10, 右隣=8, 上=3,4
-  10: [9, 11, 12, 2, 3],  // 左隣=11&12, 右隣=9, 上=2,3
-  11: [12, 10, 1, 2],     // 結合相手=12, 右隣=10, 上=1,2
-  12: [11, 10, 1, 2],     // 結合相手=11, 右隣=10, 上=1,2
-};
-
-/** 結合ケージ: 11と12は1つの檻 → 内部的にケージ11に統一 */
-function normalizeCageNum(cageNum: number): number {
-  return cageNum === 12 ? 11 : cageNum;
-}
-
-/** うんちバーストの閾値 */
-const POOP_BURST_THRESHOLD = 7;
+import { ZooState, PlayerState, Cage, CageSlot } from "../schema/ZooState";
+import { ANIMALS, STARTING_COINS } from "../game/animals";
+import { normalizeCageNum } from "../game/gameLogic";
+import { RoomHistory } from "./RoomHistory";
+import { RoomGameplay } from "./RoomGameplay";
 
 export class ZooRoom extends Room<ZooState> {
   maxClients = 4;
@@ -44,215 +12,24 @@ export class ZooRoom extends Room<ZooState> {
   private emptyTimeout: ReturnType<typeof setTimeout> | null = null;
   private static EMPTY_ROOM_TTL = 15 * 60 * 1000; // 15分
 
-  // ===== デバッグ用: 次のサイコロの出目を固定 =====
-  private _debugForcedDice: number[] | null = null;
-
-  // ===== チャンスカード（秘匿情報はスキーマ外で管理） =====
-  private chanceDeck: string[] = [];
-  private chanceDiscard: string[] = [];
-  private heldCards: Map<string, string> = new Map();  // sessionId → cardId
-  private shouldDrawChance: boolean = false;
-  private extraTurnFlag: boolean = false;
-  private drawnCardId: string = "";  // 引いたカードID（サーバー内部保持）
-
-  // ===== 履歴管理（スナップショット方式） =====
-  private undoStack: any[] = [];
-  private redoStack: any[] = [];
-  private static MAX_HISTORY = 200;
-
-  /** 現在のstateのスナップショットを保存（チャンスカード秘匿データ含む） */
-  private pushSnapshot() {
-    this.undoStack.push({
-      state: this.state.toJSON(),
-      chanceDeck: [...this.chanceDeck],
-      chanceDiscard: [...this.chanceDiscard],
-      heldCards: Object.fromEntries(this.heldCards),
-      shouldDrawChance: this.shouldDrawChance,
-      extraTurnFlag: this.extraTurnFlag,
-      drawnCardId: this.drawnCardId,
-    });
-    if (this.undoStack.length > ZooRoom.MAX_HISTORY) {
-      this.undoStack.shift();
-    }
-    // 新しいアクションが行われたらredo履歴はクリア
-    this.redoStack = [];
-    console.log(`[History] push (undo=${this.undoStack.length}, redo=${this.redoStack.length})`);
-    this.broadcastHistoryInfo();
-  }
-
-  /** JSONからstateを完全復元 */
-  private restoreFromJSON(json: any) {
-    // players
-    this.state.players.clear();
-    if (json.players) {
-      for (const [pid, pj] of Object.entries(json.players) as [string, any][]) {
-        const p = new PlayerState();
-        p.id = pj.id; p.name = pj.name; p.color = pj.color ?? ""; p.coins = pj.coins;
-        p.stars = pj.stars; p.connected = pj.connected;
-        p.poopTokens = pj.poopTokens ?? 0;
-        p.totalPoopCleaned = pj.totalPoopCleaned ?? 0;
-        p.totalCoinsEarned = pj.totalCoinsEarned ?? 0;
-        p.hasHeldCard = pj.hasHeldCard ?? false;
-        p.cages.clear();
-        if (pj.cages) {
-          for (const cj of pj.cages) {
-            const cage = new Cage();
-            cage.num = cj.num;
-            if (cj.slots) {
-              for (const sj of cj.slots) {
-                const slot = new CageSlot();
-                slot.animalId = sj.animalId;
-                slot.playerId = sj.playerId;
-                cage.slots.push(slot);
-              }
-            }
-            p.cages.push(cage);
-          }
-        }
-        this.state.players.set(pid, p);
-      }
-    }
-
-    // market
-    this.state.market.clear();
-    if (json.market) {
-      for (const [k, v] of Object.entries(json.market)) {
-        this.state.market.set(k, v as number);
-      }
-    }
-
-    // scalars
-    this.state.roomName = json.roomName ?? this.state.roomName;
-    this.state.hostId = json.hostId ?? this.state.hostId;
-    this.state.isPrivate = json.isPrivate ?? this.state.isPrivate;
-    this.state.phase = json.phase ?? "lobby";
-    this.state.currentTurn = json.currentTurn ?? "";
-    this.state.turnStep = json.turnStep ?? "poop";
-    this.state.dice1 = json.dice1 ?? 0;
-    this.state.dice2 = json.dice2 ?? 0;
-    this.state.diceSum = json.diceSum ?? 0;
-    this.state.diceCount = json.diceCount ?? 2;
-    this.state.diceRolled = json.diceRolled ?? false;
-    this.state.boughtAnimal = json.boughtAnimal ?? false;
-    this.state.boughtStar = json.boughtStar ?? false;
-    this.state.winnerId = json.winnerId ?? "";
-    this.state.burstPlayerId = json.burstPlayerId ?? "";
-    this.state.chanceDeckCount = json.chanceDeckCount ?? 0;
-    this.state.chanceDiscardCount = json.chanceDiscardCount ?? 0;
-    this.state.chanceCardPhase = json.chanceCardPhase ?? "";
-    this.state.activeChanceCard = json.activeChanceCard ?? "";
-
-    // pendingEffects
-    this.state.pendingEffects.clear();
-    if (json.pendingEffects) {
-      for (const ej of json.pendingEffects) {
-        const pe = new PendingEffect();
-        pe.effectType = ej.effectType;
-        pe.ownerPlayerId = ej.ownerPlayerId;
-        pe.animalId = ej.animalId;
-        pe.stealAmount = ej.stealAmount ?? 0;
-        pe.creationAmount = ej.creationAmount ?? 0;
-        pe.starAmount = ej.starAmount ?? 0;
-        if (ej.choices) ej.choices.forEach((c: string) => pe.choices.push(c));
-        this.state.pendingEffects.push(pe);
-      }
-    }
-
-    // effectLog
-    this.state.effectLog.clear();
-    if (json.effectLog) {
-      for (const log of json.effectLog) this.state.effectLog.push(log);
-    }
-
-    // gameLog
-    this.state.gameLog.clear();
-    if (json.gameLog) {
-      for (const log of json.gameLog) this.state.gameLog.push(log);
-    }
-
-    // turnOrder
-    this.state.turnOrder.clear();
-    if (json.turnOrder) {
-      for (const id of json.turnOrder) this.state.turnOrder.push(id);
-    }
-
-    // setupInventory
-    this.state.setupInventory.clear();
-    if (json.setupInventory) {
-      for (const [k, v] of Object.entries(json.setupInventory)) {
-        this.state.setupInventory.set(k, v as string);
-      }
-    }
-  }
-
-  /** スナップショットオブジェクトを作成 */
-  private createSnapshotObj() {
-    return {
-      state: this.state.toJSON(),
-      chanceDeck: [...this.chanceDeck],
-      chanceDiscard: [...this.chanceDiscard],
-      heldCards: Object.fromEntries(this.heldCards),
-      shouldDrawChance: this.shouldDrawChance,
-      extraTurnFlag: this.extraTurnFlag,
-      drawnCardId: this.drawnCardId,
-    };
-  }
-
-  /** スナップショットオブジェクトから完全復元 */
-  private restoreSnapshot(snapshot: any) {
-    this.restoreFromJSON(snapshot.state);
-    this.chanceDeck = snapshot.chanceDeck ?? [];
-    this.chanceDiscard = snapshot.chanceDiscard ?? [];
-    this.heldCards = new Map(Object.entries(snapshot.heldCards ?? {}));
-    this.shouldDrawChance = snapshot.shouldDrawChance ?? false;
-    this.extraTurnFlag = snapshot.extraTurnFlag ?? false;
-    this.drawnCardId = snapshot.drawnCardId ?? "";
-  }
-
-  /** 伏せカード情報を各プレイヤーに個別通知 */
-  private notifyHeldCards() {
-    for (const client of this.clients) {
-      if (this.heldCards.has(client.sessionId)) {
-        client.send("heldCardInfo", { cardId: this.heldCards.get(client.sessionId)! });
-      } else {
-        client.send("heldCardCleared", {});
-      }
-    }
-    // チャンスカードフェーズ中なら引いたカード情報も再通知
-    if (this.drawnCardId && this.state.chanceCardPhase) {
-      const currentClient = this.clients.find(c => c.sessionId === this.state.currentTurn);
-      if (currentClient) {
-        currentClient.send("chanceCardDrawn", { cardId: this.drawnCardId });
-      }
-    }
-  }
-
-  /** 履歴情報をクライアントにブロードキャスト */
-  private broadcastHistoryInfo() {
-    this.broadcast("historyInfo", {
-      undoCount: this.undoStack.length,
-      redoCount: this.redoStack.length,
-    });
-  }
+  gameplay!: RoomGameplay;
+  history!: RoomHistory;
 
   // ===== ライフサイクル =====
 
   onCreate(options: { roomName?: string; password?: string }) {
     this.setState(new ZooState());
 
-    // ルームメタデータ
     this.state.roomName = options.roomName || "三ツ星動物園の部屋";
     if (options.password) {
       this.password = options.password;
       this.state.isPrivate = true;
     }
 
-    // マーケット初期化
     for (const [id, animal] of Object.entries(ANIMALS)) {
       this.state.market.set(id, animal.inventory);
     }
 
-    // メタデータ設定（ルーム一覧で表示）
     this.setMetadata({
       roomName: this.state.roomName,
       isPrivate: this.state.isPrivate,
@@ -260,23 +37,31 @@ export class ZooRoom extends Room<ZooState> {
       phase: "lobby",
     });
 
-    this.registerMessages();
+    // コンテキストオブジェクトを作成し、gameplay / history を初期化
+    const ctx = {
+      state: this.state,
+      room: this as Room<ZooState>,
+      addGameLog: (msg: string) => this.addGameLog(msg),
+      logEffect: (msg: string) => this.logEffect(msg),
+      getPlayerName: (sid: string) => this.getPlayerName(sid),
+      getPlayerCage: (pid: string, cn: number) => this.getPlayerCage(pid, cn),
+    };
+    this.gameplay = new RoomGameplay(ctx);
+    this.history = new RoomHistory(this, () => this.gameplay);
 
-    // 空室タイマー開始（作成直後は誰もいないので）
+    this.registerMessages();
     this.startEmptyTimer();
 
     console.log(`ZooRoom "${this.state.roomName}" created (private=${this.state.isPrivate})`);
   }
 
   onJoin(client: Client, options: { name?: string; password?: string }) {
-    // パスワード認証
     if (this.state.isPrivate && this.password) {
       if (options.password !== this.password) {
         throw new Error("パスワードが間違っています");
       }
     }
 
-    // ゲーム中の再入室チェック
     if (this.state.phase !== "lobby") {
       const existingPlayer = this.state.players.get(client.sessionId);
       if (existingPlayer) {
@@ -286,7 +71,6 @@ export class ZooRoom extends Room<ZooState> {
         this.updateMetadata();
         return;
       }
-      // ゲーム進行中に新規参加は不可
       throw new Error("ゲームが進行中のため参加できません");
     }
 
@@ -298,7 +82,6 @@ export class ZooRoom extends Room<ZooState> {
     player.connected = true;
     player.poopTokens = 0;
 
-    // プレイヤー個別のエリアボード (ケージ1-12) を初期化
     for (let i = 1; i <= 12; i++) {
       const cage = new Cage();
       cage.num = i;
@@ -308,7 +91,6 @@ export class ZooRoom extends Room<ZooState> {
     this.state.players.set(client.sessionId, player);
     this.state.turnOrder.push(client.sessionId);
 
-    // 最初に入った人がホスト
     if (this.state.hostId === "") {
       this.state.hostId = client.sessionId;
     }
@@ -327,10 +109,11 @@ export class ZooRoom extends Room<ZooState> {
     player.connected = false;
     this.updateMetadata();
 
-    // ゲーム進行中の切断 → 長めの再接続猶予（15分）
-    if (!consented && this.state.phase !== "lobby") {
+    if (!consented) {
+      // ロビーでは短時間(30秒)、ゲーム中は15分の再接続猶予
+      const ttlSeconds = this.state.phase === "lobby" ? 30 : ZooRoom.EMPTY_ROOM_TTL / 1000;
       try {
-        await this.allowReconnection(client, ZooRoom.EMPTY_ROOM_TTL / 1000);
+        await this.allowReconnection(client, ttlSeconds);
         player.connected = true;
         this.addGameLog(`${player.name} が再接続しました`);
         this.clearEmptyTimer();
@@ -345,33 +128,24 @@ export class ZooRoom extends Room<ZooState> {
     this.addGameLog(`${player.name} が退室しました`);
     console.log(`${player.name} left permanently`);
 
-    // ロビー中ならプレイヤーを完全削除
     if (this.state.phase === "lobby") {
       const idx = this.state.turnOrder.indexOf(client.sessionId);
       if (idx !== -1) this.state.turnOrder.splice(idx, 1);
       this.state.players.delete(client.sessionId);
     }
 
-    // ホスト引き継ぎ（ロビー/ゲーム中共通）
     if (this.state.hostId === client.sessionId) {
       this.reassignHost();
     }
 
     this.updateMetadata();
 
-    // 全員disconnected/退室なら空室タイマー開始
     let anyConnected = false;
     this.state.players.forEach((p) => {
       if (p.connected) anyConnected = true;
     });
     if (!anyConnected) {
-      if (this.state.phase === "lobby" && this.state.players.size === 0) {
-        // ロビーで誰もいない → 即座にタイマー開始
-        this.startEmptyTimer();
-      } else {
-        // ゲーム中に全員切断 → タイマー開始
-        this.startEmptyTimer();
-      }
+      this.startEmptyTimer();
     }
   }
 
@@ -380,7 +154,7 @@ export class ZooRoom extends Room<ZooState> {
     console.log(`ZooRoom "${this.state.roomName}" disposed`);
   }
 
-  // ===== 空室タイマー =====
+  // ===== ユーティリティ =====
 
   private startEmptyTimer() {
     this.clearEmptyTimer();
@@ -410,9 +184,7 @@ export class ZooRoom extends Room<ZooState> {
     });
   }
 
-  /** ホスト引き継ぎ: turnOrder順に接続中のプレイヤーを探す */
   private reassignHost() {
-    // turnOrder順に接続中プレイヤーを探す
     for (const id of this.state.turnOrder) {
       const p = this.state.players.get(id);
       if (p && p.connected) {
@@ -421,11 +193,9 @@ export class ZooRoom extends Room<ZooState> {
         return;
       }
     }
-    // 全員切断ならホスト空に
     this.state.hostId = "";
   }
 
-  /** ゲームログに追記（チャット+システムログ共用、最大500件） */
   private addGameLog(message: string) {
     const timestamp = new Date().toLocaleTimeString('ja-JP', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
     this.state.gameLog.push(`[${timestamp}] ${message}`);
@@ -434,479 +204,33 @@ export class ZooRoom extends Room<ZooState> {
     }
   }
 
-  // ===== フェーズ管理 =====
-
-  private startSetupPhase() {
-    this.state.phase = "setup";
-
-    // 各プレイヤーにセットアップ用インベントリを設定
-    this.state.turnOrder.forEach((sessionId) => {
-      this.state.setupInventory.set(sessionId, STARTING_ANIMALS.join(","));
-    });
-
-    // 最初のプレイヤーのターン
-    this.state.currentTurn = this.state.turnOrder.at(0)!;
-    console.log("Setup phase started");
-  }
-
-  private startMainPhase() {
-    this.state.phase = "main";
-    this.state.currentTurn = this.state.turnOrder.at(0)!;
-    // チャンスカード山札初期化
-    this.chanceDeck = createChanceDeck();
-    this.chanceDiscard = [];
-    this.heldCards.clear();
-    this.state.chanceDeckCount = this.chanceDeck.length;
-    this.extraTurnFlag = false;
-    this.resetTurnState();
-    console.log("Main phase started");
-  }
-
-  private resetTurnState() {
-    this.state.turnStep = "poop";
-    this.state.dice1 = 0;
-    this.state.dice2 = 0;
-    this.state.diceSum = 0;
-    this.state.diceCount = 2;
-    this.state.diceRolled = false;
-    this.state.pendingEffects.clear();
-    this.state.effectLog.clear();
-    this.state.boughtAnimal = false;
-    this.state.boughtStar = false;
-    this.state.chanceCardPhase = "";
-    this.state.activeChanceCard = "";
-    this.shouldDrawChance = false;
-    this.drawnCardId = "";
-    // heldCards, extraTurnFlag はターンをまたいで保持するためリセットしない
-  }
-
-  private nextTurn() {
-    if (this.extraTurnFlag) {
-      // 再入園: ターン順を進めず同じプレイヤーのターンを繰り返す
-      this.extraTurnFlag = false;
-      this.resetTurnState();
-      this.addGameLog(`🃏 再入園! ${this.getPlayerName(this.state.currentTurn)} のもう1ターン`);
-      return;
-    }
-    const idx = this.state.turnOrder.indexOf(this.state.currentTurn);
-    const nextIdx = (idx + 1) % this.state.turnOrder.length;
-    this.state.currentTurn = this.state.turnOrder.at(nextIdx)!;
-    this.resetTurnState();
-  }
-
-  // ===== チャンスカード処理 =====
-
-  /** income完了後の遷移: チャンスカードドローまたはtradeへ */
-  private advanceAfterIncome() {
-    if (this.shouldDrawChance) {
-      this.drawChanceCard();
-    } else {
-      this.state.turnStep = "trade";
-    }
-  }
-
-  /** チャンスカードを1枚ドロー */
-  private drawChanceCard() {
-    // 山札が空なら捨て札をシャッフルして再構築
-    if (this.chanceDeck.length === 0) {
-      if (this.chanceDiscard.length === 0) {
-        // カードが全くない
-        this.shouldDrawChance = false;
-        this.state.turnStep = "trade";
-        return;
-      }
-      this.chanceDeck = shuffle(this.chanceDiscard);
-      this.chanceDiscard = [];
-    }
-
-    const cardId = this.chanceDeck.pop()!;
-    this.state.chanceDeckCount = this.chanceDeck.length;
-    this.drawnCardId = cardId;
-    this.shouldDrawChance = false;
-
-    const playerId = this.state.currentTurn;
-
-    // 手番プレイヤーにのみカードIDを送信（秘匿）
-    const currentClient = this.clients.find(c => c.sessionId === playerId);
-    if (currentClient) {
-      currentClient.send("chanceCardDrawn", { cardId });
-    }
-
-    const hasHeld = this.heldCards.has(playerId);
-    if (hasHeld) {
-      // 既に伏せカードあり → 強制使用モード
-      this.state.chanceCardPhase = "forceUse";
-      // 保持カードIDも再通知
-      if (currentClient) {
-        currentClient.send("heldCardInfo", { cardId: this.heldCards.get(playerId)! });
-      }
-    } else {
-      this.state.chanceCardPhase = "useOrKeep";
-    }
-
-    this.addGameLog(`🃏 ${this.getPlayerName(playerId)} がチャンスカードを引いた`);
-  }
-
-  /** チャンスカード効果を実行（使用時に全員に公開） */
-  private executeChanceCard(playerId: string, cardId: string) {
-    const player = this.state.players.get(playerId)!;
-    const cardDef = CHANCE_CARDS[cardId];
-    this.state.activeChanceCard = cardId;  // 全員に公開
-
-    switch (cardId) {
-      case 'menuHit':
-        player.coins += 3;
-        player.totalCoinsEarned += 3;
-        this.finishChanceCard(playerId, cardId,
-          `${this.getPlayerName(playerId)}: ${cardDef.name} → +3金`);
-        break;
-
-      case 'productHit':
-        player.coins += 5;
-        player.totalCoinsEarned += 5;
-        this.finishChanceCard(playerId, cardId,
-          `${this.getPlayerName(playerId)}: ${cardDef.name} → +5金`);
-        break;
-
-      case 'compost':
-        this.state.chanceCardPhase = "using_compost";
-        break;
-
-      case 'compostGive':
-        this.state.chanceCardPhase = "using_compostGive";
-        break;
-
-      case 'extraTurn':
-        this.extraTurnFlag = true;
-        this.finishChanceCard(playerId, cardId,
-          `${this.getPlayerName(playerId)}: ${cardDef.name} → もう1ターン!`);
-        break;
-
-      case 'eviction':
-        this.state.chanceCardPhase = "using_eviction";
-        break;
-    }
-  }
-
-  /** チャンスカード効果完了 */
-  private finishChanceCard(playerId: string, cardId: string, logMessage: string) {
-    this.chanceDiscard.push(cardId);
-    this.state.chanceDiscardCount = this.chanceDiscard.length;
-    this.state.activeChanceCard = "";
-    this.state.chanceCardPhase = "";
-    this.drawnCardId = "";
-    this.addGameLog(`🃏 ${logMessage}`);
-
-    if (this.state.turnStep !== "trade") {
-      this.state.turnStep = "trade";
-    }
-  }
-
-  private checkWin(): boolean {
-    const playerId = this.state.currentTurn;
-    const player = this.state.players.get(playerId);
-    if (!player) return false;
-
-    // 星3つ かつ うんちコマ6個以下でターンを終えたら勝利
-    if (player.stars >= STARS_TO_WIN && player.poopTokens < POOP_BURST_THRESHOLD) {
-      this.state.winnerId = playerId;
-      this.state.phase = "ended";
-      this.broadcast("gameOver", { winnerId: playerId, winnerName: player.name });
-      console.log(`${player.name} wins!`);
-      return true;
-    }
-    return false;
-  }
-
-  // ===== ヘルパー関数 =====
-
-  /** プレイヤーのケージを取得（11&12は結合→11に正規化） */
-  private getPlayerCage(playerId: string, cageNum: number): Cage {
-    const player = this.state.players.get(playerId)!;
-    const normalized = normalizeCageNum(cageNum);
-    return player.cages.at(normalized - 1)!; // 0-indexed array, 1-indexed cage
-  }
-
-  /** プレイヤーが持つ特定動物の数をカウント */
-  private countPlayerAnimal(playerId: string, animalId: string): number {
-    const player = this.state.players.get(playerId);
-    if (!player) return 0;
-    let count = 0;
-    for (const cage of player.cages) {
-      for (const slot of cage.slots) {
-        if (slot.animalId === animalId) {
-          count++;
-        }
-      }
-    }
-    return count;
-  }
-
-  /** ケージの既存動物の色を取得 */
-  private getCageColors(playerId: string, cageNum: number): AnimalColor[] | null {
-    const cage = this.getPlayerCage(playerId, cageNum);
-    if (cage.slots.length === 0) return null;
-    return ANIMALS[cage.slots.at(0)!.animalId].colors;
-  }
-
-  /** 動物を配置可能かチェック（色・種類・容量） */
-  private canPlaceAnimal(animalId: string, cageNum: number, playerId: string): boolean {
-    const cage = this.getPlayerCage(playerId, cageNum);
-    const animalDef = ANIMALS[animalId];
-    if (!animalDef) return false;
-
-    if (cage.slots.length >= 2) return false;
-    if (cage.slots.some((s: CageSlot) => s.animalId === animalId)) return false;
-
-    if (cage.slots.length > 0) {
-      const cageColors = this.getCageColors(playerId, cageNum);
-      if (cageColors) {
-        const hasCommonColor = animalDef.colors.some(c => cageColors.includes(c));
-        if (!hasCommonColor) return false;
-      }
-    }
-
-    return true;
-  }
-
-  /** 同一動物の2匹目配置時、隣接制約チェック（4x3グリッド） */
-  private checkAdjacentConstraint(animalId: string, cageNum: number, playerId: string): boolean {
-    const existingCount = this.countPlayerAnimal(playerId, animalId);
-    if (existingCount === 0) return true;
-
-    const player = this.state.players.get(playerId)!;
-    const adjacent = ADJACENCY[cageNum] || [];
-    for (const cage of player.cages) {
-      for (const slot of cage.slots) {
-        if (slot.animalId === animalId) {
-          if (adjacent.includes(cage.num)) return true;
-        }
-      }
-    }
-    return false;
-  }
-
-  /** 条件式を評価 (creationIf, stealIf) */
-  private evaluateCondition(
-    condition: [string, string, string, '?', string, ':', string],
-    playerId: string,
-  ): number {
-    const [animalId, op, threshold, , trueVal, , falseVal] = condition;
-    const count = this.countPlayerAnimal(playerId, animalId);
-    const thresholdNum = parseInt(threshold);
-    let result = false;
-    switch (op) {
-      case '>=': result = count >= thresholdNum; break;
-      case '>': result = count > thresholdNum; break;
-      case '<=': result = count <= thresholdNum; break;
-      case '<': result = count < thresholdNum; break;
-      case '==': result = count === thresholdNum; break;
-    }
-    return parseInt(result ? trueVal : falseVal);
-  }
-
-  /** プレイヤーの全動物のうんちコスト合計 */
-  private calculatePoopCost(playerId: string): number {
-    const player = this.state.players.get(playerId);
-    if (!player) return 0;
-    let total = 0;
-    for (const cage of player.cages) {
-      for (const slot of cage.slots) {
-        total += ANIMALS[slot.animalId].poops;
-      }
-    }
-    return total;
-  }
-
-  // ===== 効果処理 =====
-
-  private processEffects(): void {
-    const rawCageNum = this.state.diceSum;
-    if (rawCageNum < 1 || rawCageNum > 12) return;
-
-    // 11&12結合: ダイス12はケージ11として処理
-    const cageNum = normalizeCageNum(rawCageNum);
-
-    const currentPlayer = this.state.currentTurn;
-    this.state.effectLog.clear();
-
-    const adjacentCages = ADJACENCY[rawCageNum] || [];
-
-    // 効果処理順: 手番プレイヤーの左隣から時計回り、手番プレイヤーが最後
-    const playerOrder = this.getEffectProcessingOrder(currentPlayer);
-
-    for (const timing of ['first', 'end'] as const) {
-      // 各プレイヤーのケージの効果を処理
-      for (const playerId of playerOrder) {
-        const player = this.state.players.get(playerId);
-        if (!player) continue;
-
-        const cage = player.cages.at(cageNum - 1);
-        if (!cage) continue;
-
-        for (const slot of cage.slots) {
-          const animalDef = ANIMALS[slot.animalId];
-          if (animalDef.effect.timing !== timing) continue;
-          if (!animalDef.effect.global && playerId !== currentPlayer) continue;
-          this.processAnimalEffect(slot, animalDef.effect, currentPlayer, playerId);
-        }
-      }
-
-      // 隣接ボーナス（firstタイミングのみ）
-      if (timing === 'first') {
-        for (const adjCageNum of adjacentCages) {
-          for (const playerId of playerOrder) {
-            const player = this.state.players.get(playerId);
-            if (!player) continue;
-
-            const adjCage = player.cages.at(adjCageNum - 1);
-            if (!adjCage) continue;
-
-            for (const slot of adjCage.slots) {
-              const animalDef = ANIMALS[slot.animalId];
-              if (!animalDef.effect.adjacent) continue;
-              if (!animalDef.effect.global && playerId !== currentPlayer) continue;
-
-              const [coins, targetAnimalId] = animalDef.effect.adjacent;
-              if (this.countPlayerAnimal(playerId, targetAnimalId) > 0) {
-                const playerState = this.state.players.get(playerId)!;
-                playerState.coins += coins;
-                this.logEffect(
-                  `${this.getPlayerName(playerId)}: ${animalDef.name}の隣接ボーナス +${coins}コイン`
-                );
-              }
-            }
-          }
-        }
-      }
-    }
-  }
-
-  /** 効果処理順を返す（手番プレイヤーの左隣から時計回り、手番が最後） */
-  private getEffectProcessingOrder(currentPlayer: string): string[] {
-    const order = this.state.turnOrder.toArray();
-    const idx = order.indexOf(currentPlayer);
-    const result: string[] = [];
-    for (let i = 1; i <= order.length; i++) {
-      result.push(order[(idx + i) % order.length]);
-    }
-    return result;
-  }
-
-  private processAnimalEffect(slot: CageSlot, effect: Effect, currentPlayer: string, owner: string): void {
-    const animalDef = ANIMALS[slot.animalId];
-    const ownerState = this.state.players.get(owner)!;
-
-    // Choice効果
-    if (effect.choice) {
-      const pe = new PendingEffect();
-      pe.effectType = "choice";
-      pe.ownerPlayerId = owner;
-      pe.animalId = slot.animalId;
-      pe.creationAmount = effect.creation ?? 0;
-      pe.stealAmount = effect.steal ? (effect.steal[0] as number) : 0;
-      effect.choice.forEach(c => pe.choices.push(c));
-      this.state.pendingEffects.push(pe);
-      this.logEffect(`${this.getPlayerName(owner)}: ${animalDef.name} → 効果を選択してください`);
-      return;
-    }
-
-    // Creation
-    if (effect.creation && effect.creation > 0) {
-      ownerState.coins += effect.creation;
-      this.logEffect(`${this.getPlayerName(owner)}: ${animalDef.name} +${effect.creation}コイン`);
-    }
-
-    // CreationIf
-    if (effect.creationIf) {
-      const coins = this.evaluateCondition(effect.creationIf, owner);
-      if (coins > 0) {
-        ownerState.coins += coins;
-        this.logEffect(`${this.getPlayerName(owner)}: ${animalDef.name} (条件) +${coins}コイン`);
-      }
-    }
-
-    // Buff
-    if (effect.buff) {
-      const [coinsPerUnit, targetAnimalId, mode] = effect.buff;
-      const count = this.countPlayerAnimal(owner, targetAnimalId);
-      const coins = mode === 'each' ? coinsPerUnit * count : (count > 0 ? coinsPerUnit : 0);
-      if (coins > 0) {
-        ownerState.coins += coins;
-        this.logEffect(`${this.getPlayerName(owner)}: ${animalDef.name} Buff +${coins}コイン`);
-      }
-    }
-
-    // BonusBuff
-    if (effect.bonusbuff) {
-      const [coins, targetAnimalId] = effect.bonusbuff;
-      const count = this.countPlayerAnimal(owner, targetAnimalId);
-      if (count > 0) {
-        ownerState.coins += coins;
-        this.logEffect(`${this.getPlayerName(owner)}: ${animalDef.name} ボーナス +${coins}コイン`);
-      }
-    }
-
-    // StealIf (ライオン等)
-    if (effect.stealIf) {
-      const amount = this.evaluateCondition(effect.stealIf, owner);
-      if (amount > 0) {
-        // ライオンは全員のターンで発動、対象は1人選択
-        const pe = new PendingEffect();
-        pe.effectType = "steal";
-        pe.ownerPlayerId = owner;
-        pe.animalId = slot.animalId;
-        pe.stealAmount = amount;
-        this.state.pendingEffects.push(pe);
-        this.logEffect(`${this.getPlayerName(owner)}: ${animalDef.name} → 奪取対象を選択してください`);
-      }
-    }
-
-    // Steal (no choice, no stealIf)
-    if (effect.steal && !effect.choice && !effect.stealIf) {
-      if (effect.steal.length >= 4 && effect.steal[3] === 'star') {
-        // 星奪取 (ミナミシロサイ)
-        const pe = new PendingEffect();
-        pe.effectType = "stealStar";
-        pe.ownerPlayerId = owner;
-        pe.animalId = slot.animalId;
-        pe.starAmount = effect.steal[0] as number;
-        this.state.pendingEffects.push(pe);
-        this.logEffect(`${this.getPlayerName(owner)}: ${animalDef.name} → 星奪取対象を選択してください`);
-      } else if (effect.steal[1] === 'target') {
-        // コイン奪取 (カリフォルニアアシカ等: creation + steal 両方発動)
-        const pe = new PendingEffect();
-        pe.effectType = "steal";
-        pe.ownerPlayerId = owner;
-        pe.animalId = slot.animalId;
-        pe.stealAmount = effect.steal[0] as number;
-        this.state.pendingEffects.push(pe);
-        this.logEffect(`${this.getPlayerName(owner)}: ${animalDef.name} → 奪取対象を選択してください`);
-      }
-    }
-  }
-
   private getPlayerName(sessionId: string): string {
     return this.state.players.get(sessionId)?.name ?? sessionId;
   }
 
-  /** effectLogに追記しつつgameLogにもミラー */
   private logEffect(message: string) {
     this.state.effectLog.push(message);
     this.addGameLog(message);
   }
 
-  // ===== メッセージハンドラ =====
+  private getPlayerCage(playerId: string, cageNum: number): Cage {
+    const player = this.state.players.get(playerId)!;
+    const normalized = normalizeCageNum(cageNum);
+    return player.cages.at(normalized - 1)!;
+  }
+
+  // ===== メッセージハンドラ（薄いdispatch層） =====
 
   private registerMessages() {
-    // --- ロビー: プレイヤーカラー変更 ---
+    const gp = this.gameplay;
+
+    // --- ロビー ---
     this.onMessage("setColor", (client, data: { color: string }) => {
       if (this.state.phase !== "lobby") return;
       const player = this.state.players.get(client.sessionId);
       if (!player) return;
       const validColors = ["red", "blue", "green", "orange", "purple", "pink"];
       if (!validColors.includes(data.color)) return;
-      // 他プレイヤーが使用中の色は選択不可
       let taken = false;
       this.state.players.forEach((p) => {
         if (p.id !== client.sessionId && p.color === data.color) taken = true;
@@ -915,108 +239,33 @@ export class ZooRoom extends Room<ZooState> {
       player.color = data.color;
     });
 
-    // --- ロビー: ゲーム開始 ---
     this.onMessage("startGame", (client) => {
       if (this.state.phase !== "lobby") return;
       if (this.state.hostId !== client.sessionId) return;
       if (this.state.players.size < 2) return;
 
-      // 現在のプレイヤー数でゲーム開始
       this.minClients = this.state.players.size;
-      this.lock(); // 新規参加を締め切る
-      this.startSetupPhase();
+      this.lock();
+      gp.startSetupPhase();
       this.updateMetadata();
       this.addGameLog(`ゲーム開始！ (${this.minClients}人)`);
       console.log(`Game started with ${this.minClients} players`);
     });
 
     // --- 履歴操作 ---
-    this.onMessage("undo", (_client) => {
-      if (this.undoStack.length === 0) return;
-      this.redoStack.push(this.createSnapshotObj());
-      const snapshot = this.undoStack.pop()!;
-      this.restoreSnapshot(snapshot);
-      this.broadcastHistoryInfo();
-      this.notifyHeldCards();
-      console.log(`Undo (残り${this.undoStack.length})`);
-    });
+    this.onMessage("undo", () => { this.history.undo(); });
+    this.onMessage("redo", () => { this.history.redo(); });
+    this.onMessage("resetGame", () => { this.history.resetToFirst(); });
 
-    this.onMessage("redo", (_client) => {
-      if (this.redoStack.length === 0) return;
-      this.undoStack.push(this.createSnapshotObj());
-      const snapshot = this.redoStack.pop()!;
-      this.restoreSnapshot(snapshot);
-      this.broadcastHistoryInfo();
-      this.notifyHeldCards();
-      console.log(`Redo (残り${this.redoStack.length})`);
-    });
-
-    // --- ゲーム終了後: もう1試合（ロビーに戻る） ---
-    this.onMessage("restartGame", (_client) => {
+    // --- ゲーム終了後 ---
+    this.onMessage("restartGame", () => {
       if (this.state.phase !== "ended") return;
-
-      // 全プレイヤーをリセット
-      this.state.players.forEach((p) => {
-        p.coins = STARTING_COINS;
-        p.stars = 0;
-        p.poopTokens = 0;
-        p.totalPoopCleaned = 0;
-        p.totalCoinsEarned = 0;
-        p.hasHeldCard = false;
-        p.cages.clear();
-        for (let i = 1; i <= 12; i++) {
-          const cage = new Cage();
-          cage.num = i;
-          p.cages.push(cage);
-        }
-      });
-
-      // マーケットリセット
-      for (const [id, animal] of Object.entries(ANIMALS)) {
-        this.state.market.set(id, animal.inventory);
-      }
-
-      // 状態リセット
-      this.state.phase = "lobby";
-      this.state.currentTurn = "";
-      this.state.winnerId = "";
-      this.state.burstPlayerId = "";
-      this.state.turnStep = "poop";
-      this.state.dice1 = 0; this.state.dice2 = 0;
-      this.state.diceSum = 0; this.state.diceRolled = false;
-      this.state.boughtAnimal = false; this.state.boughtStar = false;
-      this.state.pendingEffects.clear();
-      this.state.effectLog.clear();
-      this.state.setupInventory.clear();
-      this.state.gameLog.clear();
-      this.state.chanceDeckCount = 0;
-      this.state.chanceDiscardCount = 0;
-      this.state.chanceCardPhase = "";
-      this.state.activeChanceCard = "";
-      this.chanceDeck = [];
-      this.chanceDiscard = [];
-      this.heldCards.clear();
-      this.shouldDrawChance = false;
-      this.extraTurnFlag = false;
-      this.drawnCardId = "";
-      this.undoStack = [];
-      this.redoStack = [];
-
-      this.unlock(); // 新規参加を再許可
+      gp.handleRestartGame();
+      this.history.clear();
+      this.unlock();
       this.updateMetadata();
       this.addGameLog("ゲームがリスタートされました");
       console.log("Game restarted to lobby");
-    });
-
-    this.onMessage("resetGame", (_client) => {
-      if (this.undoStack.length === 0) return;
-      this.redoStack.push(this.createSnapshotObj());
-      const firstSnapshot = this.undoStack[0];
-      this.undoStack = [];
-      this.restoreSnapshot(firstSnapshot);
-      this.broadcastHistoryInfo();
-      this.notifyHeldCards();
-      console.log("Reset to initial state");
     });
 
     // --- チャット ---
@@ -1028,561 +277,166 @@ export class ZooRoom extends Room<ZooState> {
       this.addGameLog(`💬 ${name}: ${text}`);
     });
 
-    // --- セットアップフェーズ ---
+    // --- セットアップ ---
     this.onMessage("placeAnimal", (client, data: { animalId: string; cageNum: number }) => {
       if (this.state.phase !== "setup") return;
       if (this.state.currentTurn !== client.sessionId) return;
-      this.pushSnapshot();
-
-      const { animalId, cageNum } = data;
-      const inventoryStr = this.state.setupInventory.get(client.sessionId);
-      if (!inventoryStr) return;
-
-      const inventory = inventoryStr.split(",").filter(s => s.length > 0);
-      const idx = inventory.indexOf(animalId);
-      if (idx === -1) return;
-
-      if (!this.canPlaceAnimal(animalId, cageNum, client.sessionId)) return;
-
-      // 配置（プレイヤー自身のケージに）
-      const slot = new CageSlot();
-      slot.animalId = animalId;
-      slot.playerId = client.sessionId;
-      this.getPlayerCage(client.sessionId, cageNum).slots.push(slot);
-
-      // インベントリ更新
-      inventory.splice(idx, 1);
-      this.state.setupInventory.set(client.sessionId, inventory.join(","));
-
-      // インベントリが空なら次のプレイヤーへ
-      if (inventory.length === 0) {
-        this.advanceSetupTurn();
-      }
+      this.history.push();
+      gp.handlePlaceAnimal(client.sessionId, data.animalId, data.cageNum);
     });
 
     // --- メインフェーズ ---
-
-    // ステップ1: うんちをもらう（トークン蓄積）
     this.onMessage("receivePoop", (client) => {
-      if (!this.validateMainAction(client, "poop")) return;
-      this.pushSnapshot();
-
-      const playerId = client.sessionId;
-      const cost = this.calculatePoopCost(playerId);
-      const player = this.state.players.get(playerId)!;
-      player.poopTokens += cost;
-
-      this.state.effectLog.clear();
-      if (cost > 0) {
-        this.logEffect(`${this.getPlayerName(playerId)}: うんち +${cost}個 (合計${player.poopTokens}個)`);
-      }
-      this.state.turnStep = "roll";
+      if (!gp.validateMainAction(client.sessionId, "poop")) return;
+      this.history.push();
+      gp.handleReceivePoop(client.sessionId);
     });
 
-    // ステップ2: サイコロを振る（1個 or 2個選択）
     this.onMessage("rollDice", (client, data?: { diceCount?: number }) => {
-      if (!this.validateMainAction(client, "roll")) return;
-      this.pushSnapshot();
-
+      if (!gp.validateMainAction(client.sessionId, "roll")) return;
+      this.history.push();
       const diceCount = (data?.diceCount === 1) ? 1 : 2;
-      this.state.diceCount = diceCount;
-
-      if (this._debugForcedDice && this._debugForcedDice.length >= diceCount) {
-        // デバッグ用: 固定値を使用
-        this.state.dice1 = this._debugForcedDice[0];
-        this.state.dice2 = diceCount === 2 ? this._debugForcedDice[1] : 0;
-        this._debugForcedDice = null;
-      } else {
-        this.state.dice1 = Math.floor(Math.random() * 6) + 1;
-        this.state.dice2 = diceCount === 2 ? Math.floor(Math.random() * 6) + 1 : 0;
-      }
-      if (diceCount === 2) {
-        this.state.diceSum = this.state.dice1 + this.state.dice2;
-      } else {
-        this.state.diceSum = this.state.dice1;
-      }
-      this.state.diceRolled = true;
-      this.state.turnStep = "income";
-      this.addGameLog(`🎲 ${this.getPlayerName(client.sessionId)} がサイコロ ${diceCount}個 → ${this.state.diceSum}`);
-
-      // 出目11/12ならチャンスカードドローフラグを立てる
-      if (this.state.diceSum >= 11) {
-        this.shouldDrawChance = true;
-      }
-
-      this.processEffects();
-
-      if (this.state.pendingEffects.length === 0) {
-        this.advanceAfterIncome();
-      }
+      gp.handleRollDice(client.sessionId, diceCount);
     });
 
-    // ステップ3: 効果解決（steal対象選択）
     this.onMessage("resolveSteal", (client, data: { targetPlayerId: string }) => {
-      if (!this.validateEffectResolve()) return;
+      if (!gp.validateEffectResolve()) return;
       if (this.state.pendingEffects.length === 0) return;
-
-      const effect = this.state.pendingEffects.at(0);
-      if (!effect) return;
-      if (effect.effectType !== "steal" || effect.ownerPlayerId !== client.sessionId) return;
-      this.pushSnapshot();
-
-      const { targetPlayerId } = data;
-      const targetPlayer = this.state.players.get(targetPlayerId);
-      if (!targetPlayer || targetPlayerId === client.sessionId) return;
-
-      const amount = effect.stealAmount;
-      const stolen = Math.min(amount, targetPlayer.coins);
-      targetPlayer.coins -= stolen;
-      this.state.players.get(effect.ownerPlayerId)!.coins += stolen;
-
-      const animalName = ANIMALS[effect.animalId].name;
-      this.logEffect(
-        `${this.getPlayerName(effect.ownerPlayerId)}: ${animalName} → ${this.getPlayerName(targetPlayerId)}から${stolen}コイン奪取`
-      );
-
-      this.state.pendingEffects.shift();
-      if (this.state.pendingEffects.length === 0) {
-        this.advanceAfterIncome();
-      }
+      this.history.push();
+      gp.handleResolveSteal(client.sessionId, data.targetPlayerId);
     });
 
     this.onMessage("resolveStealStar", (client, data: { targetPlayerId: string }) => {
-      if (!this.validateEffectResolve()) return;
+      if (!gp.validateEffectResolve()) return;
       if (this.state.pendingEffects.length === 0) return;
-
-      const effect = this.state.pendingEffects.at(0);
-      if (!effect) return;
-      if (effect.effectType !== "stealStar" || effect.ownerPlayerId !== client.sessionId) return;
-      this.pushSnapshot();
-
-      const { targetPlayerId } = data;
-      const targetPlayer = this.state.players.get(targetPlayerId);
-      if (!targetPlayer || targetPlayerId === client.sessionId) return;
-
-      const amount = effect.starAmount;
-      const stolen = Math.min(amount, targetPlayer.stars);
-      targetPlayer.stars -= stolen;
-      this.state.players.get(effect.ownerPlayerId)!.stars += stolen;
-
-      const animalName = ANIMALS[effect.animalId].name;
-      this.logEffect(
-        `${this.getPlayerName(effect.ownerPlayerId)}: ${animalName} → ${this.getPlayerName(targetPlayerId)}から星${stolen}個奪取`
-      );
-
-      this.state.pendingEffects.shift();
-      if (this.state.pendingEffects.length === 0) {
-        this.advanceAfterIncome();
-      }
+      this.history.push();
+      gp.handleResolveStealStar(client.sessionId, data.targetPlayerId);
     });
 
     this.onMessage("resolveChoice", (client, data: { choice: string; targetPlayerId?: string }) => {
-      if (!this.validateEffectResolve()) return;
+      if (!gp.validateEffectResolve()) return;
       if (this.state.pendingEffects.length === 0) return;
-
-      const effect = this.state.pendingEffects.at(0);
-      if (!effect) return;
-      if (effect.effectType !== "choice" || effect.ownerPlayerId !== client.sessionId) return;
-      this.pushSnapshot();
-
-      const { choice, targetPlayerId } = data;
-      const animalName = ANIMALS[effect.animalId].name;
-      const ownerState = this.state.players.get(effect.ownerPlayerId)!;
-
-      if (choice === "creation") {
-        const coins = effect.creationAmount;
-        ownerState.coins += coins;
-        this.logEffect(`${this.getPlayerName(effect.ownerPlayerId)}: ${animalName} → ${coins}コイン獲得を選択`);
-      } else if (choice === "steal") {
-        if (!targetPlayerId) return;
-        const targetPlayer = this.state.players.get(targetPlayerId);
-        if (!targetPlayer || targetPlayerId === client.sessionId) return;
-
-        const amount = effect.stealAmount;
-        const stolen = Math.min(amount, targetPlayer.coins);
-        targetPlayer.coins -= stolen;
-        ownerState.coins += stolen;
-        this.logEffect(
-          `${this.getPlayerName(effect.ownerPlayerId)}: ${animalName} → ${this.getPlayerName(targetPlayerId)}から${stolen}コイン奪取を選択`
-        );
-      } else {
-        return; // invalid choice
-      }
-
-      this.state.pendingEffects.shift();
-      if (this.state.pendingEffects.length === 0) {
-        this.advanceAfterIncome();
-      }
+      this.history.push();
+      gp.handleResolveChoice(client.sessionId, data.choice, data.targetPlayerId);
     });
 
-    // ステップ4: お買い物（動物1匹 + 星1つ + 返却 を好きな順で）
     this.onMessage("buyAnimal", (client, data: { animalId: string; cageNum: number }) => {
-      if (!this.validateMainAction(client, "trade")) return;
+      if (!gp.validateMainAction(client.sessionId, "trade")) return;
       if (this.state.boughtAnimal) return;
-      this.pushSnapshot();
-
-      const { animalId, cageNum } = data;
-      const playerId = client.sessionId;
-      const animalDef = ANIMALS[animalId];
-      if (!animalDef) return;
-
-      const player = this.state.players.get(playerId)!;
-      const stock = this.state.market.get(animalId) ?? 0;
-
-      if (stock <= 0) return;
-      if (player.coins < animalDef.cost) return;
-      if (!this.canPlaceAnimal(animalId, cageNum, playerId)) return;
-      if (!this.checkAdjacentConstraint(animalId, cageNum, playerId)) return;
-
-      player.coins -= animalDef.cost;
-      this.state.market.set(animalId, stock - 1);
-
-      const slot = new CageSlot();
-      slot.animalId = animalId;
-      slot.playerId = playerId;
-      this.getPlayerCage(playerId, cageNum).slots.push(slot);
-
-      this.state.boughtAnimal = true;
-      this.state.effectLog.clear();
-      this.logEffect(`${this.getPlayerName(playerId)}: ${animalDef.name}を購入 (ケージ${cageNum})`);
-      // tradeステップに留まる（他のアクションも可能）
+      this.history.push();
+      gp.handleBuyAnimal(client.sessionId, data.animalId, data.cageNum);
     });
 
     this.onMessage("buyStar", (client) => {
-      if (!this.validateMainAction(client, "trade")) return;
+      if (!gp.validateMainAction(client.sessionId, "trade")) return;
       if (this.state.boughtStar) return;
-      this.pushSnapshot();
-
-      const player = this.state.players.get(client.sessionId)!;
-      if (player.coins < STAR_COST) return;
-
-      player.coins -= STAR_COST;
-      player.stars += 1;
-
-      this.state.boughtStar = true;
-      this.state.effectLog.clear();
-      this.logEffect(`${this.getPlayerName(client.sessionId)}: 星を購入! (★${player.stars})`);
-      // tradeステップに留まる
+      this.history.push();
+      gp.handleBuyStar(client.sessionId);
     });
 
     this.onMessage("returnAnimal", (client, data: { returns: { animalId: string; cageNum: number }[] }) => {
-      if (!this.validateMainAction(client, "trade")) return;
-      this.pushSnapshot();
-
-      const playerId = client.sessionId;
-      this.state.effectLog.clear();
-
-      for (const { animalId, cageNum } of data.returns) {
-        const cage = this.getPlayerCage(playerId, cageNum);
-        const idx = cage.slots.toArray().findIndex(
-          (s: CageSlot) => s.animalId === animalId && s.playerId === playerId
-        );
-        if (idx === -1) return;
-
-        cage.slots.splice(idx, 1);
-        const stock = this.state.market.get(animalId) ?? 0;
-        this.state.market.set(animalId, stock + 1);
-        this.logEffect(`${this.getPlayerName(playerId)}: ${ANIMALS[animalId].name}を返却 (ケージ${cageNum})`);
-      }
-      // tradeステップに留まる
+      if (!gp.validateMainAction(client.sessionId, "trade")) return;
+      this.history.push();
+      gp.handleReturnAnimal(client.sessionId, data.returns);
     });
 
-    // お買い物終了 → 掃除フェーズへ
     this.onMessage("endTrade", (client) => {
-      if (!this.validateMainAction(client, "trade")) return;
-      if (this.state.chanceCardPhase) return;  // チャンスカード処理中は終了不可
-      this.pushSnapshot();
+      if (!gp.validateMainAction(client.sessionId, "trade")) return;
+      if (this.state.chanceCardPhase) return;
+      this.history.push();
       this.state.effectLog.clear();
       this.state.turnStep = "clean";
     });
 
-    // --- チャンスカード: 引いたカードを伏せる ---
+    // --- チャンスカード ---
     this.onMessage("keepChanceCard", (client) => {
       if (this.state.currentTurn !== client.sessionId) return;
       if (this.state.chanceCardPhase !== "useOrKeep") return;
-      this.pushSnapshot();
-
-      this.heldCards.set(client.sessionId, this.drawnCardId);
-      this.state.players.get(client.sessionId)!.hasHeldCard = true;
-      this.drawnCardId = "";
-      this.state.chanceCardPhase = "";
-      this.state.turnStep = "trade";
-      this.addGameLog(`🃏 ${this.getPlayerName(client.sessionId)} がチャンスカードを伏せた`);
+      this.history.push();
+      gp.handleKeepChanceCard(client.sessionId);
     });
 
-    // --- チャンスカード: 引いたカードを使う ---
     this.onMessage("useDrawnChanceCard", (client) => {
       if (this.state.currentTurn !== client.sessionId) return;
       if (this.state.chanceCardPhase !== "useOrKeep" && this.state.chanceCardPhase !== "forceUse") return;
-      this.pushSnapshot();
-
-      const cardId = this.drawnCardId;
-      this.drawnCardId = "";
-      this.executeChanceCard(client.sessionId, cardId);
+      this.history.push();
+      gp.handleUseDrawnChanceCard(client.sessionId);
     });
 
-    // --- チャンスカード: forceUseモードで保持カードを使う ---
     this.onMessage("useHeldChanceCard", (client) => {
       if (this.state.currentTurn !== client.sessionId) return;
       if (this.state.chanceCardPhase !== "forceUse") return;
-      this.pushSnapshot();
-
-      const heldCardId = this.heldCards.get(client.sessionId)!;
-      // 引いたカードを新しい伏せカードにする
-      this.heldCards.set(client.sessionId, this.drawnCardId);
-      this.drawnCardId = "";
-      // 保持していた方を使う
-      this.executeChanceCard(client.sessionId, heldCardId);
+      this.history.push();
+      gp.handleUseHeldChanceCard(client.sessionId);
     });
 
-    // --- チャンスカード: tradeフェーズで伏せカードを使う ---
     this.onMessage("useHeldCardInTrade", (client) => {
-      if (!this.validateMainAction(client, "trade")) return;
-      if (!this.heldCards.has(client.sessionId)) return;
-      this.pushSnapshot();
-
-      const cardId = this.heldCards.get(client.sessionId)!;
-      this.heldCards.delete(client.sessionId);
-      this.state.players.get(client.sessionId)!.hasHeldCard = false;
-      this.executeChanceCard(client.sessionId, cardId);
+      if (!gp.validateMainAction(client.sessionId, "trade")) return;
+      this.history.push();
+      gp.handleUseHeldCardInTrade(client.sessionId);
     });
 
-    // --- チャンスカード: 効果解決中のキャンセル（Undoで戻す） ---
     this.onMessage("cancelChanceCard", (client) => {
       if (this.state.currentTurn !== client.sessionId) return;
       if (!this.state.chanceCardPhase?.startsWith('using_')) return;
-      if (this.undoStack.length === 0) return;
-      // Undoと同じ処理: 直前のスナップショットに復元
-      this.redoStack.push(this.createSnapshotObj());
-      const snapshot = this.undoStack.pop()!;
-      this.restoreSnapshot(snapshot);
-      this.broadcastHistoryInfo();
-      this.notifyHeldCards();
-      console.log(`Chance card cancelled by ${client.sessionId}`);
+      // Undo と同じ処理
+      this.history.undo();
     });
 
-    // --- チャンスカード効果解決: 堆肥化 ---
     this.onMessage("resolveCompost", (client, data: { count: number }) => {
       if (this.state.currentTurn !== client.sessionId) return;
       if (this.state.chanceCardPhase !== "using_compost") return;
-      this.pushSnapshot();
-
-      const player = this.state.players.get(client.sessionId)!;
-      const count = Math.min(data.count, 5, player.poopTokens);
-      if (count < 0) return;
-      player.poopTokens -= count;
-      player.coins += count;
-      player.totalCoinsEarned += count;
-      this.finishChanceCard(client.sessionId, 'compost',
-        `${this.getPlayerName(client.sessionId)}: うんちの堆肥化 → 💩${count}個 → +${count}金`);
+      this.history.push();
+      gp.handleResolveCompost(client.sessionId, data.count);
     });
 
-    // --- チャンスカード効果解決: 堆肥提供 ---
     this.onMessage("resolveCompostGive", (client, data: { distributions: { targetId: string; count: number }[] }) => {
       if (this.state.currentTurn !== client.sessionId) return;
       if (this.state.chanceCardPhase !== "using_compostGive") return;
-      this.pushSnapshot();
-
-      const player = this.state.players.get(client.sessionId)!;
-      const maxGive = Math.min(6, player.poopTokens);
-      let totalGiven = 0;
-
-      for (const { targetId, count } of data.distributions) {
-        if (targetId === client.sessionId) continue;
-        const target = this.state.players.get(targetId);
-        if (!target || count <= 0) continue;
-        const give = Math.min(count, maxGive - totalGiven);
-        if (give <= 0) break;
-        player.poopTokens -= give;
-        target.poopTokens += give;
-        totalGiven += give;
-      }
-
-      this.finishChanceCard(client.sessionId, 'compostGive',
-        `${this.getPlayerName(client.sessionId)}: 堆肥の提供 → 💩${totalGiven}個を分配`);
+      this.history.push();
+      gp.handleResolveCompostGive(client.sessionId, data.distributions);
     });
 
-    // --- チャンスカード効果解決: お引っ越し ---
     this.onMessage("resolveEviction", (client, data: { targetPlayerId: string; animalId: string; cageNum: number }) => {
       if (this.state.currentTurn !== client.sessionId) return;
       if (this.state.chanceCardPhase !== "using_eviction") return;
-      this.pushSnapshot();
-
-      const { targetPlayerId, animalId, cageNum } = data;
-      const target = this.state.players.get(targetPlayerId);
-      if (!target || targetPlayerId === client.sessionId) return;
-
-      const normalizedCage = normalizeCageNum(cageNum);
-      const cage = target.cages.at(normalizedCage - 1);
-      if (!cage) return;
-
-      const idx = cage.slots.toArray().findIndex(s => s.animalId === animalId && s.playerId === targetPlayerId);
-      if (idx === -1) return;
-
-      cage.slots.splice(idx, 1);
-      const stock = this.state.market.get(animalId) ?? 0;
-      this.state.market.set(animalId, stock + 1);
-
-      this.finishChanceCard(client.sessionId, 'eviction',
-        `${this.getPlayerName(client.sessionId)}: お引っ越し → ${this.getPlayerName(targetPlayerId)}の${ANIMALS[animalId].name}を市場へ`);
+      this.history.push();
+      gp.handleResolveEviction(client.sessionId, data.targetPlayerId, data.animalId, data.cageNum);
     });
 
-    // ステップ5: うんち掃除（1コインで2個）
     this.onMessage("cleanPoop", (client) => {
-      if (!this.validateMainAction(client, "clean")) return;
-      this.pushSnapshot();
-
-      const player = this.state.players.get(client.sessionId)!;
-      if (player.coins < 1 || player.poopTokens <= 0) return;
-
-      player.coins -= 1;
-      const cleaned = Math.min(2, player.poopTokens);
-      player.poopTokens -= cleaned;
-      player.totalPoopCleaned += cleaned;
-
-      this.state.effectLog.clear();
-      this.logEffect(
-        `${this.getPlayerName(client.sessionId)}: うんち掃除 ${cleaned}個 (-1コイン, 残り${player.poopTokens}個)`
-      );
+      if (!gp.validateMainAction(client.sessionId, "clean")) return;
+      this.history.push();
+      gp.handleCleanPoop(client.sessionId);
     });
 
-    // 掃除終了 → バースト判定 → ターン終了
     this.onMessage("endClean", (client) => {
-      if (!this.validateMainAction(client, "clean")) return;
-      this.pushSnapshot();
-
-      const playerId = client.sessionId;
-      const player = this.state.players.get(playerId)!;
-
-      this.state.effectLog.clear();
-
-      // バースト判定: 7個以上でペナルティ
-      if (player.poopTokens >= POOP_BURST_THRESHOLD) {
-        this.state.burstPlayerId = playerId;
-        this.logEffect(`${this.getPlayerName(playerId)}: うんちバースト! (${player.poopTokens}個)`);
-
-        if (player.stars > 0) {
-          // 星を1つ失う
-          player.stars -= 1;
-          this.logEffect(`${this.getPlayerName(playerId)}: 星を1つ失った (★${player.stars})`);
-        } else {
-          // 星がない場合、最高コスト動物を1匹返却
-          this.returnMostExpensiveAnimal(playerId);
-        }
-
-        // バースト後: 全コイン + 全うんちコマをリセット
-        player.coins = 0;
-        player.poopTokens = 0;
-        this.logEffect(`${this.getPlayerName(playerId)}: 全コインとうんちコマを銀行に返却`);
-      }
-
-      // 勝利判定（掃除後）
-      if (this.checkWin()) return;
-
-      this.state.turnStep = "flush";
+      if (!gp.validateMainAction(client.sessionId, "clean")) return;
+      this.history.push();
+      gp.handleEndClean(client.sessionId);
     });
 
-    // ステップ6: ターン終了
     this.onMessage("endTurn", (client) => {
-      if (!this.validateMainAction(client, "flush")) return;
-      this.pushSnapshot();
-      this.state.burstPlayerId = "";  // バーストアニメクリア
-      this.nextTurn();
+      if (!gp.validateMainAction(client.sessionId, "flush")) return;
+      this.history.push();
+      gp.handleEndTurn();
     });
 
-    // デバッグ用: 次のサイコロの出目を固定（E2Eテスト用）
+    // --- デバッグ ---
     this.onMessage("__debugSetDice", (_client, data: { dice: number[] }) => {
       if (data?.dice && Array.isArray(data.dice)) {
-        this._debugForcedDice = data.dice;
+        gp._debugForcedDice = data.dice;
       }
     });
 
-    // デバッグ用: プレイヤーのコインを設定（E2Eテスト用）
     this.onMessage("__debugSetCoins", (_client, data: { playerId: string; coins: number }) => {
       const player = this.state.players.get(data.playerId);
       if (player) player.coins = data.coins;
     });
 
-    // デバッグ用: プレイヤーの星を設定（E2Eテスト用）
     this.onMessage("__debugSetStars", (_client, data: { playerId: string; stars: number }) => {
       const player = this.state.players.get(data.playerId);
       if (player) player.stars = data.stars;
     });
-  }
-
-  // ===== バースト時の動物返却 =====
-
-  private returnMostExpensiveAnimal(playerId: string): void {
-    const player = this.state.players.get(playerId)!;
-    let maxCost = -1;
-    let maxPoops = -1;
-    let targetCage: Cage | null = null;
-    let targetSlotIdx = -1;
-    let targetAnimalId = "";
-
-    for (const cage of player.cages) {
-      for (let i = 0; i < cage.slots.length; i++) {
-        const slot = cage.slots.at(i)!;
-        const animalDef = ANIMALS[slot.animalId];
-        // 最高コスト → 同コストならうんちコスト高い方
-        if (animalDef.cost > maxCost || (animalDef.cost === maxCost && animalDef.poops > maxPoops)) {
-          maxCost = animalDef.cost;
-          maxPoops = animalDef.poops;
-          targetCage = cage;
-          targetSlotIdx = i;
-          targetAnimalId = slot.animalId;
-        }
-      }
-    }
-
-    if (targetCage && targetSlotIdx >= 0) {
-      targetCage.slots.splice(targetSlotIdx, 1);
-      const stock = this.state.market.get(targetAnimalId) ?? 0;
-      this.state.market.set(targetAnimalId, stock + 1);
-      this.logEffect(
-        `${this.getPlayerName(playerId)}: ${ANIMALS[targetAnimalId].name}を市場に返却 (ペナルティ)`
-      );
-    }
-  }
-
-  // ===== バリデーション =====
-
-  /** 効果解決のバリデーション（送信者=手番プレイヤーとは限らない。ownerチェックは呼び出し側で行う） */
-  private validateEffectResolve(): boolean {
-    if (this.state.phase !== "main") return false;
-    if (this.state.turnStep !== "income") return false;
-    return true;
-  }
-
-  private validateMainAction(client: Client, expectedStep: string): boolean {
-    if (this.state.phase !== "main") return false;
-    if (this.state.currentTurn !== client.sessionId) return false;
-    if (this.state.turnStep !== expectedStep) return false;
-    return true;
-  }
-
-  // ===== セットアップターン進行 =====
-
-  private advanceSetupTurn() {
-    const currentIdx = this.state.turnOrder.indexOf(this.state.currentTurn);
-    const nextIdx = currentIdx + 1;
-
-    if (nextIdx >= this.state.turnOrder.length) {
-      // 全プレイヤーの配置完了チェック
-      let allDone = true;
-      this.state.turnOrder.forEach((sessionId) => {
-        const inv = this.state.setupInventory.get(sessionId);
-        if (inv && inv.length > 0) allDone = false;
-      });
-
-      if (allDone) {
-        this.startMainPhase();
-      } else {
-        // 2周目（もしあれば）
-        this.state.currentTurn = this.state.turnOrder.at(0)!;
-      }
-    } else {
-      this.state.currentTurn = this.state.turnOrder.at(nextIdx)!;
-    }
   }
 }

@@ -3,3 +3,5 @@ dist/
 .env
 *.log
 .claude/settings.local.json
+colyseus-prototype/e2e/screenshots/
+rule/ExportBlock-8449b0e4-c0ec-4d81-829f-41c7f4914378-Part-1/53c3d7e9-9d45-4963-a8ac-402b93f0ddd1.__CR161,0,3233,2000_PT0_SX970_V1___.jpg
