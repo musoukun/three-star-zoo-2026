@@ -28,6 +28,19 @@ export const ANIMAL_ICONS: Record<string, string> = {
   BottlenoseDolphin: '🐬',
 };
 
+// 顔アイコン画像
+import faceRessaPanda from '../assets/animals/RessaPanda_face.jpg';
+import faceRosyFacedLovebird from '../assets/animals/RosyFacedLovebird_face.jpg';
+import facePenguin from '../assets/animals/Penguin_face.jpg';
+import faceLion from '../assets/animals/Lion_face.jpg';
+import faceGiantPanda from '../assets/animals/GiantPanda_face.jpg';
+import faceCaliforniaSeaLion from '../assets/animals/CaliforniaSeaLion_face.jpg';
+import faceReticulatedGiraffe from '../assets/animals/ReticulatedGiraffe_face.jpg';
+import faceCheetah from '../assets/animals/Cheetah_face.jpg';
+import faceAfricanElephant from '../assets/animals/AfricanElephant_face.jpg';
+import faceSouthernWhiteRhino from '../assets/animals/SouthernWhiteRhino_face.jpg';
+import faceBottlenoseDolphin from '../assets/animals/BottlenoseDolphin_face.jpg';
+
 /** カード用画像パス */
 export const ANIMAL_CARD_IMAGES: Record<string, string> = {
   RessaPanda: imgRessaPanda,
@@ -41,6 +54,21 @@ export const ANIMAL_CARD_IMAGES: Record<string, string> = {
   AfricanElephant: imgAfricanElephant,
   SouthernWhiteRhino: imgSouthernWhiteRhino,
   BottlenoseDolphin: imgBottlenoseDolphin,
+};
+
+/** 顔アイコン画像パス（ケージ用） */
+export const ANIMAL_FACE_IMAGES: Record<string, string> = {
+  RessaPanda: faceRessaPanda,
+  RosyFacedLovebird: faceRosyFacedLovebird,
+  Penguin: facePenguin,
+  Lion: faceLion,
+  GiantPanda: faceGiantPanda,
+  CaliforniaSeaLion: faceCaliforniaSeaLion,
+  ReticulatedGiraffe: faceReticulatedGiraffe,
+  Cheetah: faceCheetah,
+  AfricanElephant: faceAfricanElephant,
+  SouthernWhiteRhino: faceSouthernWhiteRhino,
+  BottlenoseDolphin: faceBottlenoseDolphin,
 };
 
 /** 動物の効果テキスト（マーケットカード用、普通の文量） */

@@ -1,7 +1,7 @@
 import { useState, useEffect, useContext, useMemo } from 'react';
 import { ColyseusContext } from '../App';
 import { PLAYER_COLORS } from '../App';
-import { ANIMALS, ANIMAL_ICONS, ANIMAL_CARD_IMAGES, EFFECT_TEXT_FULL, EFFECT_TEXT_SHORT, COLOR_CLASS, STAR_COST } from '../game/animals';
+import { ANIMALS, ANIMAL_ICONS, ANIMAL_CARD_IMAGES, ANIMAL_FACE_IMAGES, EFFECT_TEXT_FULL, EFFECT_TEXT_SHORT, COLOR_CLASS, STAR_COST } from '../game/animals';
 import type { CageState, PlayerInfo } from '../hooks/useColyseus';
 
 // ===== 定数 =====
@@ -538,8 +538,8 @@ function CageGrid({
             return (
               <div key={si} className="cage-animal" title={EFFECT_TEXT_FULL[slot.animalId] || a.name}>
                 <span className="cage-animal-icon">
-                  {ANIMAL_CARD_IMAGES[slot.animalId]
-                    ? <img src={ANIMAL_CARD_IMAGES[slot.animalId]} alt={slot.animalId} className="cage-animal-img" />
+                  {ANIMAL_FACE_IMAGES[slot.animalId]
+                    ? <img src={ANIMAL_FACE_IMAGES[slot.animalId]} alt={slot.animalId} className="cage-animal-img" />
                     : (ANIMAL_ICONS[slot.animalId] || '🐾')}
                 </span>
                 <span className="cage-animal-effect">{EFFECT_TEXT_SHORT[slot.animalId]}</span>
