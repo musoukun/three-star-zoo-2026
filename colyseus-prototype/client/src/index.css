@@ -372,7 +372,12 @@ body {
 }
 
 .cage.rolled {
-  box-shadow: 0 0 0 3px #e74c3c, 0 0 12px rgba(231, 76, 60, 0.4);
+  animation: cage-blink 1.5s ease-in-out infinite;
+}
+
+@keyframes cage-blink {
+  0%, 100% { box-shadow: 0 0 0 3px #e74c3c, 0 0 16px rgba(231, 76, 60, 0.5); }
+  50% { box-shadow: 0 0 0 3px rgba(231, 76, 60, 0.25), 0 0 4px rgba(231, 76, 60, 0.1); }
 }
 
 /* ケージの色はインラインスタイルで動的に設定 */
@@ -1191,7 +1196,12 @@ body {
 }
 
 .mini-cage.rolled {
-  box-shadow: 0 0 0 2px #e74c3c;
+  animation: cage-blink-mini 1.5s ease-in-out infinite;
+}
+
+@keyframes cage-blink-mini {
+  0%, 100% { box-shadow: 0 0 0 2px #e74c3c, 0 0 8px rgba(231, 76, 60, 0.4); }
+  50% { box-shadow: 0 0 0 2px rgba(231, 76, 60, 0.25), 0 0 2px rgba(231, 76, 60, 0.1); }
 }
 
 /* ===== 自分の盤面（モバイル） ===== */
