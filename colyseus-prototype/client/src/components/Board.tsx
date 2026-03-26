@@ -130,7 +130,7 @@ export function Board({ onLeave }: { onLeave: () => void }) {
                 {player.name}
                 <span className="mobile-other-stats">💰{player.coins} ⭐{player.stars} 💩{player.poopTokens}</span>
               </div>
-              <MiniCageGrid cages={player.cages ?? []} diceSum={state.diceRolled ? state.diceSum : 0} />
+              <MiniCageGrid cages={player.cages ?? []} diceSum={state.diceRolled && !diceAnimResults ? state.diceSum : 0} />
             </div>
           );
         })}
@@ -169,7 +169,7 @@ export function Board({ onLeave }: { onLeave: () => void }) {
 
           <CageGrid
             cages={me?.cages ?? []}
-            diceSum={state.diceRolled ? state.diceSum : 0}
+            diceSum={state.diceRolled && !diceAnimResults ? state.diceSum : 0}
             isSetup={isSetup}
             isMyTurn={isMyTurn}
             setupInventory={state.setupInventory[sessionId] ?? ''}
@@ -339,7 +339,7 @@ export function Board({ onLeave }: { onLeave: () => void }) {
               </div>
               <CageGrid
                 cages={player.cages ?? []}
-                diceSum={state.diceRolled ? state.diceSum : 0}
+                diceSum={state.diceRolled && !diceAnimResults ? state.diceSum : 0}
                 isSetup={false}
                 isMyTurn={false}
                 setupInventory=""
@@ -400,7 +400,7 @@ export function Board({ onLeave }: { onLeave: () => void }) {
 
         <CageGrid
           cages={me?.cages ?? []}
-          diceSum={state.diceRolled ? state.diceSum : 0}
+          diceSum={state.diceRolled && !diceAnimResults ? state.diceSum : 0}
           isSetup={isSetup}
           isMyTurn={isMyTurn}
           setupInventory={state.setupInventory[sessionId] ?? ''}
