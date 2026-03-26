@@ -27,7 +27,11 @@ const httpServer = http.createServer((req, res) => {
 });
 
 const server = new Server({
-  transport: new WebSocketTransport({ server: httpServer }),
+  transport: new WebSocketTransport({
+    server: httpServer,
+    pingInterval: 15000,    // 15秒ごとにpingを送信（プロキシのアイドル切断を防止）
+    pingMaxRetries: 3,      // 3回連続でpong応答がなければ切断
+  }),
 });
 
 server.define("zoo_room", ZooRoom).enableRealtimeListing();

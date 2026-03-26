@@ -124,6 +124,7 @@ export interface RoomListing {
 export function useColyseus() {
   const clientRef = useRef<Colyseus.Client | null>(null);
   const roomRef = useRef<Colyseus.Room | null>(null);
+  const tryReconnectRef = useRef<() => Promise<boolean>>(() => Promise.resolve(false));
   const [room, setRoom] = useState<Colyseus.Room | null>(null);
   const [state, setState] = useState<ZooRoomState | null>(null);
   const [sessionId, setSessionId] = useState<string>('');
@@ -194,19 +195,34 @@ export function useColyseus() {
     });
 
     r.onError((code: number, message?: string) => {
-      setError(`Error ${code}: ${message}`);
+      console.error('[Colyseus] onError:', code, message);
+      if (code && message) {
+        setError(`Error ${code}: ${message}`);
+      } else {
+        setError('サーバーとの通信でエラーが発生しました');
+      }
     });
 
     r.onLeave((code: number) => {
-      console.log('Left room', code);
+      console.log('[Colyseus] Left room, code:', code);
       roomRef.current = null;
       setRoom(null);
       setState(null);
       // 正常退出(1000)や意図的退出(4000)の場合のみセッション情報をクリア
-      // 異常切断(1006等)やページリロードではセッション情報を残す
       if (code === 1000 || code === 4000) {
         clearSession();
+        return;
       }
+      // 異常切断（1006等）→ 自動再接続を試行
+      console.log('[Colyseus] 異常切断を検出、自動再接続を試行します...');
+      setIsReconnecting(true);
+      // 少し待ってから再接続（サーバー側の処理完了を待つ）
+      setTimeout(async () => {
+        const success = await tryReconnectRef.current();
+        if (!success) {
+          setError('サーバーとの接続が切れました。ページを再読み込みしてください。');
+        }
+      }, 1000);
     });
   }, []);
 
@@ -245,6 +261,9 @@ export function useColyseus() {
     setIsReconnecting(false);
     return false;
   }, [setupRoom]);
+
+  // tryReconnectをrefに保持（setupRoom内のonLeaveから参照するため）
+  tryReconnectRef.current = tryReconnect;
 
   // ルーム作成
   const createRoom = useCallback(async (name: string, roomName: string, password?: string) => {
