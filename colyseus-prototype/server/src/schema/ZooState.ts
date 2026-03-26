@@ -34,7 +34,12 @@ export class ZooState extends Schema {
   @type({ map: PlayerState }) players = new MapSchema<PlayerState>();
   @type({ map: "number" }) market = new MapSchema<number>();
 
-  @type("string") phase: string = "waiting";      // waiting | setup | main | ended
+  // ルームメタデータ
+  @type("string") roomName: string = "";
+  @type("string") hostId: string = "";             // ルーム作成者（ゲーム開始権限）
+  @type("boolean") isPrivate: boolean = false;
+
+  @type("string") phase: string = "lobby";         // lobby | setup | main | ended
   @type("string") currentTurn: string = "";        // sessionId
   @type("string") turnStep: string = "poop";       // poop | roll | income | trade | clean | flush
 

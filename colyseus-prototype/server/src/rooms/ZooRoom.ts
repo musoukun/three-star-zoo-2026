@@ -4,25 +4,34 @@ import { ANIMALS, STARTING_ANIMALS, STARTING_COINS, STAR_COST, STARS_TO_WIN } fr
 import type { AnimalColor, Effect } from "../game/types";
 import { ArraySchema } from "@colyseus/schema";
 
-/** 4x3 グリッドの隣接マップ (上下左右、斜めなし)
- *  1  2  3  4
- *  5  6  7  8
- *  9 10 11 12
+/** 2行グリッドの隣接マップ (上下左右、斜めなし)
+ *  上段:  1    2    3    4    5    6
+ *  下段: [11&12]  10    9    8    7
+ *
+ *  11と12は結合された1つの大きな檻
+ *  11&12は上段の1,2の下に位置する（2列幅）
  */
 const ADJACENCY: Record<number, number[]> = {
-  1: [2, 5],
-  2: [1, 3, 6],
-  3: [2, 4, 7],
-  4: [3, 8],
-  5: [1, 6, 9],
-  6: [2, 5, 7, 10],
-  7: [3, 6, 8, 11],
-  8: [4, 7, 12],
-  9: [5, 10],
-  10: [6, 9, 11],
-  11: [7, 10, 12],
-  12: [8, 11],
+  // 上段
+  1:  [2, 11, 12],        // 右=2, 下=11&12
+  2:  [1, 3, 11, 12, 10], // 左=1, 右=3, 下=11&12と10
+  3:  [2, 4, 10, 9],      // 左=2, 右=4, 下=10と9
+  4:  [3, 5, 9, 8],       // 左=3, 右=5, 下=9と8
+  5:  [4, 6, 8, 7],       // 左=4, 右=6, 下=8と7
+  6:  [5, 7],             // 左=5, 下=7
+  // 下段 (右から左: 7,8,9,10,11&12)
+  7:  [8, 5, 6],          // 左=8, 上=5,6
+  8:  [7, 9, 4, 5],       // 左隣=9, 右隣=7, 上=4,5
+  9:  [8, 10, 3, 4],      // 左隣=10, 右隣=8, 上=3,4
+  10: [9, 11, 12, 2, 3],  // 左隣=11&12, 右隣=9, 上=2,3
+  11: [12, 10, 1, 2],     // 結合相手=12, 右隣=10, 上=1,2
+  12: [11, 10, 1, 2],     // 結合相手=11, 右隣=10, 上=1,2
 };
+
+/** 結合ケージ: 11と12は1つの檻 → 内部的にケージ11に統一 */
+function normalizeCageNum(cageNum: number): number {
+  return cageNum === 12 ? 11 : cageNum;
+}
 
 /** うんちバーストの閾値 */
 const POOP_BURST_THRESHOLD = 7;
@@ -30,6 +39,9 @@ const POOP_BURST_THRESHOLD = 7;
 export class ZooRoom extends Room<ZooState> {
   maxClients = 4;
   private minClients = 2;
+  private password: string = "";
+  private emptyTimeout: ReturnType<typeof setTimeout> | null = null;
+  private static EMPTY_ROOM_TTL = 15 * 60 * 1000; // 15分
 
   // ===== 履歴管理（スナップショット方式） =====
   private undoStack: any[] = [];
@@ -87,7 +99,10 @@ export class ZooRoom extends Room<ZooState> {
     }
 
     // scalars
-    this.state.phase = json.phase ?? "waiting";
+    this.state.roomName = json.roomName ?? this.state.roomName;
+    this.state.hostId = json.hostId ?? this.state.hostId;
+    this.state.isPrivate = json.isPrivate ?? this.state.isPrivate;
+    this.state.phase = json.phase ?? "lobby";
     this.state.currentTurn = json.currentTurn ?? "";
     this.state.turnStep = json.turnStep ?? "poop";
     this.state.dice1 = json.dice1 ?? 0;
@@ -152,11 +167,14 @@ export class ZooRoom extends Room<ZooState> {
 
   // ===== ライフサイクル =====
 
-  onCreate(options: { minClients?: number }) {
+  onCreate(options: { roomName?: string; password?: string }) {
     this.setState(new ZooState());
 
-    if (options.minClients) {
-      this.minClients = Math.max(2, Math.min(4, options.minClients));
+    // ルームメタデータ
+    this.state.roomName = options.roomName || "三ツ星動物園の部屋";
+    if (options.password) {
+      this.password = options.password;
+      this.state.isPrivate = true;
     }
 
     // マーケット初期化
@@ -164,12 +182,44 @@ export class ZooRoom extends Room<ZooState> {
       this.state.market.set(id, animal.inventory);
     }
 
+    // メタデータ設定（ルーム一覧で表示）
+    this.setMetadata({
+      roomName: this.state.roomName,
+      isPrivate: this.state.isPrivate,
+      playerCount: 0,
+      phase: "lobby",
+    });
+
     this.registerMessages();
 
-    console.log(`ZooRoom created, waiting for ${this.minClients} players...`);
+    // 空室タイマー開始（作成直後は誰もいないので）
+    this.startEmptyTimer();
+
+    console.log(`ZooRoom "${this.state.roomName}" created (private=${this.state.isPrivate})`);
   }
 
-  onJoin(client: Client, options: { name?: string }) {
+  onJoin(client: Client, options: { name?: string; password?: string }) {
+    // パスワード認証
+    if (this.state.isPrivate && this.password) {
+      if (options.password !== this.password) {
+        throw new Error("パスワードが間違っています");
+      }
+    }
+
+    // ゲーム中の再入室チェック
+    if (this.state.phase !== "lobby") {
+      const existingPlayer = this.state.players.get(client.sessionId);
+      if (existingPlayer) {
+        existingPlayer.connected = true;
+        this.addGameLog(`${existingPlayer.name} が再接続しました`);
+        this.clearEmptyTimer();
+        this.updateMetadata();
+        return;
+      }
+      // ゲーム進行中に新規参加は不可
+      throw new Error("ゲームが進行中のため参加できません");
+    }
+
     const player = new PlayerState();
     player.id = client.sessionId;
     player.name = options.name || `Player ${this.state.players.size + 1}`;
@@ -188,13 +238,16 @@ export class ZooRoom extends Room<ZooState> {
     this.state.players.set(client.sessionId, player);
     this.state.turnOrder.push(client.sessionId);
 
-    console.log(`${player.name} (${client.sessionId}) joined. ${this.state.players.size}/${this.minClients}`);
-
-    // 必要人数が揃ったらセットアップ開始
-    if (this.state.players.size >= this.minClients) {
-      this.lock();
-      this.startSetupPhase();
+    // 最初に入った人がホスト
+    if (this.state.hostId === "") {
+      this.state.hostId = client.sessionId;
     }
+
+    this.clearEmptyTimer();
+    this.updateMetadata();
+    this.addGameLog(`${player.name} が入室しました`);
+
+    console.log(`${player.name} (${client.sessionId}) joined. ${this.state.players.size} players in lobby`);
   }
 
   async onLeave(client: Client, consented: boolean) {
@@ -202,12 +255,16 @@ export class ZooRoom extends Room<ZooState> {
     if (!player) return;
 
     player.connected = false;
+    this.updateMetadata();
 
-    if (!consented) {
+    // ゲーム進行中の切断 → 長めの再接続猶予（15分）
+    if (!consented && this.state.phase !== "lobby") {
       try {
-        await this.allowReconnection(client, 30);
+        await this.allowReconnection(client, ZooRoom.EMPTY_ROOM_TTL / 1000);
         player.connected = true;
         this.addGameLog(`${player.name} が再接続しました`);
+        this.clearEmptyTimer();
+        this.updateMetadata();
         console.log(`${player.name} reconnected`);
         return;
       } catch {
@@ -218,19 +275,71 @@ export class ZooRoom extends Room<ZooState> {
     this.addGameLog(`${player.name} が退室しました`);
     console.log(`${player.name} left permanently`);
 
-    // 全員disconnectedならルームを閉じる
+    // ロビー中ならプレイヤーを完全削除
+    if (this.state.phase === "lobby") {
+      const idx = this.state.turnOrder.indexOf(client.sessionId);
+      if (idx !== -1) this.state.turnOrder.splice(idx, 1);
+      this.state.players.delete(client.sessionId);
+
+      // ホスト引き継ぎ
+      if (this.state.hostId === client.sessionId) {
+        this.state.hostId = this.state.turnOrder.length > 0
+          ? this.state.turnOrder.at(0)!
+          : "";
+      }
+    }
+
+    this.updateMetadata();
+
+    // 全員disconnected/退室なら空室タイマー開始
     let anyConnected = false;
     this.state.players.forEach((p) => {
       if (p.connected) anyConnected = true;
     });
     if (!anyConnected) {
-      console.log("All players disconnected, disposing room");
-      this.disconnect();
+      if (this.state.phase === "lobby" && this.state.players.size === 0) {
+        // ロビーで誰もいない → 即座にタイマー開始
+        this.startEmptyTimer();
+      } else {
+        // ゲーム中に全員切断 → タイマー開始
+        this.startEmptyTimer();
+      }
     }
   }
 
   onDispose() {
-    console.log("ZooRoom disposed");
+    this.clearEmptyTimer();
+    console.log(`ZooRoom "${this.state.roomName}" disposed`);
+  }
+
+  // ===== 空室タイマー =====
+
+  private startEmptyTimer() {
+    this.clearEmptyTimer();
+    this.emptyTimeout = setTimeout(() => {
+      console.log(`ZooRoom "${this.state.roomName}" empty for 15 min, disposing`);
+      this.disconnect();
+    }, ZooRoom.EMPTY_ROOM_TTL);
+  }
+
+  private clearEmptyTimer() {
+    if (this.emptyTimeout) {
+      clearTimeout(this.emptyTimeout);
+      this.emptyTimeout = null;
+    }
+  }
+
+  private updateMetadata() {
+    let connectedCount = 0;
+    this.state.players.forEach((p) => {
+      if (p.connected) connectedCount++;
+    });
+    this.setMetadata({
+      roomName: this.state.roomName,
+      isPrivate: this.state.isPrivate,
+      playerCount: connectedCount,
+      phase: this.state.phase,
+    });
   }
 
   /** ゲームログに追記（チャット+システムログ共用、最大500件） */
@@ -302,10 +411,11 @@ export class ZooRoom extends Room<ZooState> {
 
   // ===== ヘルパー関数 =====
 
-  /** プレイヤーのケージを取得 */
+  /** プレイヤーのケージを取得（11&12は結合→11に正規化） */
   private getPlayerCage(playerId: string, cageNum: number): Cage {
     const player = this.state.players.get(playerId)!;
-    return player.cages.at(cageNum - 1)!; // 0-indexed array, 1-indexed cage
+    const normalized = normalizeCageNum(cageNum);
+    return player.cages.at(normalized - 1)!; // 0-indexed array, 1-indexed cage
   }
 
   /** プレイヤーが持つ特定動物の数をカウント */
@@ -402,13 +512,16 @@ export class ZooRoom extends Room<ZooState> {
   // ===== 効果処理 =====
 
   private processEffects(): void {
-    const cageNum = this.state.diceSum;
-    if (cageNum < 1 || cageNum > 12) return;
+    const rawCageNum = this.state.diceSum;
+    if (rawCageNum < 1 || rawCageNum > 12) return;
+
+    // 11&12結合: ダイス12はケージ11として処理
+    const cageNum = normalizeCageNum(rawCageNum);
 
     const currentPlayer = this.state.currentTurn;
     this.state.effectLog.clear();
 
-    const adjacentCages = ADJACENCY[cageNum] || [];
+    const adjacentCages = ADJACENCY[rawCageNum] || [];
 
     // 効果処理順: 手番プレイヤーの左隣から時計回り、手番プレイヤーが最後
     const playerOrder = this.getEffectProcessingOrder(currentPlayer);
@@ -577,6 +690,21 @@ export class ZooRoom extends Room<ZooState> {
   // ===== メッセージハンドラ =====
 
   private registerMessages() {
+    // --- ロビー: ゲーム開始 ---
+    this.onMessage("startGame", (client) => {
+      if (this.state.phase !== "lobby") return;
+      if (this.state.hostId !== client.sessionId) return;
+      if (this.state.players.size < 2) return;
+
+      // 現在のプレイヤー数でゲーム開始
+      this.minClients = this.state.players.size;
+      this.lock(); // 新規参加を締め切る
+      this.startSetupPhase();
+      this.updateMetadata();
+      this.addGameLog(`ゲーム開始！ (${this.minClients}人)`);
+      console.log(`Game started with ${this.minClients} players`);
+    });
+
     // --- 履歴操作 ---
     this.onMessage("undo", (_client) => {
       if (this.undoStack.length === 0) return;

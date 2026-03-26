@@ -271,6 +271,12 @@ function getCageStyle(cage: CageState): React.CSSProperties {
   };
 }
 
+// ===== ケージレイアウト定義 =====
+// 上段: 1,2,3,4,5,6  下段: [11&12],10,9,8,7
+// ケージ12は内部的にケージ11に統合（結合檻）
+const TOP_ROW = [1, 2, 3, 4, 5, 6];
+const BOTTOM_ROW = [11, 10, 9, 8, 7]; // 11 = 結合ケージ(11&12)
+
 // ===== ケージグリッド =====
 function CageGrid({
   cages, diceSum, isSetup, isMyTurn, setupInventory, send,
@@ -284,46 +290,61 @@ function CageGrid({
 }) {
   const invAnimals = setupInventory ? setupInventory.split(',').filter(s => s.length > 0) : [];
 
+  const renderCage = (cageNum: number, isMerged: boolean = false) => {
+    const cage = cages.find(c => c.num === cageNum);
+    if (!cage) return null;
+    const isRolled = diceSum === cageNum || (isMerged && (diceSum === 11 || diceSum === 12));
+    const cageStyle = getCageStyle(cage);
+    const label = isMerged ? '11&12' : String(cageNum);
+
+    return (
+      <div
+        key={cageNum}
+        className={`cage ${isRolled ? 'rolled' : ''} ${isMerged ? 'cage-merged' : ''}`}
+        style={cageStyle}
+      >
+        <span className="cage-num">{label}</span>
+        <div className="cage-content">
+          {cage.slots.length === 0 && <div className="cage-empty">·</div>}
+          {cage.slots.map((slot, si) => {
+            const a = ANIMALS[slot.animalId];
+            if (!a) return null;
+            return (
+              <div key={si} className="cage-animal" title={EFFECT_TEXT_FULL[slot.animalId] || a.name}>
+                <span className="cage-animal-icon">{ANIMAL_ICONS[slot.animalId] || '🐾'}</span>
+                <span className="cage-animal-effect">{EFFECT_TEXT_SHORT[slot.animalId]}</span>
+              </div>
+            );
+          })}
+          {/* セットアップ配置ボタン（色・同一動物制約でフィルタ） */}
+          {isSetup && isMyTurn && cage.slots.length < 2 && invAnimals
+            .filter(aid => canPlaceOnCage(aid, cage))
+            .map(aid => {
+              const a = ANIMALS[aid];
+              return (
+                <button
+                  key={aid}
+                  className="cage-place-btn"
+                  onClick={() => send('placeAnimal', { animalId: aid, cageNum: cage.num })}
+                >
+                  <span className="place-icon">{ANIMAL_ICONS[aid]}</span>
+                  <span className="place-label">{a?.name ?? aid}を配置</span>
+                </button>
+              );
+            })}
+        </div>
+      </div>
+    );
+  };
+
   return (
-    <div className="cage-grid">
-      {cages.map((cage: CageState) => {
-        const isRolled = diceSum === cage.num;
-        const cageStyle = getCageStyle(cage);
-        return (
-          <div key={cage.num} className={`cage ${isRolled ? 'rolled' : ''}`} style={cageStyle}>
-            <span className="cage-num">{cage.num}</span>
-            <div className="cage-content">
-              {cage.slots.length === 0 && <div className="cage-empty">·</div>}
-              {cage.slots.map((slot, si) => {
-                const a = ANIMALS[slot.animalId];
-                if (!a) return null;
-                return (
-                  <div key={si} className="cage-animal" title={EFFECT_TEXT_FULL[slot.animalId] || a.name}>
-                    <span className="cage-animal-icon">{ANIMAL_ICONS[slot.animalId] || '🐾'}</span>
-                    <span className="cage-animal-effect">{EFFECT_TEXT_SHORT[slot.animalId]}</span>
-                  </div>
-                );
-              })}
-              {/* セットアップ配置ボタン（色・同一動物制約でフィルタ） */}
-              {isSetup && isMyTurn && cage.slots.length < 2 && invAnimals
-                .filter(aid => canPlaceOnCage(aid, cage))
-                .map(aid => {
-                  const a = ANIMALS[aid];
-                  return (
-                    <button
-                      key={aid}
-                      className="cage-place-btn"
-                      onClick={() => send('placeAnimal', { animalId: aid, cageNum: cage.num })}
-                    >
-                      <span className="place-icon">{ANIMAL_ICONS[aid]}</span>
-                      <span className="place-label">{a?.name ?? aid}を配置</span>
-                    </button>
-                  );
-                })}
-            </div>
-          </div>
-        );
-      })}
+    <div className="cage-grid-2row">
+      <div className="cage-row top-row">
+        {TOP_ROW.map(n => renderCage(n))}
+      </div>
+      <div className="cage-row bottom-row">
+        {BOTTOM_ROW.map(n => renderCage(n, n === 11))}
+      </div>
     </div>
   );
 }

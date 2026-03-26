@@ -223,15 +223,36 @@ body {
   margin-bottom: 6px;
 }
 
-/* ===== ケージグリッド (4x3) ===== */
-.cage-grid {
-  display: grid;
-  grid-template-columns: repeat(4, 1fr);
+/* ===== ケージグリッド (2行: 上段6列, 下段5列+結合) ===== */
+.cage-grid-2row {
+  display: flex;
+  flex-direction: column;
   gap: 3px;
 }
 
-.cage-grid.my-board {
-  gap: 4px;
+.cage-row {
+  display: grid;
+  gap: 3px;
+}
+
+.cage-row.top-row {
+  grid-template-columns: repeat(6, 1fr);
+}
+
+.cage-row.bottom-row {
+  grid-template-columns: 2fr repeat(4, 1fr);
+}
+
+/* 結合ケージ(11&12) */
+.cage.cage-merged {
+  min-width: 0;
+}
+
+/* 旧クラス互換 (使われなくなった) */
+.cage-grid {
+  display: grid;
+  grid-template-columns: repeat(6, 1fr);
+  gap: 3px;
 }
 
 /* ===== ケージ — 空は白、動物の色で背景が変わる ===== */
