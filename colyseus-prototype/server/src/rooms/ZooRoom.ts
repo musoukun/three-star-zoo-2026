@@ -119,9 +119,16 @@ export class ZooRoom extends Room<ZooState> {
     player.connected = false;
     this.updateMetadata();
 
-    if (!consented) {
-      // ロビーでは短時間(30秒)、ゲーム中は15分の再接続猶予
-      const ttlSeconds = this.state.phase === "lobby" ? 30 : ZooRoom.EMPTY_ROOM_TTL / 1000;
+    // ロビーでは再接続を待たず即削除（待つと抜け殻+新規接続の重複が発生する）
+    if (this.state.phase === "lobby") {
+      this.addGameLog(`${player.name} が退室しました`);
+      console.log(`${player.name} left permanently (lobby)`);
+      const idx = this.state.turnOrder.indexOf(client.sessionId);
+      if (idx !== -1) this.state.turnOrder.splice(idx, 1);
+      this.state.players.delete(client.sessionId);
+    } else if (!consented) {
+      // ゲーム中は15分の再接続猶予
+      const ttlSeconds = ZooRoom.EMPTY_ROOM_TTL / 1000;
       try {
         await this.allowReconnection(client, ttlSeconds);
         player.connected = true;
@@ -138,15 +145,11 @@ export class ZooRoom extends Room<ZooState> {
       } catch {
         // 再接続タイムアウト
       }
-    }
-
-    this.addGameLog(`${player.name} が退室しました`);
-    console.log(`${player.name} left permanently`);
-
-    if (this.state.phase === "lobby") {
-      const idx = this.state.turnOrder.indexOf(client.sessionId);
-      if (idx !== -1) this.state.turnOrder.splice(idx, 1);
-      this.state.players.delete(client.sessionId);
+      this.addGameLog(`${player.name} が退室しました`);
+      console.log(`${player.name} left permanently (timeout)`);
+    } else {
+      this.addGameLog(`${player.name} が退室しました`);
+      console.log(`${player.name} left permanently`);
     }
 
     if (this.state.hostId === client.sessionId) {
