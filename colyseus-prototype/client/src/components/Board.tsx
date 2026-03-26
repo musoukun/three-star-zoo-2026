@@ -330,7 +330,7 @@ function RuleTooltip() {
   const [open, setOpen] = useState(false);
   return (
     <div className="rule-tooltip-container">
-      <div className="rule-tooltip-trigger" onClick={() => setOpen(!open)}>📖 ルール</div>
+      <div className="rule-tooltip-trigger" onClick={() => setOpen(!open)}>📖</div>
       {open && <><div className="rule-tooltip-overlay" onClick={() => setOpen(false)} />
       <div className="rule-tooltip-content">
         <button className="rule-close-btn" onClick={() => setOpen(false)}>✕</button>
