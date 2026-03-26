@@ -18,6 +18,10 @@ export class ZooRoom extends Room<ZooState> {
   // ===== ライフサイクル =====
 
   onCreate(options: { roomName?: string; password?: string }) {
+    // autoDisposeを無効化: 自前のemptyTimerで管理する
+    // デフォルトのautoDisposeは接続者0人で即dispose → allowReconnectionと競合する
+    this.autoDispose = false;
+
     this.setState(new ZooState());
 
     this.state.roomName = options.roomName || "三ツ星動物園の部屋";
