@@ -310,12 +310,12 @@ export function MarketPanel() {
             style={{ cursor: canBuy ? 'pointer' : 'default' }}
           >
             <div className={`market-card-header ${colorClass}`}>
-              <span><Emoji name="coin" size={14} />{a.cost}</span>
               <span>{a.effect.global ? '範囲：全員' : '範囲：自分のみ'}</span>
-              <span><Emoji name="poop" size={14} />{a.poops}</span>
             </div>
             <div className="market-card-body">
               <div className="market-card-icon">
+                <span className="market-card-badge badge-coin"><Emoji name="coin" size={14} />{a.cost}</span>
+                <span className="market-card-badge badge-poop"><Emoji name="poop" size={14} />{a.poops}</span>
                 {ANIMAL_CARD_IMAGES[a.id]
                   ? <img src={ANIMAL_CARD_IMAGES[a.id]} alt={a.name} className="market-card-img" />
                   : ANIMAL_ICONS[a.id]}

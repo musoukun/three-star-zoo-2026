@@ -542,13 +542,13 @@ body {
   box-shadow: 0 0 0 1px #3F51B5;
 }
 
-/* ヘッダー: コスト(左) ターン(中) うんち(右) */
+/* ヘッダー: 範囲表示 */
 .market-card-header {
   display: flex;
-  justify-content: space-between;
+  justify-content: center;
   align-items: center;
-  padding: 4px 6px;
-  font-size: 12px;
+  padding: 3px 6px;
+  font-size: 11px;
   font-weight: bold;
   color: #fff;
 }
@@ -569,6 +569,29 @@ body {
 .market-card-icon {
   font-size: 36px;
   line-height: 1.1;
+  position: relative;
+}
+
+.market-card-badge {
+  position: absolute;
+  top: 2px;
+  display: flex;
+  align-items: center;
+  gap: 1px;
+  font-size: 12px;
+  font-weight: 700;
+  z-index: 1;
+  line-height: 1.2;
+}
+
+.badge-coin {
+  left: 2px;
+  color: #f57f17;
+}
+
+.badge-poop {
+  right: 2px;
+  color: #795548;
 }
 
 .market-card-img {
