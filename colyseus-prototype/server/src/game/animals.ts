@@ -8,6 +8,7 @@ export const ANIMALS: Record<string, AnimalDef> = {
     poops: 0,
     colors: ['RED', 'GREEN', 'ORANGE'],
     inventory: 8,
+    inventory2p: 6,
     effect: {
       global: false,
       timing: 'first',
@@ -23,6 +24,7 @@ export const ANIMALS: Record<string, AnimalDef> = {
     poops: 0,
     colors: ['RED', 'GREEN', 'ORANGE'],
     inventory: 8,
+    inventory2p: 6,
     effect: {
       global: true,
       timing: 'first',
@@ -35,7 +37,8 @@ export const ANIMALS: Record<string, AnimalDef> = {
     cost: 2,
     poops: 1,
     colors: ['BLUE'],
-    inventory: 6,
+    inventory: 8,
+    inventory2p: 6,
     effect: {
       global: true,
       timing: 'first',
@@ -63,7 +66,7 @@ export const ANIMALS: Record<string, AnimalDef> = {
     cost: 3,
     poops: 2,
     colors: ['PURPLE'],
-    inventory: 6,
+    inventory: 4,
     effect: {
       global: true,
       timing: 'first',
@@ -91,7 +94,7 @@ export const ANIMALS: Record<string, AnimalDef> = {
     cost: 4,
     poops: 1,
     colors: ['GREEN'],
-    inventory: 8,
+    inventory: 4,
     effect: {
       global: true,
       timing: 'first',
@@ -105,7 +108,7 @@ export const ANIMALS: Record<string, AnimalDef> = {
     cost: 5,
     poops: 0,
     colors: ['RED'],
-    inventory: 6,
+    inventory: 4,
     effect: {
       global: true,
       timing: 'end',
@@ -118,7 +121,7 @@ export const ANIMALS: Record<string, AnimalDef> = {
     cost: 6,
     poops: 3,
     colors: ['GREEN'],
-    inventory: 6,
+    inventory: 2,
     effect: {
       global: true,
       timing: 'first',
@@ -131,7 +134,7 @@ export const ANIMALS: Record<string, AnimalDef> = {
     cost: 6,
     poops: 2,
     colors: ['GREEN'],
-    inventory: 6,
+    inventory: 2,
     effect: {
       global: false,
       timing: 'first',
@@ -155,6 +158,14 @@ export const ANIMALS: Record<string, AnimalDef> = {
     },
   },
 };
+
+/** プレイヤー人数に応じた在庫数を返す */
+export function getInventoryForPlayerCount(animal: AnimalDef, playerCount: number): number {
+  if (playerCount <= 2 && animal.inventory2p !== undefined) {
+    return animal.inventory2p;
+  }
+  return animal.inventory;
+}
 
 /** 初期動物（全プレイヤー共通） */
 export const STARTING_ANIMALS = ['RessaPanda', 'Penguin'];

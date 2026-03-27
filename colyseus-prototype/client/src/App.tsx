@@ -365,6 +365,16 @@ export function App() {
         </div>
       )}
 
+      {/* 人数別在庫テーブル */}
+      <div style={{ margin: '12px 0', textAlign: 'center' }}>
+        <h4 style={{ margin: '0 0 8px', fontSize: 14, color: '#555' }}>人数別チップ在庫数</h4>
+        <img
+          src="/inventory-table.png"
+          alt="人数別チップ在庫数"
+          style={{ maxWidth: '100%', borderRadius: 8, border: '1px solid #ddd' }}
+        />
+      </div>
+
       <div style={styles.lobbyActions}>
         {isHost && (
           <div style={{ display: 'flex', gap: 8, marginBottom: 8, flexWrap: 'wrap', alignItems: 'center' }}>

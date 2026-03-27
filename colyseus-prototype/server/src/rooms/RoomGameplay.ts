@@ -1,6 +1,6 @@
 import { Room } from "colyseus";
 import { ZooState, PlayerState, Cage, CageSlot, PendingEffect } from "../schema/ZooState";
-import { ANIMALS, STARTING_ANIMALS, STARTING_COINS, STAR_COST, STARS_TO_WIN } from "../game/animals";
+import { ANIMALS, STARTING_ANIMALS, STARTING_COINS, STAR_COST, STARS_TO_WIN, getInventoryForPlayerCount } from "../game/animals";
 import { CHANCE_CARDS, createChanceDeck, shuffle } from "../game/chanceCards";
 import type { Effect } from "../game/types";
 import {
@@ -45,11 +45,18 @@ export class RoomGameplay {
 
   startSetupPhase() {
     this.state.phase = "setup";
+
+    // プレイヤー人数に応じてマーケット在庫を調整
+    const playerCount = this.state.turnOrder.length;
+    for (const [id, animal] of Object.entries(ANIMALS)) {
+      this.state.market.set(id, getInventoryForPlayerCount(animal, playerCount));
+    }
+
     this.state.turnOrder.forEach((sessionId) => {
       this.state.setupInventory.set(sessionId, STARTING_ANIMALS.join(","));
     });
     this.state.currentTurn = this.state.turnOrder.at(0)!;
-    console.log("Setup phase started");
+    console.log(`Setup phase started (${playerCount} players)`);
   }
 
   startMainPhase() {

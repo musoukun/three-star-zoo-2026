@@ -118,6 +118,7 @@ export const ANIMALS: Record<string, AnimalDef> = {
     poops: 0,
     colors: ['RED', 'GREEN', 'ORANGE'],
     inventory: 8,
+    inventory2p: 6,
     effect: { global: false, timing: 'first', creation: 0, buff: [1, 'RessaPanda', 'each'], bonusbuff: [2, 'GiantPanda', 'once'] },
   },
   RosyFacedLovebird: {
@@ -127,6 +128,7 @@ export const ANIMALS: Record<string, AnimalDef> = {
     poops: 0,
     colors: ['RED', 'GREEN', 'ORANGE'],
     inventory: 8,
+    inventory2p: 6,
     effect: { global: true, timing: 'first', creation: 1 },
   },
   Penguin: {
@@ -135,7 +137,8 @@ export const ANIMALS: Record<string, AnimalDef> = {
     cost: 2,
     poops: 1,
     colors: ['BLUE'],
-    inventory: 6,
+    inventory: 8,
+    inventory2p: 6,
     effect: { global: true, timing: 'first', creation: 0, creationIf: ['Penguin', '>=', '2', '?', '3', ':', '1'] },
   },
   Lion: {
@@ -153,7 +156,7 @@ export const ANIMALS: Record<string, AnimalDef> = {
     cost: 3,
     poops: 2,
     colors: ['PURPLE'],
-    inventory: 6,
+    inventory: 4,
     effect: { global: true, timing: 'first', creation: 0, buff: [2, 'GiantPanda', 'each'] },
   },
   CaliforniaSeaLion: {
@@ -171,7 +174,7 @@ export const ANIMALS: Record<string, AnimalDef> = {
     cost: 4,
     poops: 1,
     colors: ['GREEN'],
-    inventory: 8,
+    inventory: 4,
     effect: { global: true, timing: 'first', creation: 3, adjacent: [1, 'ReticulatedGiraffe', 'once'] },
   },
   Cheetah: {
@@ -180,7 +183,7 @@ export const ANIMALS: Record<string, AnimalDef> = {
     cost: 5,
     poops: 0,
     colors: ['RED'],
-    inventory: 6,
+    inventory: 4,
     effect: { global: true, timing: 'end', creation: 3 },
   },
   AfricanElephant: {
@@ -189,7 +192,7 @@ export const ANIMALS: Record<string, AnimalDef> = {
     cost: 6,
     poops: 3,
     colors: ['GREEN'],
-    inventory: 6,
+    inventory: 2,
     effect: { global: true, timing: 'first', creation: 7 },
   },
   SouthernWhiteRhino: {
@@ -198,7 +201,7 @@ export const ANIMALS: Record<string, AnimalDef> = {
     cost: 6,
     poops: 2,
     colors: ['GREEN'],
-    inventory: 6,
+    inventory: 2,
     effect: { global: false, timing: 'first', creation: 0, steal: [1, 'target', 1, 'star'] },
   },
   BottlenoseDolphin: {

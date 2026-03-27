@@ -22,5 +22,6 @@ export interface AnimalDef {
   poops: number;
   colors: AnimalColor[];
   inventory: number;
+  inventory2p?: number;
   effect: Effect;
 }
