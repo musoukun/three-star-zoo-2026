@@ -691,7 +691,7 @@ function TradeActions() {
   return (
     <>
       {!state.boughtAnimal && (
-        <span className="trade-done" style={{ color: '#666' }}>🛒 マーケットから動物をクリックで購入</span>
+        <span className="trade-done" style={{ color: '#333' }}>🛒 マーケットから動物をクリックで購入</span>
       )}
       {state.boughtAnimal && <span className="trade-done">✓ 動物購入済み</span>}
 
