@@ -373,7 +373,6 @@ export function App() {
           <thead>
             <tr style={{ background: '#f5f5f5' }}>
               <th style={{ padding: '4px 8px', border: '1px solid #ddd' }}>動物</th>
-              <th style={{ padding: '4px 8px', border: '1px solid #ddd' }}>コスト</th>
               <th style={{ padding: '4px 8px', border: '1px solid #ddd' }}>2人</th>
               <th style={{ padding: '4px 8px', border: '1px solid #ddd' }}>3〜4人</th>
             </tr>
@@ -383,9 +382,6 @@ export function App() {
               <tr key={id}>
                 <td style={{ padding: '3px 8px', border: '1px solid #ddd', textAlign: 'left' }}>
                   {ANIMAL_ICONS[id]} {a.name}
-                </td>
-                <td style={{ padding: '3px 8px', border: '1px solid #ddd', textAlign: 'center' }}>
-                  {a.cost}
                 </td>
                 <td style={{ padding: '3px 8px', border: '1px solid #ddd', textAlign: 'center' }}>
                   {a.inventory2p ?? a.inventory}
