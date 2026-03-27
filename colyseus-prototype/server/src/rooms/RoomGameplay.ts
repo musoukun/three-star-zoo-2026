@@ -366,6 +366,9 @@ export class RoomGameplay {
 
     // StealIf (ライオン等)
     if (effect.stealIf) {
+      const condAnimalId = effect.stealIf[0];
+      const condCount = countPlayerAnimal(ownerState, condAnimalId);
+      console.log(`[StealIf] ${this.ctx.getPlayerName(owner)}: ${animalDef.name}, ${condAnimalId}数=${condCount} (ownerCages=${ownerState.cages.length})`);
       const amount = evaluateCondition(effect.stealIf, ownerState);
       if (amount > 0) {
         const pe = new PendingEffect();
@@ -417,6 +420,12 @@ export class RoomGameplay {
     slot.animalId = animalId;
     slot.playerId = sessionId;
     this.ctx.getPlayerCage(sessionId, cageNum).slots.push(slot);
+
+    // マーケット在庫を減らす
+    const currentStock = this.state.market.get(animalId) ?? 0;
+    if (currentStock > 0) {
+      this.state.market.set(animalId, currentStock - 1);
+    }
 
     inventory.splice(idx, 1);
     this.state.setupInventory.set(sessionId, inventory.join(","));
@@ -722,7 +731,8 @@ export class RoomGameplay {
 
     if (this.checkWin()) return;
 
-    this.state.turnStep = "flush";
+    // 自動でターン終了
+    this.handleEndTurn();
   }
 
   handleEndTrade() {

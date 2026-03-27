@@ -646,11 +646,7 @@ function ActionPanel() {
         </>
       )}
 
-      {state.turnStep === 'flush' && (
-        <button className="action-btn" onClick={() => send('endTurn')}>
-          <Emoji name="check" size={14} /> ターン終了
-        </button>
-      )}
+      {/* flushステップは自動でターン終了するため、UIは不要 */}
     </div>
   );
 }

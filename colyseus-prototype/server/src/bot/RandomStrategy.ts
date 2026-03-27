@@ -33,7 +33,6 @@ export class RandomStrategy implements BotStrategy {
       case "roll": return this.decideRoll();
       case "trade": return this.decideTrade(state, playerId, player);
       case "clean": return this.decideClean(player);
-      case "flush": return { type: "endTurn" };
       default: return null;
     }
   }
