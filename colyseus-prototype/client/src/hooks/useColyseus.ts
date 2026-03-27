@@ -63,6 +63,7 @@ export interface PlayerInfo {
   totalPoopCleaned: number;
   totalCoinsEarned: number;
   hasHeldCard: boolean;
+  isCpu: boolean;
   cages: CageState[];
 }
 

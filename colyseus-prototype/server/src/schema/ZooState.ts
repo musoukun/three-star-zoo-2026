@@ -21,6 +21,7 @@ export class PlayerState extends Schema {
   @type("number") totalPoopCleaned: number = 0;   // 累計うんち掃除量
   @type("number") totalCoinsEarned: number = 0;   // 累計コイン獲得量
   @type("boolean") hasHeldCard: boolean = false;  // チャンスカード伏せカード保持
+  @type("boolean") isCpu: boolean = false;        // CPUプレイヤーか
   @type([Cage]) cages = new ArraySchema<Cage>();
 }
 

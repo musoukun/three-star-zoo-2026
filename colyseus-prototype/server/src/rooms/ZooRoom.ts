@@ -4,6 +4,7 @@ import { ANIMALS, STARTING_COINS } from "../game/animals";
 import { normalizeCageNum } from "../game/gameLogic";
 import { RoomHistory } from "./RoomHistory";
 import { RoomGameplay } from "./RoomGameplay";
+import { BotManager } from "../bot/BotManager";
 
 export class ZooRoom extends Room<ZooState> {
   maxClients = 4;
@@ -14,14 +15,12 @@ export class ZooRoom extends Room<ZooState> {
 
   gameplay!: RoomGameplay;
   history!: RoomHistory;
+  botManager!: BotManager;
 
   // ===== ライフサイクル =====
 
   onCreate(options: { roomName?: string; password?: string }) {
-    // autoDisposeを無効化: 自前のemptyTimerで管理する
-    // デフォルトのautoDisposeは接続者0人で即dispose → allowReconnectionと競合する
     this.autoDispose = false;
-
     this.setState(new ZooState());
 
     this.state.roomName = options.roomName || "三ツ星動物園の部屋";
@@ -41,7 +40,6 @@ export class ZooRoom extends Room<ZooState> {
       phase: "lobby",
     });
 
-    // コンテキストオブジェクトを作成し、gameplay / history を初期化
     const ctx = {
       state: this.state,
       room: this as Room<ZooState>,
@@ -52,6 +50,10 @@ export class ZooRoom extends Room<ZooState> {
     };
     this.gameplay = new RoomGameplay(ctx);
     this.history = new RoomHistory(this, () => this.gameplay);
+    this.botManager = new BotManager(
+      this.state,
+      (pid, action) => { const { type, ...data } = action; this.dispatch(pid, type, data); },
+    );
 
     this.registerMessages();
     this.startEmptyTimer();
@@ -103,7 +105,6 @@ export class ZooRoom extends Room<ZooState> {
     this.updateMetadata();
     this.addGameLog(`${player.name} が入室しました`);
 
-    // 履歴情報を送信（途中参加対応）
     client.send("historyInfo", {
       undoCount: this.history.undoCount,
       redoCount: this.history.redoCount,
@@ -120,7 +121,6 @@ export class ZooRoom extends Room<ZooState> {
     this.updateMetadata();
 
     if (!consented) {
-      // ロビーでは30秒、ゲーム中は15分の再接続猶予
       const ttlSeconds = this.state.phase === "lobby" ? 30 : ZooRoom.EMPTY_ROOM_TTL / 1000;
       try {
         await this.allowReconnection(client, ttlSeconds);
@@ -128,7 +128,6 @@ export class ZooRoom extends Room<ZooState> {
         this.addGameLog(`${player.name} が再接続しました`);
         this.clearEmptyTimer();
         this.updateMetadata();
-        // 再接続したクライアントに履歴情報を送信
         client.send("historyInfo", {
           undoCount: this.history.undoCount,
           redoCount: this.history.redoCount,
@@ -234,7 +233,148 @@ export class ZooRoom extends Room<ZooState> {
     return player.cages.at(normalized - 1)!;
   }
 
-  // ===== メッセージハンドラ（薄いdispatch層） =====
+  // ===== 統一アクション実行（メッセージハンドラ・Bot共通） =====
+
+  dispatch(playerId: string, type: string, data?: any): boolean {
+    const gp = this.gameplay;
+    const s = this.state;
+
+    switch (type) {
+      // --- セットアップ ---
+      case "placeAnimal":
+        if (s.phase !== "setup" || s.currentTurn !== playerId) return false;
+        this.history.push();
+        gp.handlePlaceAnimal(playerId, data.animalId, data.cageNum);
+        break;
+
+      // --- メインフェーズ ---
+      case "receivePoop":
+        if (!gp.validateMainAction(playerId, "poop")) return false;
+        this.history.push();
+        gp.handleReceivePoop(playerId);
+        break;
+
+      case "rollDice": {
+        if (!gp.validateMainAction(playerId, "roll")) return false;
+        this.history.push();
+        const diceCount = (data?.diceCount === 1) ? 1 : 2;
+        gp.handleRollDice(playerId, diceCount);
+        break;
+      }
+
+      case "resolveSteal":
+        if (!gp.validateEffectResolve() || s.pendingEffects.length === 0) return false;
+        this.history.push();
+        gp.handleResolveSteal(playerId, data.targetPlayerId);
+        break;
+
+      case "resolveStealStar":
+        if (!gp.validateEffectResolve() || s.pendingEffects.length === 0) return false;
+        this.history.push();
+        gp.handleResolveStealStar(playerId, data.targetPlayerId);
+        break;
+
+      case "resolveChoice":
+        if (!gp.validateEffectResolve() || s.pendingEffects.length === 0) return false;
+        this.history.push();
+        gp.handleResolveChoice(playerId, data.choice, data.targetPlayerId);
+        break;
+
+      case "buyAnimal":
+        if (!gp.validateMainAction(playerId, "trade") || s.boughtAnimal) return false;
+        this.history.push();
+        gp.handleBuyAnimal(playerId, data.animalId, data.cageNum);
+        break;
+
+      case "buyStar":
+        if (!gp.validateMainAction(playerId, "trade") || s.boughtStar) return false;
+        this.history.push();
+        gp.handleBuyStar(playerId);
+        break;
+
+      case "returnAnimal":
+        if (!gp.validateMainAction(playerId, "trade")) return false;
+        this.history.push();
+        gp.handleReturnAnimal(playerId, data.returns);
+        break;
+
+      case "endTrade":
+        if (!gp.validateMainAction(playerId, "trade")) return false;
+        this.history.push();
+        gp.handleEndTrade();
+        break;
+
+      case "cleanPoop":
+        if (!gp.validateMainAction(playerId, "clean")) return false;
+        this.history.push();
+        gp.handleCleanPoop(playerId);
+        break;
+
+      case "endClean":
+        if (!gp.validateMainAction(playerId, "clean")) return false;
+        this.history.push();
+        gp.handleEndClean(playerId);
+        break;
+
+      case "endTurn":
+        if (!gp.validateMainAction(playerId, "flush")) return false;
+        this.history.push();
+        gp.handleEndTurn();
+        break;
+
+      // --- チャンスカード ---
+      case "keepChanceCard":
+        if (s.currentTurn !== playerId || s.chanceCardPhase !== "useOrKeep") return false;
+        this.history.push();
+        gp.handleKeepChanceCard(playerId);
+        break;
+
+      case "useDrawnChanceCard":
+        if (s.currentTurn !== playerId) return false;
+        if (s.chanceCardPhase !== "useOrKeep" && s.chanceCardPhase !== "forceUse") return false;
+        this.history.push();
+        gp.handleUseDrawnChanceCard(playerId);
+        break;
+
+      case "useHeldChanceCard":
+        if (s.currentTurn !== playerId || s.chanceCardPhase !== "forceUse") return false;
+        this.history.push();
+        gp.handleUseHeldChanceCard(playerId);
+        break;
+
+      case "useHeldCardInTrade":
+        if (!gp.validateMainAction(playerId, "trade")) return false;
+        this.history.push();
+        gp.handleUseHeldCardInTrade(playerId);
+        break;
+
+      case "resolveCompost":
+        if (s.currentTurn !== playerId || s.chanceCardPhase !== "using_compost") return false;
+        this.history.push();
+        gp.handleResolveCompost(playerId, data.count);
+        break;
+
+      case "resolveCompostGive":
+        if (s.currentTurn !== playerId || s.chanceCardPhase !== "using_compostGive") return false;
+        this.history.push();
+        gp.handleResolveCompostGive(playerId, data.distributions);
+        break;
+
+      case "resolveEviction":
+        if (s.currentTurn !== playerId || s.chanceCardPhase !== "using_eviction") return false;
+        this.history.push();
+        gp.handleResolveEviction(playerId, data.targetPlayerId, data.animalId, data.cageNum);
+        break;
+
+      default:
+        return false;
+    }
+
+    this.tickBot();
+    return true;
+  }
+
+  // ===== メッセージハンドラ =====
 
   private registerMessages() {
     const gp = this.gameplay;
@@ -265,16 +405,80 @@ export class ZooRoom extends Room<ZooState> {
       this.updateMetadata();
       this.addGameLog(`ゲーム開始！ (${this.minClients}人)`);
       console.log(`Game started with ${this.minClients} players`);
+      this.tickBot();
+    });
+
+    // --- CPU追加/削除 ---
+    this.onMessage("addCpu", (client, data?: { difficulty?: string }) => {
+      if (this.state.phase !== "lobby") return;
+      if (this.state.hostId !== client.sessionId) return;
+      if (this.state.players.size >= 4) return;
+
+      const difficulty = (data?.difficulty === "normal" || data?.difficulty === "hard")
+        ? data.difficulty : "normal";
+      const cpuId = this.botManager.addCpu(difficulty as "normal" | "hard");
+      if (!cpuId) return;
+
+      const player = new PlayerState();
+      player.id = cpuId;
+      player.name = this.botManager.getCpuName(cpuId);
+      player.coins = STARTING_COINS;
+      player.connected = true;
+      player.isCpu = true;
+
+      for (let i = 1; i <= 12; i++) {
+        const cage = new Cage();
+        cage.num = i;
+        player.cages.push(cage);
+      }
+
+      const usedColors = new Set<string>();
+      this.state.players.forEach((p) => { if (p.color) usedColors.add(p.color); });
+      const availColors = ["red", "blue", "green", "orange", "purple", "pink"].filter(c => !usedColors.has(c));
+      if (availColors.length > 0) player.color = availColors[0];
+
+      this.state.players.set(cpuId, player);
+      this.state.turnOrder.push(cpuId);
+      this.updateMetadata();
+      this.addGameLog(`${player.name} が参加しました (CPU)`);
+      console.log(`CPU ${player.name} (${cpuId}) added [${difficulty}]`);
+    });
+
+    this.onMessage("removeCpu", (client) => {
+      if (this.state.phase !== "lobby") return;
+      if (this.state.hostId !== client.sessionId) return;
+
+      let lastCpuId: string | null = null;
+      for (let i = this.state.turnOrder.length - 1; i >= 0; i--) {
+        const id = this.state.turnOrder.at(i)!;
+        if (this.botManager.isCpu(id)) { lastCpuId = id; break; }
+      }
+      if (!lastCpuId) return;
+
+      const cpuName = this.state.players.get(lastCpuId)?.name ?? "CPU";
+      this.botManager.removeCpu(lastCpuId);
+      const idx = this.state.turnOrder.indexOf(lastCpuId);
+      if (idx !== -1) this.state.turnOrder.splice(idx, 1);
+      this.state.players.delete(lastCpuId);
+      this.updateMetadata();
+      this.addGameLog(`${cpuName} が退出しました`);
     });
 
     // --- 履歴操作 ---
-    this.onMessage("undo", () => { this.history.undo(); });
-    this.onMessage("redo", () => { this.history.redo(); });
+    this.onMessage("undo", () => { this.botManager.cancelPending(); this.history.undo(); this.tickBot(); });
+    this.onMessage("redo", () => { this.botManager.cancelPending(); this.history.redo(); this.tickBot(); });
     this.onMessage("resetGame", () => { this.history.resetToFirst(); });
 
     // --- ゲーム終了後 ---
     this.onMessage("restartGame", () => {
       if (this.state.phase !== "ended") return;
+      this.botManager.cancelPending();
+      for (const cpuId of this.botManager.cpuIds) {
+        const idx = this.state.turnOrder.indexOf(cpuId);
+        if (idx !== -1) this.state.turnOrder.splice(idx, 1);
+        this.state.players.delete(cpuId);
+      }
+      this.botManager.removeAllCpus();
       gp.handleRestartGame();
       this.history.clear();
       this.unlock();
@@ -292,171 +496,53 @@ export class ZooRoom extends Room<ZooState> {
       this.addGameLog(`💬 ${name}: ${text}`);
     });
 
-    // --- セットアップ ---
-    this.onMessage("placeAnimal", (client, data: { animalId: string; cageNum: number }) => {
-      if (this.state.phase !== "setup") return;
-      if (this.state.currentTurn !== client.sessionId) return;
-      this.history.push();
-      gp.handlePlaceAnimal(client.sessionId, data.animalId, data.cageNum);
-    });
-
-    // --- メインフェーズ ---
-    this.onMessage("receivePoop", (client) => {
-      if (!gp.validateMainAction(client.sessionId, "poop")) return;
-      this.history.push();
-      gp.handleReceivePoop(client.sessionId);
-    });
-
-    this.onMessage("rollDice", (client, data?: { diceCount?: number }) => {
-      if (!gp.validateMainAction(client.sessionId, "roll")) return;
-      this.history.push();
-      const diceCount = (data?.diceCount === 1) ? 1 : 2;
-      gp.handleRollDice(client.sessionId, diceCount);
-    });
-
-    this.onMessage("resolveSteal", (client, data: { targetPlayerId: string }) => {
-      if (!gp.validateEffectResolve()) return;
-      if (this.state.pendingEffects.length === 0) return;
-      this.history.push();
-      gp.handleResolveSteal(client.sessionId, data.targetPlayerId);
-    });
-
-    this.onMessage("resolveStealStar", (client, data: { targetPlayerId: string }) => {
-      if (!gp.validateEffectResolve()) return;
-      if (this.state.pendingEffects.length === 0) return;
-      this.history.push();
-      gp.handleResolveStealStar(client.sessionId, data.targetPlayerId);
-    });
-
-    this.onMessage("resolveChoice", (client, data: { choice: string; targetPlayerId?: string }) => {
-      if (!gp.validateEffectResolve()) return;
-      if (this.state.pendingEffects.length === 0) return;
-      this.history.push();
-      gp.handleResolveChoice(client.sessionId, data.choice, data.targetPlayerId);
-    });
-
-    this.onMessage("buyAnimal", (client, data: { animalId: string; cageNum: number }) => {
-      if (!gp.validateMainAction(client.sessionId, "trade")) return;
-      if (this.state.boughtAnimal) return;
-      this.history.push();
-      gp.handleBuyAnimal(client.sessionId, data.animalId, data.cageNum);
-    });
-
-    this.onMessage("buyStar", (client) => {
-      if (!gp.validateMainAction(client.sessionId, "trade")) return;
-      if (this.state.boughtStar) return;
-      this.history.push();
-      gp.handleBuyStar(client.sessionId);
-    });
-
-    this.onMessage("returnAnimal", (client, data: { returns: { animalId: string; cageNum: number }[] }) => {
-      if (!gp.validateMainAction(client.sessionId, "trade")) return;
-      this.history.push();
-      gp.handleReturnAnimal(client.sessionId, data.returns);
-    });
-
-    this.onMessage("endTrade", (client) => {
-      if (!gp.validateMainAction(client.sessionId, "trade")) return;
-      if (this.state.chanceCardPhase) return;
-      this.history.push();
-      this.state.effectLog.clear();
-      this.state.turnStep = "clean";
-    });
-
-    // --- チャンスカード ---
-    this.onMessage("keepChanceCard", (client) => {
-      if (this.state.currentTurn !== client.sessionId) return;
-      if (this.state.chanceCardPhase !== "useOrKeep") return;
-      this.history.push();
-      gp.handleKeepChanceCard(client.sessionId);
-    });
-
-    this.onMessage("useDrawnChanceCard", (client) => {
-      if (this.state.currentTurn !== client.sessionId) return;
-      if (this.state.chanceCardPhase !== "useOrKeep" && this.state.chanceCardPhase !== "forceUse") return;
-      this.history.push();
-      gp.handleUseDrawnChanceCard(client.sessionId);
-    });
-
-    this.onMessage("useHeldChanceCard", (client) => {
-      if (this.state.currentTurn !== client.sessionId) return;
-      if (this.state.chanceCardPhase !== "forceUse") return;
-      this.history.push();
-      gp.handleUseHeldChanceCard(client.sessionId);
-    });
-
-    this.onMessage("useHeldCardInTrade", (client) => {
-      if (!gp.validateMainAction(client.sessionId, "trade")) return;
-      this.history.push();
-      gp.handleUseHeldCardInTrade(client.sessionId);
-    });
+    // --- ゲームアクション（dispatch経由） ---
+    this.onMessage("placeAnimal", (c, d) => this.dispatch(c.sessionId, "placeAnimal", d));
+    this.onMessage("receivePoop", (c) => this.dispatch(c.sessionId, "receivePoop"));
+    this.onMessage("rollDice", (c, d) => this.dispatch(c.sessionId, "rollDice", d));
+    this.onMessage("resolveSteal", (c, d) => this.dispatch(c.sessionId, "resolveSteal", d));
+    this.onMessage("resolveStealStar", (c, d) => this.dispatch(c.sessionId, "resolveStealStar", d));
+    this.onMessage("resolveChoice", (c, d) => this.dispatch(c.sessionId, "resolveChoice", d));
+    this.onMessage("buyAnimal", (c, d) => this.dispatch(c.sessionId, "buyAnimal", d));
+    this.onMessage("buyStar", (c) => this.dispatch(c.sessionId, "buyStar"));
+    this.onMessage("returnAnimal", (c, d) => this.dispatch(c.sessionId, "returnAnimal", d));
+    this.onMessage("endTrade", (c) => this.dispatch(c.sessionId, "endTrade"));
+    this.onMessage("keepChanceCard", (c) => this.dispatch(c.sessionId, "keepChanceCard"));
+    this.onMessage("useDrawnChanceCard", (c) => this.dispatch(c.sessionId, "useDrawnChanceCard"));
+    this.onMessage("useHeldChanceCard", (c) => this.dispatch(c.sessionId, "useHeldChanceCard"));
+    this.onMessage("useHeldCardInTrade", (c) => this.dispatch(c.sessionId, "useHeldCardInTrade"));
+    this.onMessage("resolveCompost", (c, d) => this.dispatch(c.sessionId, "resolveCompost", d));
+    this.onMessage("resolveCompostGive", (c, d) => this.dispatch(c.sessionId, "resolveCompostGive", d));
+    this.onMessage("resolveEviction", (c, d) => this.dispatch(c.sessionId, "resolveEviction", d));
+    this.onMessage("cleanPoop", (c) => this.dispatch(c.sessionId, "cleanPoop"));
+    this.onMessage("endClean", (c) => this.dispatch(c.sessionId, "endClean"));
+    this.onMessage("endTurn", (c) => this.dispatch(c.sessionId, "endTurn"));
 
     this.onMessage("cancelChanceCard", (client) => {
       if (this.state.currentTurn !== client.sessionId) return;
       if (!this.state.chanceCardPhase?.startsWith('using_')) return;
-      // Undo と同じ処理
       this.history.undo();
     });
 
-    this.onMessage("resolveCompost", (client, data: { count: number }) => {
-      if (this.state.currentTurn !== client.sessionId) return;
-      if (this.state.chanceCardPhase !== "using_compost") return;
-      this.history.push();
-      gp.handleResolveCompost(client.sessionId, data.count);
-    });
-
-    this.onMessage("resolveCompostGive", (client, data: { distributions: { targetId: string; count: number }[] }) => {
-      if (this.state.currentTurn !== client.sessionId) return;
-      if (this.state.chanceCardPhase !== "using_compostGive") return;
-      this.history.push();
-      gp.handleResolveCompostGive(client.sessionId, data.distributions);
-    });
-
-    this.onMessage("resolveEviction", (client, data: { targetPlayerId: string; animalId: string; cageNum: number }) => {
-      if (this.state.currentTurn !== client.sessionId) return;
-      if (this.state.chanceCardPhase !== "using_eviction") return;
-      this.history.push();
-      gp.handleResolveEviction(client.sessionId, data.targetPlayerId, data.animalId, data.cageNum);
-    });
-
-    this.onMessage("cleanPoop", (client) => {
-      if (!gp.validateMainAction(client.sessionId, "clean")) return;
-      this.history.push();
-      gp.handleCleanPoop(client.sessionId);
-    });
-
-    this.onMessage("endClean", (client) => {
-      if (!gp.validateMainAction(client.sessionId, "clean")) return;
-      this.history.push();
-      gp.handleEndClean(client.sessionId);
-    });
-
-    this.onMessage("endTurn", (client) => {
-      if (!gp.validateMainAction(client.sessionId, "flush")) return;
-      this.history.push();
-      gp.handleEndTurn();
-    });
-
     // --- デバッグ ---
-    this.onMessage("__debugSetDice", (_client, data: { dice: number[] }) => {
-      if (data?.dice && Array.isArray(data.dice)) {
-        gp._debugForcedDice = data.dice;
-      }
+    this.onMessage("__debugSetDice", (_c, d: { dice: number[] }) => {
+      if (d?.dice && Array.isArray(d.dice)) gp._debugForcedDice = d.dice;
     });
+    this.onMessage("__debugSetCoins", (_c, d: { playerId: string; coins: number }) => {
+      const p = this.state.players.get(d.playerId); if (p) p.coins = d.coins;
+    });
+    this.onMessage("__debugSetStars", (_c, d: { playerId: string; stars: number }) => {
+      const p = this.state.players.get(d.playerId); if (p) p.stars = d.stars;
+    });
+    this.onMessage("__debugSetPoop", (_c, d: { playerId: string; poop: number }) => {
+      const p = this.state.players.get(d.playerId); if (p) p.poopTokens = d.poop;
+    });
+  }
 
-    this.onMessage("__debugSetCoins", (_client, data: { playerId: string; coins: number }) => {
-      const player = this.state.players.get(data.playerId);
-      if (player) player.coins = data.coins;
-    });
+  // ===== Bot =====
 
-    this.onMessage("__debugSetStars", (_client, data: { playerId: string; stars: number }) => {
-      const player = this.state.players.get(data.playerId);
-      if (player) player.stars = data.stars;
-    });
-
-    this.onMessage("__debugSetPoop", (_client, data: { playerId: string; poop: number }) => {
-      const player = this.state.players.get(data.playerId);
-      if (player) player.poopTokens = data.poop;
-    });
+  private tickBot() {
+    this.botManager.cancelPending();
+    this.botManager.tick();
   }
 }

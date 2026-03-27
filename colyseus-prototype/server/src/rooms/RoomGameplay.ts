@@ -717,6 +717,12 @@ export class RoomGameplay {
     this.state.turnStep = "flush";
   }
 
+  handleEndTrade() {
+    if (this.state.chanceCardPhase) return;
+    this.state.effectLog.clear();
+    this.state.turnStep = "clean";
+  }
+
   handleEndTurn() {
     this.state.burstPlayerId = "";
     this.nextTurn();

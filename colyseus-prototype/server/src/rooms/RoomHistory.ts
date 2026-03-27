@@ -122,6 +122,7 @@ export class RoomHistory {
         p.totalPoopCleaned = pj.totalPoopCleaned ?? 0;
         p.totalCoinsEarned = pj.totalCoinsEarned ?? 0;
         p.hasHeldCard = pj.hasHeldCard ?? false;
+        p.isCpu = pj.isCpu ?? false;
         p.cages.clear();
         if (pj.cages) {
           for (const cj of pj.cages) {

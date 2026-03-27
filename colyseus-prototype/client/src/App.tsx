@@ -315,6 +315,7 @@ export function App() {
                 }} />
                 <span>
                   {p.name}
+                  {p.isCpu && ' 🤖'}
                   {p.id === sessionId && ' (あなた)'}
                   {p.id === state.hostId && ' ⭐ホスト'}
                 </span>
@@ -362,6 +363,33 @@ export function App() {
       )}
 
       <div style={styles.lobbyActions}>
+        {isHost && (
+          <div style={{ display: 'flex', gap: 8, marginBottom: 8, flexWrap: 'wrap', alignItems: 'center' }}>
+            <button
+              onClick={() => send('addCpu', { difficulty: 'normal' })}
+              disabled={players.length >= 4 || isLoading}
+              style={players.length >= 4 ? styles.disabledBtn : styles.cpuBtn}
+            >
+              🤖 CPU追加（ふつう）
+            </button>
+            <button
+              onClick={() => send('addCpu', { difficulty: 'hard' })}
+              disabled={players.length >= 4 || isLoading}
+              style={players.length >= 4 ? styles.disabledBtn : styles.cpuBtnHard}
+            >
+              🔥 CPU追加（つよい）
+            </button>
+            {players.some(p => p.isCpu) && (
+              <button
+                onClick={() => send('removeCpu')}
+                disabled={isLoading}
+                style={styles.cpuRemoveBtn}
+              >
+                CPU削除
+              </button>
+            )}
+          </div>
+        )}
         {isHost ? (
           <>
             <button
@@ -845,5 +873,34 @@ const styles: Record<string, React.CSSProperties> = {
     border: '1px solid #f44336',
     color: '#f44336',
     borderRadius: 4,
+  },
+  cpuBtn: {
+    padding: '6px 16px',
+    fontSize: 13,
+    cursor: 'pointer',
+    background: '#e8f5e9',
+    border: '1px solid #66bb6a',
+    color: '#2e7d32',
+    borderRadius: 6,
+    fontWeight: 'bold',
+  },
+  cpuBtnHard: {
+    padding: '6px 16px',
+    fontSize: 13,
+    cursor: 'pointer',
+    background: '#fce4ec',
+    border: '1px solid #ef5350',
+    color: '#c62828',
+    borderRadius: 6,
+    fontWeight: 'bold',
+  },
+  cpuRemoveBtn: {
+    padding: '6px 16px',
+    fontSize: 13,
+    cursor: 'pointer',
+    background: '#fff3e0',
+    border: '1px solid #ffa726',
+    color: '#e65100',
+    borderRadius: 6,
   },
 };
