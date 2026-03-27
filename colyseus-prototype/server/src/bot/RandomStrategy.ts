@@ -97,13 +97,20 @@ export class RandomStrategy implements BotStrategy {
   }
 
   private decideTrade(state: ZooState, playerId: string, player: PlayerState): BotAction | null {
-    // 50%の確率で星を買う（買えるなら）
-    if (!state.boughtStar && player.coins >= STAR_COST && Math.random() < 0.5) {
-      return { type: "buyStar" };
+    // 星を買えるなら高確率で買う（コインがあるのに買わない問題を修正）
+    if (!state.boughtStar && player.coins >= STAR_COST) {
+      // 星2つ（あと1つで勝利）なら確実に買う、それ以外は80%
+      if (player.stars >= 2 || Math.random() < 0.8) {
+        return { type: "buyStar" };
+      }
     }
 
-    // 30%の確率で動物を買う（買えるなら）
-    if (!state.boughtAnimal && Math.random() < 0.3) {
+    // 星をまだ買っていない場合、コインを温存して動物を買わないことがある
+    // 星1つ以上で6コイン以上持っていれば50%で温存
+    const savingForStar = player.stars >= 1 && player.coins >= 6 && Math.random() < 0.5;
+
+    // 30%の確率で動物を買う（買えるなら）— 星温存中は買わない
+    if (!state.boughtAnimal && !savingForStar && Math.random() < 0.3) {
       const purchase = this.findRandomPurchase(state, playerId, player);
       if (purchase) return purchase;
     }
@@ -132,8 +139,12 @@ export class RandomStrategy implements BotStrategy {
   }
 
   private decideClean(player: PlayerState): BotAction {
-    // うんちが5個以上でコインがあれば掃除する
+    // 危険域（5個以上）：コインがあれば必ず掃除
     if (player.poopTokens >= 5 && player.coins >= 1) {
+      return { type: "cleanPoop" };
+    }
+    // 注意域（4個）：50%の確率で掃除（やさしいCPUなのでたまにサボる）
+    if (player.poopTokens >= 4 && player.coins >= 1 && Math.random() < 0.5) {
       return { type: "cleanPoop" };
     }
     return { type: "endClean" };

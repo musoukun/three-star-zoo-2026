@@ -124,8 +124,14 @@ export class GreedyStrategy implements BotStrategy {
       }
     }
 
-    // 2. 動物購入（コスパ順で検討）
-    if (!state.boughtAnimal) {
+    // 2. 星が近い場合はコインを温存して動物を買わない
+    //    星を1つ以上持っていて、あとSTAR_COSTの6割以上貯まっているなら温存
+    const savingForStar = player.stars >= 1 && player.coins >= STAR_COST * 0.6;
+    // 星を2つ持っている（あと1つで勝利）なら必ず温存
+    const almostWinning = player.stars >= STARS_TO_WIN - 1;
+
+    // 3. 動物購入（コスパ順で検討）— 星を温存中なら買わない
+    if (!state.boughtAnimal && !almostWinning && !savingForStar) {
       const purchase = this.findBestPurchase(state, playerId, player);
       if (purchase) return purchase;
     }
@@ -186,16 +192,16 @@ export class GreedyStrategy implements BotStrategy {
   }
 
   private decideClean(player: PlayerState): BotAction {
-    // バースト回避を最優先
+    // バースト回避を最優先（7個以上）
     if (player.poopTokens >= POOP_BURST_THRESHOLD && player.coins >= 1) {
       return { type: "cleanPoop" };
     }
-    // バースト圏内（5-6）で余裕があれば掃除
+    // 危険域（5-6個）：コインがあれば必ず掃除
     if (player.poopTokens >= 5 && player.coins >= 1) {
       return { type: "cleanPoop" };
     }
-    // 4個でも余裕のコインがあれば掃除しておく
-    if (player.poopTokens >= 4 && player.coins >= 3) {
+    // 注意域（3-4個）：次ターンのうんち受取で危険域に入るので余裕があれば掃除
+    if (player.poopTokens >= 3 && player.coins >= 1) {
       return { type: "cleanPoop" };
     }
     return { type: "endClean" };
