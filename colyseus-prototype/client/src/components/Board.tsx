@@ -204,7 +204,7 @@ export function Board({ onLeave }: { onLeave: () => void }) {
       <div className={`market-drawer ${marketOpen ? 'open' : ''}`}>
         <div className="market-drawer-header">
           <span><Emoji name="store" size={16} /> 動物マーケット</span>
-          <span className="market-header-coins"><Emoji name="coin" size={14} /> {me?.coins ?? 0}</span>
+          <span className="market-header-coins">所持金：<Emoji name="coin" size={14} />{me?.coins ?? 0}</span>
           <button onClick={() => setMarketOpen(false)} className="drawer-close-btn">✕</button>
         </div>
         <div className="market-drawer-body">
@@ -363,7 +363,7 @@ export function Board({ onLeave }: { onLeave: () => void }) {
 
       {/* ===== 中央右: マーケット ===== */}
       <div className="market-area">
-        <div className="market-title"><Emoji name="store" size={16} /> 動物マーケット <span className="market-header-coins"><Emoji name="coin" size={14} /> {me?.coins ?? 0}</span></div>
+        <div className="market-title"><Emoji name="store" size={16} /> 動物マーケット <span className="market-header-coins">所持金：<Emoji name="coin" size={14} />{me?.coins ?? 0}</span></div>
         <MarketPanel />
       </div>
 
