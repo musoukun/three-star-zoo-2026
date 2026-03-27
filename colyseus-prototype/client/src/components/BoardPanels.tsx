@@ -4,10 +4,13 @@ import { ANIMALS, ANIMAL_ICONS, ANIMAL_CARD_IMAGES, EFFECT_TEXT_FULL, COLOR_CLAS
 import { CHANCE_CARD_DATA } from '../game/chanceCards';
 import type { CageState } from '../hooks/useColyseus';
 import { AnimalIcon, checkPlacement } from './boardUtils';
+import { Emoji, COLOR_EMOJI } from './Emoji';
+import sameAnimalRuleImg from '../assets/same-animal-rule.png';
 
 // ===== リザルト画面 =====
 export function GameResultModal({ onLeave }: { onLeave: () => void }) {
-  const { state, send } = useContext(ColyseusContext);
+  const { state, sessionId, send } = useContext(ColyseusContext);
+  const [copied, setCopied] = useState(false);
   if (!state || state.phase !== 'ended') return null;
 
   const winner = state.players[state.winnerId];
@@ -23,11 +26,61 @@ export function GameResultModal({ onLeave }: { onLeave: () => void }) {
     }
   }
 
+  // シェア用テキスト生成
+  const allPlayers = Object.values(state.players);
+  const me = state.players[sessionId];
+  const isWinner = sessionId === state.winnerId;
+
+  const buildShareText = () => {
+    const lines: string[] = [];
+    lines.push(`🏆 三ツ星動物園 ゲーム結果`);
+    lines.push('');
+    if (isWinner) {
+      lines.push(`🎉 勝利しました！`);
+    } else {
+      lines.push(`${winner.name} の勝利！`);
+    }
+    lines.push('');
+    lines.push(`--- 結果 ---`);
+    for (const p of allPlayers) {
+      const mark = p.id === state.winnerId ? '👑' : '  ';
+      lines.push(`${mark} ${p.name}: ⭐${p.stars} 💰${p.coins} 💩掃除${p.totalPoopCleaned}`);
+    }
+    lines.push('');
+    lines.push(`#三ツ星動物園`);
+    return lines.join('\n');
+  };
+
+  const shareText = buildShareText();
+
+  const handleShareX = () => {
+    const url = `https://x.com/intent/tweet?text=${encodeURIComponent(shareText)}`;
+    window.open(url, '_blank', 'noopener,noreferrer');
+  };
+
+  const handleCopy = async () => {
+    try {
+      await navigator.clipboard.writeText(shareText);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    } catch {
+      // フォールバック
+      const ta = document.createElement('textarea');
+      ta.value = shareText;
+      document.body.appendChild(ta);
+      ta.select();
+      document.execCommand('copy');
+      document.body.removeChild(ta);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    }
+  };
+
   return (
     <div className="result-overlay">
       <div className="result-modal" style={winnerColor ? { borderColor: winnerColor.bg } : {}}>
         <div className="result-header" style={winnerColor ? { background: winnerColor.bg } : {}}>
-          🏆 ゲーム終了
+          <Emoji name="trophy" size={20} /> ゲーム終了
         </div>
         <div className="result-body">
           <div className="result-winner">
@@ -39,15 +92,15 @@ export function GameResultModal({ onLeave }: { onLeave: () => void }) {
 
           <div className="result-stats">
             <div className="result-stat">
-              <span className="result-stat-icon">⭐</span>
+              <span className="result-stat-icon"><Emoji name="star" size={18} /></span>
               <span>星 {winner.stars}つ</span>
             </div>
             <div className="result-stat">
-              <span className="result-stat-icon">💰</span>
+              <span className="result-stat-icon"><Emoji name="coin" size={18} /></span>
               <span>残りコイン {winner.coins}枚</span>
             </div>
             <div className="result-stat">
-              <span className="result-stat-icon">💩</span>
+              <span className="result-stat-icon"><Emoji name="poop" size={18} /></span>
               <span>掃除した💩 {winner.totalPoopCleaned}個</span>
             </div>
           </div>
@@ -73,8 +126,8 @@ export function GameResultModal({ onLeave }: { onLeave: () => void }) {
               const pc = p.color ? PLAYER_COLORS[p.color] : null;
               return (
                 <div key={p.id} className="result-player-row" style={pc ? { borderLeft: `3px solid ${pc.bg}` } : {}}>
-                  <span>{p.name} {p.id === state.winnerId && '🏆'}</span>
-                  <span>⭐{p.stars} 💰{p.coins} 💩掃除{p.totalPoopCleaned}</span>
+                  <span>{p.name} {p.id === state.winnerId && <Emoji name="trophy" size={14} />}</span>
+                  <span><Emoji name="star" size={12} />{p.stars} <Emoji name="coin" size={12} />{p.coins} <Emoji name="poop" size={12} />掃除{p.totalPoopCleaned}</span>
                 </div>
               );
             })}
@@ -82,11 +135,17 @@ export function GameResultModal({ onLeave }: { onLeave: () => void }) {
         </div>
 
         <div className="result-actions">
+          <button className="result-btn share-x" onClick={handleShareX}>
+            𝕏 にシェア
+          </button>
+          <button className="result-btn share-copy" onClick={handleCopy}>
+            {copied ? '✓ コピーしました' : 'テキストをコピー'}
+          </button>
           <button className="result-btn restart" onClick={() => send('restartGame')}>
-            🔄 もう1試合
+            <Emoji name="refresh" size={14} /> もう1試合
           </button>
           <button className="result-btn leave" onClick={onLeave}>
-            🚪 退室する
+            <Emoji name="door" size={14} /> 退室する
           </button>
         </div>
       </div>
@@ -115,7 +174,7 @@ export function BurstAnimation() {
   return (
     <div className="burst-animation">
       <div className="burst-slide">
-        <span className="burst-icon">💩💥</span>
+        <span className="burst-icon"><Emoji name="poop" size={28} /><Emoji name="explosion" size={28} /></span>
         <span className="burst-text">うんちバースト！</span>
         <span className="burst-name">{playerName}</span>
       </div>
@@ -128,7 +187,7 @@ export function RuleTooltip() {
   const [open, setOpen] = useState(false);
   return (
     <div className="rule-tooltip-container">
-      <div className="rule-tooltip-trigger" onClick={() => setOpen(!open)}>📖</div>
+      <div className="rule-tooltip-trigger" onClick={() => setOpen(!open)}><Emoji name="book" size={20} /></div>
       {open && <><div className="rule-tooltip-overlay" onClick={() => setOpen(false)} />
       <div className="rule-tooltip-content">
         <button className="rule-close-btn" onClick={() => setOpen(false)}>✕</button>
@@ -136,17 +195,17 @@ export function RuleTooltip() {
         <div className="rule-section">
           <strong>ターンの流れ</strong>
           <ol>
-            <li>💩 うんちコマを受け取る</li>
-            <li>🎲 サイコロを振る（1個 or 2個）</li>
-            <li>💰 対応する檻の効果が発動</li>
-            <li>🛒 お買い物（動物1匹 + 星1つまで）</li>
-            <li>🧹 掃除（1コインで2個除去）</li>
-            <li>✅ ターン終了</li>
+            <li><Emoji name="poop" size={14} /> うんちコマを受け取る</li>
+            <li><Emoji name="dice" size={14} /> サイコロを振る（1個 or 2個）</li>
+            <li><Emoji name="coin" size={14} /> 対応する檻の効果が発動</li>
+            <li><Emoji name="cart" size={14} /> お買い物（動物1匹 + 星1つまで）</li>
+            <li><Emoji name="broom" size={14} /> 掃除（1コインで2個除去）</li>
+            <li><Emoji name="check" size={14} /> ターン終了</li>
           </ol>
         </div>
         <div className="rule-section">
           <strong>勝利条件</strong>
-          <p>⭐星3つ + 💩6個以下でターン終了</p>
+          <p><Emoji name="star" size={14} />星3つ + 💩6個以下でターン終了</p>
         </div>
         <div className="rule-section">
           <strong>バースト</strong>
@@ -156,9 +215,11 @@ export function RuleTooltip() {
         </div>
         <div className="rule-section">
           <strong>配置ルール</strong>
-          <p>1檻に2匹まで / 同じ動物は不可<br/>
-          色が1つ以上一致する必要あり<br/>
-          2匹目は隣接檻のみ</p>
+          <p>1エリアに同じ動物を配置できない<br/>
+          1エリアに異なる色の動物は置けない（色が1つでも一致すればOK）<br/>
+          同じ動物の2匹目を配置するときは、上下左右に隣接するエリアに置く<br/>
+          1檻に2匹まで配置できる</p>
+          <img src={sameAnimalRuleImg} alt="同じ動物を置く時のルール" className="rule-image" />
         </div>
         <div className="rule-section">
           <strong>効果処理順</strong>
@@ -209,7 +270,7 @@ export function MarketPanel() {
             }}
           >
             ケージ #{cage.num}
-            {cage.slots.length > 0 && ` (${cage.slots.map(s => ANIMAL_ICONS[s.animalId] + ANIMALS[s.animalId]?.name).join(', ')})`}
+            {cage.slots.length > 0 && ` (${cage.slots.map(s => ANIMALS[s.animalId]?.name).join(', ')})`}
           </button>
         ))}
         {notPlaceable.map(({ cage, result }) => (
@@ -220,7 +281,7 @@ export function MarketPanel() {
             style={{ display: 'block', width: '100%', marginBottom: 4, padding: 8, textAlign: 'left', color: '#aaa', background: '#f5f5f5', cursor: 'not-allowed' }}
           >
             ケージ #{cage.num}
-            {cage.slots.length > 0 && ` (${cage.slots.map(s => ANIMAL_ICONS[s.animalId] + ANIMALS[s.animalId]?.name).join(', ')})`}
+            {cage.slots.length > 0 && ` (${cage.slots.map(s => ANIMALS[s.animalId]?.name).join(', ')})`}
             <span style={{ fontSize: 11, marginLeft: 8, color: '#e57373' }}>
               {(result as { reason: string }).reason}
             </span>
@@ -249,9 +310,9 @@ export function MarketPanel() {
             style={{ cursor: canBuy ? 'pointer' : 'default' }}
           >
             <div className={`market-card-header ${colorClass}`}>
-              <span>💰{a.cost}</span>
+              <span><Emoji name="coin" size={14} />{a.cost}</span>
               <span>{a.effect.global ? '範囲：全員' : '範囲：自分のみ'}</span>
-              <span>💩{a.poops}</span>
+              <span><Emoji name="poop" size={14} />{a.poops}</span>
             </div>
             <div className="market-card-body">
               <div className="market-card-icon">
@@ -264,7 +325,10 @@ export function MarketPanel() {
             </div>
             <div className="market-card-footer">
               <span>残 {stock}枚</span>
-              <span>{a.colors.map(c => ({ RED: '🔴', BLUE: '🔵', GREEN: '🟢', PURPLE: '🟣', ORANGE: '🟠' }[c] || c)).join('')}</span>
+              <span>{a.colors.map(c => {
+                const key = COLOR_EMOJI[c];
+                return key ? <Emoji key={c} name={key} size={16} /> : c;
+              })}</span>
             </div>
           </div>
         );
@@ -284,10 +348,10 @@ export function ChanceCardDrawUI() {
 
   return (
     <div className="trade-submenu">
-      <p style={{ fontWeight: 'bold', marginBottom: 6 }}>🃏 チャンスカードを引いた!</p>
+      <p style={{ fontWeight: 'bold', marginBottom: 6 }}><Emoji name="card" size={16} /> チャンスカードを引いた!</p>
       {drawnCard && (
         <div style={{ padding: '6px 10px', background: '#fff8e1', borderRadius: 6, marginBottom: 8, border: '1px solid #ffd54f' }}>
-          <span style={{ fontSize: 18 }}>{drawnCard.icon}</span>{' '}
+          <Emoji name={drawnCard.emojiKey} size={18} />{' '}
           <strong>{drawnCard.name}</strong>
           <div style={{ fontSize: 11, color: '#555', marginTop: 2 }}>{drawnCard.description}</div>
         </div>
@@ -297,7 +361,7 @@ export function ChanceCardDrawUI() {
         <>
           <p style={{ fontSize: 11, color: '#888', margin: '4px 0' }}>伏せカード:</p>
           <div style={{ padding: '4px 10px', background: '#e8eaf6', borderRadius: 6, marginBottom: 8, border: '1px solid #9fa8da' }}>
-            <span style={{ fontSize: 16 }}>{heldCard.icon}</span>{' '}
+            <Emoji name={heldCard.emojiKey} size={16} />{' '}
             <strong>{heldCard.name}</strong>
             <span style={{ fontSize: 11, color: '#555', marginLeft: 6 }}>{heldCard.description}</span>
           </div>
@@ -310,7 +374,7 @@ export function ChanceCardDrawUI() {
         </button>
         {!isForceUse && (
           <button className="action-btn secondary" onClick={() => send('keepChanceCard')}>
-            📥 伏せる
+            <Emoji name="inbox" size={14} /> 伏せる
           </button>
         )}
         {isForceUse && (
@@ -347,11 +411,11 @@ export function ChanceCardInteractionUI() {
     const maxCount = Math.min(5, me.poopTokens);
     return (
       <div className="trade-submenu">
-        <p>{cardData?.icon} {cardData?.name}: 💩を金に変換</p>
+        <p>{cardData && <Emoji name={cardData.emojiKey} size={16} />} {cardData?.name}: 💩を金に変換</p>
         <div style={{ display: 'flex', alignItems: 'center', gap: 8, margin: '6px 0' }}>
           <button className="action-btn secondary" style={{ padding: '2px 8px' }}
             onClick={() => setCompostCount(Math.max(0, compostCount - 1))} disabled={compostCount <= 0}>−</button>
-          <span style={{ fontWeight: 'bold', minWidth: 30, textAlign: 'center' }}>💩 {compostCount}個 → {compostCount}💰</span>
+          <span style={{ fontWeight: 'bold', minWidth: 30, textAlign: 'center' }}>💩 {compostCount}個 → {compostCount}<Emoji name="coin" size={14} /></span>
           <button className="action-btn secondary" style={{ padding: '2px 8px' }}
             onClick={() => setCompostCount(Math.min(maxCount, compostCount + 1))} disabled={compostCount >= maxCount}>+</button>
         </div>
@@ -374,7 +438,7 @@ export function ChanceCardInteractionUI() {
     const totalGiven = Object.values(distributions).reduce((a, b) => a + b, 0);
     return (
       <div className="trade-submenu">
-        <p>{cardData?.icon} {cardData?.name}: 💩を他プレイヤーに分配 (最大{maxGive}個)</p>
+        <p>{cardData && <Emoji name={cardData.emojiKey} size={16} />} {cardData?.name}: 💩を他プレイヤーに分配 (最大{maxGive}個)</p>
         {otherPlayers.map(pid => (
           <div key={pid} style={{ display: 'flex', alignItems: 'center', gap: 6, margin: '3px 0' }}>
             <span style={{ minWidth: 80, fontSize: 12 }}>{getPlayerName(pid)}</span>
@@ -410,7 +474,7 @@ export function ChanceCardInteractionUI() {
     if (!evictionTarget) {
       return (
         <div className="trade-submenu">
-          <p>{cardData?.icon} {cardData?.name}: 対象プレイヤーを選択</p>
+          <p>{cardData && <Emoji name={cardData.emojiKey} size={16} />} {cardData?.name}: 対象プレイヤーを選択</p>
           {otherPlayers.map(pid => {
             const p = state.players[pid];
             const animalCount = p.cages.reduce((sum, c) => sum + c.slots.length, 0);
@@ -438,7 +502,7 @@ export function ChanceCardInteractionUI() {
 
     return (
       <div className="trade-submenu">
-        <p>{cardData?.icon} {cardData?.name}: {getPlayerName(evictionTarget)}の動物を選択</p>
+        <p>{cardData && <Emoji name={cardData.emojiKey} size={16} />} {cardData?.name}: {getPlayerName(evictionTarget)}の動物を選択</p>
         <button className="action-btn secondary" style={{ fontSize: 10, padding: '1px 6px', marginBottom: 4 }}
           onClick={() => setEvictionTarget('')}>← 戻る</button>
         {animals.map((a, i) => (

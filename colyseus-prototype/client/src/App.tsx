@@ -2,6 +2,7 @@ import { useState, useEffect, createContext } from 'react';
 import { useColyseus } from './hooks/useColyseus';
 import type { ZooRoomState, HistoryInfo, RoomListing } from './hooks/useColyseus';
 import { Board } from './components/Board';
+import { Emoji } from './components/Emoji';
 
 // プレイヤーカラー定義（ロビー＆ゲーム中共通）
 export const PLAYER_COLORS: Record<string, { bg: string; light: string; label: string }> = {
@@ -70,7 +71,7 @@ export function App() {
     return (
       <div style={{ ...S.page, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
         <div style={{ textAlign: 'center', color: '#fff' }}>
-          <div style={{ fontSize: 48, marginBottom: 16 }}>🔄</div>
+          <div style={{ fontSize: 48, marginBottom: 16 }}><Emoji name="refresh" size={48} /></div>
           <h2 style={{ margin: '0 0 8px' }}>再接続中...</h2>
           <p style={{ color: '#aaa', margin: 0 }}>前回のセッションに復帰しています</p>
         </div>
@@ -99,7 +100,9 @@ export function App() {
               <h1 style={S.title}>三ツ星動物園</h1>
               <span style={S.subtitle}>Three Star Zoo - Online</span>
             </div>
-            <div style={S.animals}>🐼 🦁 🐧 🦒 🐘</div>
+            <div style={S.animals}>
+              <Emoji name="panda" size={24} /> <Emoji name="lion" size={24} /> <Emoji name="penguin" size={24} /> <Emoji name="giraffe" size={24} /> <Emoji name="elephant" size={24} />
+            </div>
           </div>
         </div>
 
@@ -146,7 +149,7 @@ export function App() {
                       checked={isPrivate}
                       onChange={(e) => setIsPrivate(e.target.checked)}
                     />
-                    <span>🔒 プライベートルーム</span>
+                    <span><Emoji name="lock" size={14} /> プライベートルーム</span>
                   </label>
                   {isPrivate && (
                     <input
@@ -166,7 +169,7 @@ export function App() {
                     style={isLoading ? S.disabledBtn : S.goldBtn}
                     disabled={isLoading || (isPrivate && !newRoomPassword)}
                   >
-                    {isLoading ? '接続中...' : '🎲 作成して入室'}
+                    {isLoading ? '接続中...' : <><Emoji name="dice" size={14} /> 作成して入室</>}
                   </button>
                 </div>
               )}
@@ -191,7 +194,8 @@ export function App() {
               {filteredRooms.length === 0 ? (
                 <p style={S.empty}>
                   {rooms.length === 0
-                    ? '🏠 ルームがありません。新しいルームを作成しましょう！'
+                    ? <><Emoji name="house" size={14} /> ルームがありません。新しいルームを作成しましょう！</>
+
                     : '検索結果がありません。'}
                 </p>
               ) : (
@@ -200,12 +204,12 @@ export function App() {
                     <div key={r.roomId} style={S.roomRow}>
                       <div>
                         <div style={S.roomName}>
-                          {r.metadata?.isPrivate ? '🔒 ' : '🏠 '}
+                          {r.metadata?.isPrivate ? <><Emoji name="lock" size={14} /> </> : <><Emoji name="house" size={14} /> </>}
                           {r.metadata?.roomName || r.roomId}
                         </div>
                         <div style={S.roomMeta}>
-                          👥 {r.metadata?.playerCount ?? r.clients}人
-                          {r.locked ? ' ・ 🎮 ゲーム中' : ' ・ ⏳ 待機中'}
+                          <Emoji name="people" size={12} /> {r.metadata?.playerCount ?? r.clients}人
+                          {r.locked ? <> ・ <Emoji name="controller" size={12} /> ゲーム中</> : <> ・ <Emoji name="hourglass" size={12} /> 待機中</>}
                         </div>
                       </div>
                       <button
@@ -235,7 +239,7 @@ export function App() {
         {passwordTarget && (
           <div style={S.overlay}>
             <div style={S.dialog}>
-              <h3 style={{ margin: '0 0 8px' }}>🔒 パスワードを入力</h3>
+              <h3 style={{ margin: '0 0 8px' }}><Emoji name="lock" size={16} /> パスワードを入力</h3>
               <p style={{ margin: '0 0 12px', color: '#666' }}>
                 {passwordTarget.metadata?.roomName || passwordTarget.roomId}
               </p>
@@ -272,7 +276,7 @@ export function App() {
 
         {/* フッター */}
         <div style={S.footer}>
-          <span>🐾 Three Star Zoo Online &copy; 2026</span>
+          <span><Emoji name="paw" size={14} /> Three Star Zoo Online &copy; 2026</span>
         </div>
       </div>
     );
@@ -294,8 +298,8 @@ export function App() {
 
   return (
     <div style={styles.container}>
-      <h2>🏠 {state.roomName || '三ツ星動物園'}</h2>
-      {state.isPrivate && <span style={styles.privateBadge}>🔒 プライベート</span>}
+      <h2><Emoji name="house" size={20} /> {state.roomName || '三ツ星動物園'}</h2>
+      {state.isPrivate && <span style={styles.privateBadge}><Emoji name="lock" size={14} /> プライベート</span>}
 
       <div style={styles.lobbyPlayers}>
         <h3>参加者 ({players.length}人)</h3>
@@ -314,9 +318,9 @@ export function App() {
                 }} />
                 <span>
                   {p.name}
-                  {p.isCpu && ' 🤖'}
+                  {p.isCpu && <> <Emoji name="robot" size={14} /></>}
                   {p.id === sessionId && ' (あなた)'}
-                  {p.id === state.hostId && ' ⭐ホスト'}
+                  {p.id === state.hostId && <> <Emoji name="star" size={14} />ホスト</>}
                 </span>
               </div>
               {p.connected
@@ -369,14 +373,14 @@ export function App() {
               disabled={players.length >= 4 || isLoading}
               style={players.length >= 4 ? styles.disabledBtn : styles.cpuBtn}
             >
-              🤖 CPU追加（ふつう）
+              <Emoji name="robot" size={14} /> CPU追加（ふつう）
             </button>
             <button
               onClick={() => send('addCpu', { difficulty: 'hard' })}
               disabled={players.length >= 4 || isLoading}
               style={players.length >= 4 ? styles.disabledBtn : styles.cpuBtnHard}
             >
-              🔥 CPU追加（つよい）
+              <Emoji name="fire" size={14} /> CPU追加（つよい）
             </button>
             {players.some(p => p.isCpu) && (
               <button

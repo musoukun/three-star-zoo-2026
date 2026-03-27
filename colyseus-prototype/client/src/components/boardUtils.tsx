@@ -1,4 +1,5 @@
 import { ANIMALS, ANIMAL_FACE_IMAGES, ANIMAL_ICONS } from '../game/animals';
+import { Emoji, EMOJI } from './Emoji';
 import type { CageState } from '../hooks/useColyseus';
 
 // ===== 隣接マップ（サーバーと同一） =====
@@ -19,13 +20,18 @@ export const ADJACENCY: Record<number, number[]> = {
 
 // ===== ターンステップ定数 =====
 export const TURN_STEPS = [
-  { key: 'poop', icon: '💩', label: 'うんち' },
-  { key: 'roll', icon: '🎲', label: 'サイコロ' },
-  { key: 'income', icon: '💰', label: '収入' },
-  { key: 'trade', icon: '🛒', label: '買物' },
-  { key: 'clean', icon: '🧹', label: '掃除' },
-  { key: 'flush', icon: '✅', label: '終了' },
+  { key: 'poop', emoji: 'poop', label: 'うんち' },
+  { key: 'roll', emoji: 'dice', label: 'サイコロ' },
+  { key: 'income', emoji: 'coin', label: '収入' },
+  { key: 'trade', emoji: 'cart', label: '買物' },
+  { key: 'clean', emoji: 'broom', label: '掃除' },
+  { key: 'flush', emoji: 'check', label: '終了' },
 ];
+
+/** ステップアイコンをレンダリング */
+export function StepIcon({ emoji, size = 14 }: { emoji: string; size?: number }) {
+  return <Emoji name={emoji} size={size} />;
+}
 
 // ===== ケージレイアウト =====
 export const TOP_ROW = [1, 2, 3, 4, 5, 6];
@@ -37,8 +43,28 @@ export function AnimalIcon({ id, size = 28, className = '' }: { id: string; size
   if (src) {
     return <img src={src} alt={id} className={`animal-icon-img ${className}`} style={{ width: size, height: size }} />;
   }
-  return <span style={{ fontSize: size * 0.7 }}>{ANIMAL_ICONS[id] || '🐾'}</span>;
+  // フォールバック: 3D絵文字画像
+  const emojiKey = ANIMAL_EMOJI_MAP[id];
+  if (emojiKey && EMOJI[emojiKey]) {
+    return <Emoji name={emojiKey} size={size} className={className} />;
+  }
+  return <Emoji name="paw" size={size} className={className} />;
 }
+
+/** 動物ID→絵文字キー */
+const ANIMAL_EMOJI_MAP: Record<string, string> = {
+  RessaPanda: 'panda',
+  RosyFacedLovebird: 'parrot',
+  Penguin: 'penguin',
+  Lion: 'lion',
+  GiantPanda: 'panda',
+  CaliforniaSeaLion: 'seal',
+  ReticulatedGiraffe: 'giraffe',
+  Cheetah: 'leopard',
+  AfricanElephant: 'elephant',
+  SouthernWhiteRhino: 'rhino',
+  BottlenoseDolphin: 'dolphin',
+};
 
 // ===== 配置バリデーション =====
 type PlaceResult = { ok: true } | { ok: false; reason: string };
@@ -73,14 +99,14 @@ export function canPlaceOnCage(animalId: string, cage: CageState, allCages?: Cag
 // ===== ケージの色 → 背景・ボーダーのスタイル =====
 const CAGE_BG: Record<string, string> = {
   RED: '#fde0e0',
-  BLUE: '#dff3f1',
+  BLUE: '#dce4f9',
   GREEN: '#e0f2e0',
   PURPLE: '#f0e6f6',
   ORANGE: '#fff3e0',
 };
 const CAGE_BORDER: Record<string, string> = {
   RED: '#e57373',
-  BLUE: '#4db6ac',
+  BLUE: '#4169e1',
   GREEN: '#66bb6a',
   PURPLE: '#ba68c8',
   ORANGE: '#ffa726',

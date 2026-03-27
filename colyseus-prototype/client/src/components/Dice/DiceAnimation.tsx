@@ -1,6 +1,7 @@
 import { useEffect, useRef, Suspense } from 'react';
 import { Canvas } from '@react-three/fiber';
 import DiceMesh from './DiceMesh';
+import { Emoji } from '../Emoji';
 
 type DiceAnimationProps = {
   diceResults: number[];
@@ -44,9 +45,10 @@ export default function DiceAnimation({ diceResults, onComplete, duration = 0.9 
         </Canvas>
       </div>
       <div className="dice-result-text">
+        <Emoji name="dice" size={18} />{' '}
         {diceResults.length === 1
-          ? `🎲 ${diceResults[0]}`
-          : `🎲 ${diceResults[0]} + ${diceResults[1]} = ${diceResults[0] + diceResults[1]}`}
+          ? diceResults[0]
+          : `${diceResults[0]} + ${diceResults[1]} = ${diceResults[0] + diceResults[1]}`}
       </div>
     </div>
   );

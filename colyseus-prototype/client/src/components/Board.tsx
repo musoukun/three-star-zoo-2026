@@ -5,12 +5,13 @@ import { CHANCE_CARD_DATA } from '../game/chanceCards';
 import type { CageState } from '../hooks/useColyseus';
 import {
   TURN_STEPS, TOP_ROW, BOTTOM_ROW,
-  AnimalIcon, canPlaceOnCage, getCageStyle,
+  AnimalIcon, canPlaceOnCage, getCageStyle, StepIcon,
 } from './boardUtils';
 import {
   GameResultModal, BurstAnimation, RuleTooltip,
   MarketPanel, ChanceCardDrawUI, ChanceCardInteractionUI,
 } from './BoardPanels';
+import { Emoji } from './Emoji';
 
 const DiceAnimation = lazy(() => import('./Dice/DiceAnimation'));
 
@@ -85,10 +86,10 @@ export function Board({ onLeave }: { onLeave: () => void }) {
           {isSetup ? `${getPlayerName(state.currentTurn)} 配置中` : getPlayerName(state.currentTurn)}
         </strong>
         {state.diceRolled && (
-          <span>🎲{state.diceCount === 1 ? `${state.dice1}` : `${state.dice1}+${state.dice2}`}={state.diceSum}</span>
+          <span><Emoji name="dice" size={14} />{state.diceCount === 1 ? `${state.dice1}` : `${state.dice1}+${state.dice2}`}={state.diceSum}</span>
         )}
         {state.phase === 'main' && state.chanceDeckCount > 0 && (
-          <span style={{ fontSize: 10, color: 'rgba(255,255,255,0.6)' }}>🃏{state.chanceDeckCount}</span>
+          <span style={{ fontSize: 10, color: 'rgba(255,255,255,0.6)' }}><Emoji name="card" size={12} />{state.chanceDeckCount}</span>
         )}
         {isMyTurn && <span className="my-turn">あなた</span>}
         <button onClick={onLeave} className="mobile-leave-btn">退出</button>
@@ -104,8 +105,8 @@ export function Board({ onLeave }: { onLeave: () => void }) {
               {c && <span className="mobile-player-dot" style={{ background: c.bg }} />}
               <span className={pid === sessionId ? 'mobile-player-name me' : 'mobile-player-name'}>{p.name}</span>
               <span className="mobile-player-stats">
-                💰{p.coins} ⭐{p.stars} 💩{p.poopTokens}
-                {p.hasHeldCard && ' 🃏'}
+                <Emoji name="coin" size={12} />{p.coins} <Emoji name="star" size={12} />{p.stars} <Emoji name="poop" size={12} />{p.poopTokens}
+                {p.hasHeldCard && <> <Emoji name="card" size={12} /></>}
               </span>
             </div>
           );
@@ -116,7 +117,7 @@ export function Board({ onLeave }: { onLeave: () => void }) {
       <div className="mobile-content">
         {isEnded && (
           <div className="game-over" style={{ padding: 8, marginBottom: 8 }}>
-            <h2 style={{ fontSize: 16, margin: 0 }}>🏆 ゲーム終了!</h2>
+            <h2 style={{ fontSize: 16, margin: 0 }}><Emoji name="trophy" size={16} /> ゲーム終了!</h2>
           </div>
         )}
 
@@ -128,7 +129,7 @@ export function Board({ onLeave }: { onLeave: () => void }) {
               <div className="mobile-other-name" style={pc ? { color: pc.bg } : undefined}>
                 {pc && <span className="mobile-player-dot" style={{ background: pc.bg }} />}
                 {player.name}
-                <span className="mobile-other-stats">💰{player.coins} ⭐{player.stars} 💩{player.poopTokens}</span>
+                <span className="mobile-other-stats"><Emoji name="coin" size={12} />{player.coins} <Emoji name="star" size={12} />{player.stars} <Emoji name="poop" size={12} />{player.poopTokens}</span>
               </div>
               <MiniCageGrid cages={player.cages ?? []} diceSum={state.diceRolled && !diceAnimResults ? state.diceSum : 0} />
             </div>
@@ -144,9 +145,9 @@ export function Board({ onLeave }: { onLeave: () => void }) {
             <span className="mobile-my-label">自分の動物園</span>
             {me && (
               <div className="mobile-my-stats">
-                <span>💰 {me.coins}</span>
-                <span>⭐ {'★'.repeat(me.stars)}{'☆'.repeat(3 - me.stars)}</span>
-                <span>💩 {me.poopTokens}{me.poopTokens >= 7 ? ' ⚠バースト!' : ''}</span>
+                <span><Emoji name="coin" size={14} /> {me.coins}</span>
+                <span><Emoji name="star" size={14} /> {'★'.repeat(me.stars)}{'☆'.repeat(3 - me.stars)}</span>
+                <span><Emoji name="poop" size={14} /> {me.poopTokens}{me.poopTokens >= 7 ? ' ⚠バースト!' : ''}</span>
               </div>
             )}
           </div>
@@ -160,7 +161,7 @@ export function Board({ onLeave }: { onLeave: () => void }) {
                   <span key={step.key} className="mobile-progress-item">
                     {i > 0 && <span className={`progress-line ${i <= stepIdx ? 'active' : ''}`} />}
                     <span className={`mobile-progress-step ${isActive ? 'active' : ''}`}
-                      title={step.label}>{step.icon}</span>
+                      title={step.label}><StepIcon emoji={step.emoji} size={12} /></span>
                   </span>
                 );
               })}
@@ -189,7 +190,7 @@ export function Board({ onLeave }: { onLeave: () => void }) {
 
         {state.effectLog.length > 0 && (
           <div className="effect-log">
-            <h4>📝 ログ</h4>
+            <h4><Emoji name="memo" size={14} /> ログ</h4>
             {state.effectLog.map((log: string, i: number) => <div key={i}>{log}</div>)}
           </div>
         )}
@@ -198,11 +199,12 @@ export function Board({ onLeave }: { onLeave: () => void }) {
       </div>
 
       {/* マーケットFAB + ドロワー */}
-      <button className="mobile-fab market-fab" onClick={() => setMarketOpen(true)}>🏪</button>
+      <button className="mobile-fab market-fab" onClick={() => setMarketOpen(true)}><Emoji name="store" size={20} /></button>
       {marketOpen && <div className="drawer-overlay" onClick={() => setMarketOpen(false)} />}
       <div className={`market-drawer ${marketOpen ? 'open' : ''}`}>
         <div className="market-drawer-header">
-          <span>🏪 動物マーケット</span>
+          <span><Emoji name="store" size={16} /> 動物マーケット</span>
+          <span className="market-header-coins"><Emoji name="coin" size={14} /> {me?.coins ?? 0}</span>
           <button onClick={() => setMarketOpen(false)} className="drawer-close-btn">✕</button>
         </div>
         <div className="market-drawer-body">
@@ -212,7 +214,7 @@ export function Board({ onLeave }: { onLeave: () => void }) {
 
       {/* チャットFAB + ボトムシート */}
       <button className="mobile-fab chat-fab" onClick={() => setChatOpen(!chatOpen)}>
-        💬
+        <Emoji name="chat" size={20} />
       </button>
       {chatOpen && (
         <>
@@ -232,13 +234,13 @@ export function Board({ onLeave }: { onLeave: () => void }) {
       </button>
       {historyOpen && (
         <div className="history-overlay">
-          <h3>📜 履歴操作</h3>
+          <h3><Emoji name="scroll" size={16} /> 履歴操作</h3>
           <div className="history-info">Undo: {historyInfo.undoCount} / Redo: {historyInfo.redoCount}</div>
           <div className="history-buttons">
             <button className="history-btn" disabled={historyInfo.undoCount === 0} onClick={() => send('undo')}>↩ Undo</button>
             <button className="history-btn" disabled={historyInfo.redoCount === 0} onClick={() => send('redo')}>↪ Redo</button>
             <button className="history-btn danger" disabled={historyInfo.undoCount === 0}
-              onClick={() => { if (confirm('ゲームを初期状態に戻しますか？')) send('resetGame'); }}>🔄 Reset</button>
+              onClick={() => { if (confirm('ゲームを初期状態に戻しますか？')) send('resetGame'); }}><Emoji name="refresh" size={12} /> Reset</button>
           </div>
         </div>
       )}
@@ -264,7 +266,7 @@ export function Board({ onLeave }: { onLeave: () => void }) {
       <div className="main-area">
         {isEnded && (
           <div className="game-over">
-            <h2>🏆 ゲーム終了!</h2>
+            <h2><Emoji name="trophy" size={20} /> ゲーム終了!</h2>
           </div>
         )}
 
@@ -276,7 +278,7 @@ export function Board({ onLeave }: { onLeave: () => void }) {
           </strong>
           {state.diceRolled && (
             <span>
-              🎲 {state.diceCount === 1
+              <Emoji name="dice" size={14} /> {state.diceCount === 1
                 ? `${state.dice1}`
                 : `${state.dice1}+${state.dice2}`}
               = <strong>{state.diceSum}</strong>
@@ -284,7 +286,7 @@ export function Board({ onLeave }: { onLeave: () => void }) {
             </span>
           )}
           {state.phase === 'main' && state.chanceDeckCount > 0 && (
-            <span style={{ fontSize: 11, color: '#777' }}>🃏{state.chanceDeckCount}</span>
+            <span style={{ fontSize: 11, color: '#777' }}><Emoji name="card" size={12} />{state.chanceDeckCount}</span>
           )}
           {isMyTurn && <span className="my-turn">← あなた</span>}
           <button onClick={onLeave} style={{ marginLeft: 'auto', padding: '2px 8px', cursor: 'pointer', fontSize: 11 }}>
@@ -315,11 +317,11 @@ export function Board({ onLeave }: { onLeave: () => void }) {
                   )}
                   <strong>{p.name}</strong>
                   {pid === sessionId && <span style={{ fontSize: 10, color: '#666' }}>(自分)</span>}
-                  {pid === state.currentTurn && <span style={{ fontSize: 10 }}>🎯</span>}
+                  {pid === state.currentTurn && <span style={{ fontSize: 10 }}><Emoji name="target" size={12} /></span>}
                 </div>
                 <div>
-                  💰{p.coins} ⭐{'★'.repeat(p.stars)}{'☆'.repeat(3 - p.stars)} 💩{p.poopTokens}
-                  {p.hasHeldCard && <span title="伏せカード保持中"> 🃏</span>}
+                  <Emoji name="coin" size={12} />{p.coins} <Emoji name="star" size={12} />{'★'.repeat(p.stars)}{'☆'.repeat(3 - p.stars)} <Emoji name="poop" size={12} />{p.poopTokens}
+                  {p.hasHeldCard && <span title="伏せカード保持中"> <Emoji name="card" size={12} /></span>}
                 </div>
               </div>
             );
@@ -335,7 +337,7 @@ export function Board({ onLeave }: { onLeave: () => void }) {
             } : undefined}>
               <div className="other-player-name" style={pc ? { color: pc.bg } : undefined}>
                 {pc && <span style={{ display: 'inline-block', width: 10, height: 10, borderRadius: '50%', background: pc.bg, marginRight: 4, verticalAlign: 'middle' }} />}
-                {player.name}の動物園 (💰{player.coins} ⭐{player.stars} 💩{player.poopTokens})
+                {player.name}の動物園 (<Emoji name="coin" size={12} />{player.coins} <Emoji name="star" size={12} />{player.stars} <Emoji name="poop" size={12} />{player.poopTokens})
               </div>
               <CageGrid
                 cages={player.cages ?? []}
@@ -351,7 +353,7 @@ export function Board({ onLeave }: { onLeave: () => void }) {
 
         {state.effectLog.length > 0 && (
           <div className="effect-log">
-            <h4>📝 ログ</h4>
+            <h4><Emoji name="memo" size={14} /> ログ</h4>
             {state.effectLog.map((log: string, i: number) => (
               <div key={i}>{log}</div>
             ))}
@@ -361,7 +363,7 @@ export function Board({ onLeave }: { onLeave: () => void }) {
 
       {/* ===== 中央右: マーケット ===== */}
       <div className="market-area">
-        <div className="market-title">🏪 動物マーケット</div>
+        <div className="market-title"><Emoji name="store" size={16} /> 動物マーケット <span className="market-header-coins"><Emoji name="coin" size={14} /> {me?.coins ?? 0}</span></div>
         <MarketPanel />
       </div>
 
@@ -382,7 +384,7 @@ export function Board({ onLeave }: { onLeave: () => void }) {
                 <span key={step.key}>
                   {i > 0 && <span className={`progress-line ${i <= stepIdx ? 'active' : ''}`} />}
                   <span className={`progress-step ${isActive ? 'active' : ''}`}>
-                    {step.icon} {step.label}
+                    <StepIcon emoji={step.emoji} size={14} /> {step.label}
                   </span>
                 </span>
               );
@@ -392,9 +394,9 @@ export function Board({ onLeave }: { onLeave: () => void }) {
 
         {me && (
           <div className="my-stats">
-            <span>💰 {me.coins}コイン</span>
-            <span>⭐ {'★'.repeat(me.stars)}{'☆'.repeat(3 - me.stars)}</span>
-            <span>💩 {me.poopTokens}個{me.poopTokens >= 7 ? ' ⚠バースト!' : ''}</span>
+            <span><Emoji name="coin" size={14} /> {me.coins}コイン</span>
+            <span><Emoji name="star" size={14} /> {'★'.repeat(me.stars)}{'☆'.repeat(3 - me.stars)}</span>
+            <span><Emoji name="poop" size={14} /> {me.poopTokens}個{me.poopTokens >= 7 ? ' ⚠バースト!' : ''}</span>
           </div>
         )}
 
@@ -432,7 +434,7 @@ export function Board({ onLeave }: { onLeave: () => void }) {
       </button>
       {historyOpen && (
         <div className="history-overlay">
-          <h3>📜 履歴操作</h3>
+          <h3><Emoji name="scroll" size={16} /> 履歴操作</h3>
           <div className="history-info">
             Undo: {historyInfo.undoCount}件 / Redo: {historyInfo.redoCount}件
           </div>
@@ -456,7 +458,7 @@ export function Board({ onLeave }: { onLeave: () => void }) {
               disabled={historyInfo.undoCount === 0}
               onClick={() => { if (confirm('ゲームを初期状態に戻しますか？')) send('resetGame'); }}
             >
-              🔄 Reset
+              <Emoji name="refresh" size={12} /> Reset
             </button>
           </div>
         </div>
@@ -586,17 +588,17 @@ function ActionPanel() {
     <div className="action-panel">
       {state.turnStep === 'poop' && (
         <button className="action-btn" onClick={() => send('receivePoop')}>
-          💩 うんちを受け取る
+          <Emoji name="poop" size={14} /> うんちを受け取る
         </button>
       )}
 
       {state.turnStep === 'roll' && (
         <>
           <button className="action-btn" onClick={() => send('rollDice', { diceCount: 1 })}>
-            🎲 1個振り (1-6)
+            <Emoji name="dice" size={14} /> 1個振り (1-6)
           </button>
           <button className="action-btn" onClick={() => send('rollDice', { diceCount: 2 })}>
-            🎲🎲 2個振り (2-12)
+            <Emoji name="dice" size={14} /><Emoji name="dice" size={14} /> 2個振り (2-12)
           </button>
         </>
       )}
@@ -618,7 +620,7 @@ function ActionPanel() {
 
       {state.activeChanceCard && !state.chanceCardPhase?.startsWith('using_') && (
         <div className="trade-submenu" style={{ textAlign: 'center' }}>
-          <span style={{ fontSize: 20 }}>{CHANCE_CARD_DATA[state.activeChanceCard]?.icon}</span>
+          {CHANCE_CARD_DATA[state.activeChanceCard] && <Emoji name={CHANCE_CARD_DATA[state.activeChanceCard].emojiKey} size={20} />}
           {' '}{CHANCE_CARD_DATA[state.activeChanceCard]?.name}
         </div>
       )}
@@ -630,22 +632,22 @@ function ActionPanel() {
       {state.turnStep === 'clean' && (
         <>
           <span style={{ color: '#555', fontSize: 12, alignSelf: 'center' }}>
-            💩 {me.poopTokens}個 {me.poopTokens >= 7 && '⚠ 7個以上でバースト!'}
+            <Emoji name="poop" size={12} /> {me.poopTokens}個 {me.poopTokens >= 7 && '⚠ 7個以上でバースト!'}
           </span>
           {me.poopTokens > 0 && me.coins >= 1 && (
             <button className="action-btn" onClick={() => send('cleanPoop')}>
-              🧹 掃除 (1💰→2個除去)
+              <Emoji name="broom" size={14} /> 掃除 (1<Emoji name="coin" size={12} />→2個除去)
             </button>
           )}
           <button className="action-btn secondary" onClick={() => send('endClean')}>
-            ✅ 掃除終了
+            <Emoji name="check" size={14} /> 掃除終了
           </button>
         </>
       )}
 
       {state.turnStep === 'flush' && (
         <button className="action-btn" onClick={() => send('endTurn')}>
-          ✅ ターン終了
+          <Emoji name="check" size={14} /> ターン終了
         </button>
       )}
     </div>
@@ -691,28 +693,28 @@ function TradeActions() {
   return (
     <>
       {!state.boughtAnimal && (
-        <span className="trade-done" style={{ color: '#333' }}>🛒 マーケットから動物をクリックで購入</span>
+        <span className="trade-done" style={{ color: '#333' }}><Emoji name="cart" size={14} /> マーケットから動物をクリックで購入</span>
       )}
       {state.boughtAnimal && <span className="trade-done">✓ 動物購入済み</span>}
 
       {!state.boughtStar && me.coins >= STAR_COST && (
         <button className="action-btn trade" onClick={() => send('buyStar')}>
-          ⭐ 星を買う ({STAR_COST}💰)
+          <Emoji name="star" size={14} /> 星を買う ({STAR_COST}<Emoji name="coin" size={12} />)
         </button>
       )}
       {state.boughtStar && <span className="trade-done">✓ 星購入済み</span>}
 
       {me.hasHeldCard && (
         <button className="action-btn trade" onClick={() => send('useHeldCardInTrade')}>
-          🃏 伏せカードを使う
+          <Emoji name="card" size={14} /> 伏せカードを使う
         </button>
       )}
 
       <button className="action-btn secondary" onClick={() => setReturning(true)}>
-        🔄 動物を返す
+        <Emoji name="refresh" size={14} /> 動物を返す
       </button>
       <button className="action-btn" onClick={() => send('endTrade')}>
-        ⏭️ お買い物終了
+        <Emoji name="skip" size={14} /> お買い物終了
       </button>
     </>
   );
@@ -735,7 +737,7 @@ function PendingEffectUI() {
         <p>{animalIconEl} {animalName}: {effect.stealAmount}コイン奪取 - 対象:</p>
         {otherPlayers.map(pid => (
           <button key={pid} className="trade-option" onClick={() => send('resolveSteal', { targetPlayerId: pid })}>
-            {getPlayerName(pid)} (💰{state.players[pid].coins})
+            {getPlayerName(pid)} (<Emoji name="coin" size={12} />{state.players[pid].coins})
           </button>
         ))}
       </div>
@@ -748,7 +750,7 @@ function PendingEffectUI() {
         <p>{animalIconEl} {animalName}: 星奪取 - 対象:</p>
         {otherPlayers.map(pid => (
           <button key={pid} className="trade-option" onClick={() => send('resolveStealStar', { targetPlayerId: pid })}>
-            {getPlayerName(pid)} (⭐{state.players[pid].stars})
+            {getPlayerName(pid)} (<Emoji name="star" size={12} />{state.players[pid].stars})
           </button>
         ))}
       </div>
@@ -760,13 +762,13 @@ function PendingEffectUI() {
       <div className="trade-submenu">
         <p>{animalIconEl} {animalName}: 効果を選択:</p>
         <button className="trade-option" onClick={() => send('resolveChoice', { choice: 'creation' })}>
-          💰 {effect.creationAmount}コイン獲得
+          <Emoji name="coin" size={14} /> {effect.creationAmount}コイン獲得
         </button>
         <div style={{ marginTop: 4 }}>
-          <span style={{ color: '#555', fontSize: 11 }}>🗡️ {effect.stealAmount}コイン奪取: </span>
+          <span style={{ color: '#555', fontSize: 11 }}><Emoji name="sword" size={12} /> {effect.stealAmount}コイン奪取: </span>
           {otherPlayers.map(pid => (
             <button key={pid} className="trade-option" onClick={() => send('resolveChoice', { choice: 'steal', targetPlayerId: pid })}>
-              {getPlayerName(pid)} (💰{state.players[pid].coins})
+              {getPlayerName(pid)} (<Emoji name="coin" size={12} />{state.players[pid].coins})
             </button>
           ))}
         </div>
@@ -795,7 +797,7 @@ function ChatPanel() {
 
   return (
     <div className="chat-area">
-      <div className="chat-header">💬 ログ / チャット</div>
+      <div className="chat-header"><Emoji name="chat" size={14} /> ログ / チャット</div>
       <div className="chat-messages" ref={el => { if (el) el.scrollTop = el.scrollHeight; }}>
         {gameLog.map((msg, i) => (
           <div key={i} className={`chat-msg ${msg.includes('💬') ? 'chat' : 'system'}`}>
