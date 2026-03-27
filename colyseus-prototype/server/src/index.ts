@@ -6,7 +6,11 @@ if (typeof globalThis.WebSocket === "undefined") {
 }
 
 import { defineServer, defineRoom, createEndpoint, createRouter, LobbyRoom } from "colyseus";
+import { Encoder } from "@colyseus/schema";
 import { WebSocketTransport } from "@colyseus/ws-transport";
+
+// デフォルトの4KBでは4人プレイ長期戦で状態がオーバーフローするため拡張
+Encoder.BUFFER_SIZE = 64 * 1024; // 64 KB
 import { ZooRoom } from "./rooms/ZooRoom";
 
 const port = Number(process.env.PORT) || 2567;
