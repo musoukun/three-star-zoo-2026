@@ -1,3 +1,10 @@
+import WebSocket from "ws";
+// Node.js 20 では WebSocket がグローバルに存在しないため、
+// @colyseus/core が WebSocket.OPEN を参照する際の ReferenceError を防ぐ
+if (typeof globalThis.WebSocket === "undefined") {
+  (globalThis as any).WebSocket = WebSocket;
+}
+
 import { defineServer, defineRoom, createEndpoint, createRouter, LobbyRoom } from "colyseus";
 import { WebSocketTransport } from "@colyseus/ws-transport";
 import { ZooRoom } from "./rooms/ZooRoom";
