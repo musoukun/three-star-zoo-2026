@@ -89,7 +89,8 @@ test('2P full game', async ({ browser }) => {
     // ボブがルーム入室
     await bob.goto('/');
     await bob.fill('input[placeholder="名前を入力..."]', 'ボブ');
-    await sleep(2000);
+    // LobbyRoom経由のリアルタイム一覧更新を待つ
+    await bob.getByRole('button', { name: '入室 →' }).first().waitFor({ state: 'visible', timeout: 15000 });
     await ssOne(bob, 'bob', '03-room-list');
 
     const targetRoom = bob.locator('div')

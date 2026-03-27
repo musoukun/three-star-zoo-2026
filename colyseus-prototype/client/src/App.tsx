@@ -36,7 +36,7 @@ export function App() {
   const {
     state, sessionId, error, historyInfo, rooms,
     myDrawnCardId, myHeldCardId, isReconnecting, isLoading,
-    fetchRooms, createRoom, joinRoomById, send, leave, tryReconnect,
+    joinLobby, leaveLobby, createRoom, joinRoomById, send, leave, tryReconnect,
   } = useColyseus();
 
   const [name, setName] = useState('');
@@ -57,14 +57,13 @@ export function App() {
     }
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
-  // ルーム一覧の自動更新
+  // ロビーに入退室（ルーム一覧のリアルタイム更新）
   useEffect(() => {
     if (!state && !isReconnecting) {
-      fetchRooms();
-      const interval = setInterval(fetchRooms, 3000);
-      return () => clearInterval(interval);
+      joinLobby();
+      return () => { leaveLobby(); };
     }
-  }, [state, isReconnecting, fetchRooms]);
+  }, [state, isReconnecting, joinLobby, leaveLobby]);
 
   // ===== 再接続中 =====
   if (isReconnecting) {
@@ -185,7 +184,7 @@ export function App() {
                   placeholder="検索..."
                   style={{ ...S.textInput, width: 160, padding: '4px 8px', fontSize: 12 }}
                 />
-                <button onClick={fetchRooms} style={S.refreshBtn}>↻</button>
+                <button onClick={() => { leaveLobby(); joinLobby(); }} style={S.refreshBtn}>↻</button>
               </div>
             </div>
             <div style={S.cardBody}>
@@ -289,7 +288,7 @@ export function App() {
   }
 
   // ===== ルーム内ロビー画面（lobby、またはそれ以外の未知のフェーズ）=====
-  const players = Object.values(state.players);
+  const players = Object.values(state.players ?? {});
   const isHost = sessionId === state.hostId;
   const canStart = players.length >= 2;
 

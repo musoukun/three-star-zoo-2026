@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
-import * as Colyseus from 'colyseus.js';
+import * as Colyseus from '@colyseus/sdk';
 
 // 本番: wss://your-railway-app.up.railway.app  開発: ws://localhost:2567
 const SERVER_URL = import.meta.env.VITE_SERVER_URL || 'ws://localhost:2567';
@@ -23,13 +23,7 @@ function loadSession(): SavedSession | null {
   try {
     const raw = localStorage.getItem(LS_KEY);
     if (!raw) return null;
-    const data: SavedSession = JSON.parse(raw);
-    // 15分以上前のセッションは無効
-    if (Date.now() - data.savedAt > 15 * 60 * 1000) {
-      localStorage.removeItem(LS_KEY);
-      return null;
-    }
-    return data;
+    return JSON.parse(raw) as SavedSession;
   } catch {
     localStorage.removeItem(LS_KEY);
     return null;
@@ -125,6 +119,7 @@ export interface RoomListing {
 export function useColyseus() {
   const clientRef = useRef<Colyseus.Client | null>(null);
   const roomRef = useRef<Colyseus.Room | null>(null);
+  const lobbyRef = useRef<Colyseus.Room | null>(null);
   const tryReconnectRef = useRef<() => Promise<boolean>>(() => Promise.resolve(false));
   const [room, setRoom] = useState<Colyseus.Room | null>(null);
   const [state, setState] = useState<ZooRoomState | null>(null);
@@ -139,24 +134,71 @@ export function useColyseus() {
 
   useEffect(() => {
     clientRef.current = new Colyseus.Client(SERVER_URL);
+
+    // モバイル: フォアグラウンド復帰時にWebSocket切断を検知して再接続
+    const handleVisibilityGlobal = () => {
+      if (document.visibilityState !== 'visible') return;
+      const r = roomRef.current;
+      if (!r) return;
+      const ws = (r.connection as any)?.ws ?? (r as any).connection?.transport?.ws;
+      if (ws && (ws.readyState === WebSocket.CLOSED || ws.readyState === WebSocket.CLOSING)) {
+        console.log('[Colyseus] visibilitychange: WebSocket切断を検知');
+      }
+    };
+    document.addEventListener('visibilitychange', handleVisibilityGlobal);
+
     return () => {
+      document.removeEventListener('visibilitychange', handleVisibilityGlobal);
+      lobbyRef.current?.leave();
       roomRef.current?.leave();
     };
   }, []);
 
-  // ルーム一覧取得
-  const fetchRooms = useCallback(async () => {
-    if (!clientRef.current) return;
+  /** LobbyRoom に接続してリアルタイムルーム一覧を取得 */
+  const joinLobby = useCallback(async () => {
+    if (!clientRef.current || lobbyRef.current) return;
     try {
-      const available = await clientRef.current.getAvailableRooms('zoo_room');
-      setRooms(available as unknown as RoomListing[]);
+      const lobby = await clientRef.current.joinOrCreate('lobby');
+      lobbyRef.current = lobby;
+
+      lobby.onMessage("rooms", (roomList: RoomListing[]) => {
+        setRooms(roomList);
+      });
+      lobby.onMessage("+", ([roomId, roomData]: [string, RoomListing]) => {
+        setRooms(prev => {
+          const idx = prev.findIndex(r => r.roomId === roomId);
+          if (idx !== -1) {
+            const updated = [...prev];
+            updated[idx] = roomData;
+            return updated;
+          }
+          return [...prev, roomData];
+        });
+      });
+      lobby.onMessage("-", (roomId: string) => {
+        setRooms(prev => prev.filter(r => r.roomId !== roomId));
+      });
+      lobby.onLeave(() => {
+        lobbyRef.current = null;
+      });
     } catch (e: any) {
-      console.error('Failed to fetch rooms:', e);
+      console.error('Failed to join lobby:', e);
     }
+  }, []);
+
+  /** LobbyRoom から退出 */
+  const leaveLobby = useCallback(() => {
+    lobbyRef.current?.leave();
+    lobbyRef.current = null;
+    setRooms([]);
   }, []);
 
   // ルーム接続時の共通セットアップ
   const setupRoom = useCallback((r: Colyseus.Room, playerName?: string) => {
+    // ゲームルームに入ったらロビーを離脱
+    lobbyRef.current?.leave();
+    lobbyRef.current = null;
+
     roomRef.current = r;
     setRoom(r);
     setSessionId(r.sessionId);
@@ -168,16 +210,9 @@ export function useColyseus() {
     // localStorageにセッション情報を保存（再接続用）
     saveSession(r.roomId, r.reconnectionToken, playerName || '');
 
-    // 初回の状態を即座に読み取る
-    if (r.state) {
-      const initial = schemaToPlain(r.state);
-      console.log('[Colyseus] initial state phase:', initial?.phase);
-      setState(initial);
-    }
-
+    // 0.17: 初回の r.state はまだ同期されていないため onStateChange を待つ
     r.onStateChange((newState: any) => {
       const plain = schemaToPlain(newState);
-      console.log('[Colyseus] state change phase:', plain?.phase);
       setState(plain);
     });
 
@@ -330,6 +365,6 @@ export function useColyseus() {
   return {
     room, state, sessionId, error, historyInfo, rooms,
     myDrawnCardId, myHeldCardId, isReconnecting, isLoading,
-    fetchRooms, createRoom, joinRoomById, joinRoom, send, leave, tryReconnect,
+    joinLobby, leaveLobby, createRoom, joinRoomById, joinRoom, send, leave, tryReconnect,
   };
 }

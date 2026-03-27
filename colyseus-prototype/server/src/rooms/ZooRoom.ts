@@ -1,4 +1,4 @@
-import { Room, Client } from "colyseus";
+import { Room, Client, Deferred } from "colyseus";
 import { ZooState, PlayerState, Cage, CageSlot } from "../schema/ZooState";
 import { ANIMALS, STARTING_COINS } from "../game/animals";
 import { normalizeCageNum } from "../game/gameLogic";
@@ -6,12 +6,29 @@ import { RoomHistory } from "./RoomHistory";
 import { RoomGameplay } from "./RoomGameplay";
 import { BotManager } from "../bot/BotManager";
 
-export class ZooRoom extends Room<ZooState> {
+/** 不在プレイヤーの再接続管理 */
+interface ReconnectionEntry {
+  deferred: Deferred<Client>;
+  /** 切断時点のターンインデックス */
+  disconnectedAtTurn: number;
+  /** 1時間フォールバックタイマー */
+  timeout: ReturnType<typeof setTimeout>;
+}
+
+/** 何ターン不在で追放するか */
+const MISSED_TURNS_LIMIT = 3;
+/** 最大再接続猶予（ミリ秒） */
+const MAX_RECONNECT_MS = 60 * 60 * 1000; // 1時間
+
+export class ZooRoom extends Room<{ state: ZooState }> {
   maxClients = 4;
   private minClients = 2;
   private password: string = "";
-  private emptyTimeout: ReturnType<typeof setTimeout> | null = null;
-  private static EMPTY_ROOM_TTL = 15 * 60 * 1000; // 15分
+
+  /** 再接続待ちプレイヤー (sessionId → entry) */
+  private reconnections = new Map<string, ReconnectionEntry>();
+  /** ゲーム全体のターン経過カウンター（endTurn ごとに +1） */
+  turnCounter: number = 0;
 
   gameplay!: RoomGameplay;
   history!: RoomHistory;
@@ -20,7 +37,6 @@ export class ZooRoom extends Room<ZooState> {
   // ===== ライフサイクル =====
 
   onCreate(options: { roomName?: string; password?: string }) {
-    this.autoDispose = false;
     this.setState(new ZooState());
 
     this.state.roomName = options.roomName || "三ツ星動物園の部屋";
@@ -42,11 +58,12 @@ export class ZooRoom extends Room<ZooState> {
 
     const ctx = {
       state: this.state,
-      room: this as Room<ZooState>,
+      room: this as Room<{ state: ZooState }>,
       addGameLog: (msg: string) => this.addGameLog(msg),
       logEffect: (msg: string) => this.logEffect(msg),
       getPlayerName: (sid: string) => this.getPlayerName(sid),
       getPlayerCage: (pid: string, cn: number) => this.getPlayerCage(pid, cn),
+      onTurnEnd: () => { this.turnCounter++; this.checkDisconnectedPlayers(); },
     };
     this.gameplay = new RoomGameplay(ctx);
     this.history = new RoomHistory(this, () => this.gameplay);
@@ -56,7 +73,6 @@ export class ZooRoom extends Room<ZooState> {
     );
 
     this.registerMessages();
-    this.startEmptyTimer();
 
     console.log(`ZooRoom "${this.state.roomName}" created (private=${this.state.isPrivate})`);
   }
@@ -73,7 +89,6 @@ export class ZooRoom extends Room<ZooState> {
       if (existingPlayer) {
         existingPlayer.connected = true;
         this.addGameLog(`${existingPlayer.name} が再接続しました`);
-        this.clearEmptyTimer();
         this.updateMetadata();
         return;
       }
@@ -101,7 +116,6 @@ export class ZooRoom extends Room<ZooState> {
       this.state.hostId = client.sessionId;
     }
 
-    this.clearEmptyTimer();
     this.updateMetadata();
     this.addGameLog(`${player.name} が入室しました`);
 
@@ -113,34 +127,16 @@ export class ZooRoom extends Room<ZooState> {
     console.log(`${player.name} (${client.sessionId}) joined. ${this.state.players.size} players in lobby`);
   }
 
-  async onLeave(client: Client, consented: boolean) {
+  async onLeave(client: Client, code: number) {
     const player = this.state.players.get(client.sessionId);
     if (!player) return;
 
+    // 再接続エントリがあればクリーンアップ
+    this.cancelReconnection(client.sessionId);
+
     player.connected = false;
-    this.updateMetadata();
-
-    if (!consented) {
-      const ttlSeconds = this.state.phase === "lobby" ? 30 : ZooRoom.EMPTY_ROOM_TTL / 1000;
-      try {
-        await this.allowReconnection(client, ttlSeconds);
-        player.connected = true;
-        this.addGameLog(`${player.name} が再接続しました`);
-        this.clearEmptyTimer();
-        this.updateMetadata();
-        client.send("historyInfo", {
-          undoCount: this.history.undoCount,
-          redoCount: this.history.redoCount,
-        });
-        console.log(`${player.name} reconnected`);
-        return;
-      } catch {
-        // 再接続タイムアウト
-      }
-    }
-
     this.addGameLog(`${player.name} が退室しました`);
-    console.log(`${player.name} left permanently`);
+    console.log(`${player.name} left permanently (code: ${code})`);
 
     if (this.state.phase === "lobby") {
       const idx = this.state.turnOrder.indexOf(client.sessionId);
@@ -153,35 +149,99 @@ export class ZooRoom extends Room<ZooState> {
     }
 
     this.updateMetadata();
+  }
 
-    let anyConnected = false;
-    this.state.players.forEach((p) => {
-      if (p.connected) anyConnected = true;
+  /** 異常切断時: 再接続を許可 */
+  onDrop(client: Client, code: number) {
+    const player = this.state.players.get(client.sessionId);
+    if (!player) return;
+
+    player.connected = false;
+    this.updateMetadata();
+
+    if (this.state.phase === "lobby") {
+      // ロビーは30秒固定
+      this.allowReconnection(client, 30);
+      this.addGameLog(`${player.name} が切断しました（30秒以内に再接続可能）`);
+      console.log(`${player.name} dropped in lobby (30s reconnect window)`);
+      return;
+    }
+
+    // ゲーム中: manual モード（Nターン不在 or 1時間で追放）
+    const deferred = this.allowReconnection(client, "manual");
+    const timeout = setTimeout(() => {
+      console.log(`${player.name}: 1時間経過、再接続を拒否`);
+      deferred.reject();
+    }, MAX_RECONNECT_MS);
+
+    this.reconnections.set(client.sessionId, {
+      deferred,
+      disconnectedAtTurn: this.turnCounter,
+      timeout,
     });
-    if (!anyConnected) {
-      this.startEmptyTimer();
+
+    this.addGameLog(`${player.name} が切断しました（${MISSED_TURNS_LIMIT}ターン以内に再接続可能）`);
+    console.log(`${player.name} dropped in-game (manual reconnect, turn=${this.turnCounter})`);
+
+    if (this.state.hostId === client.sessionId) {
+      this.reassignHost();
     }
   }
 
+  /** 再接続成功時 */
+  onReconnect(client: Client) {
+    const player = this.state.players.get(client.sessionId);
+    if (!player) return;
+
+    this.cancelReconnection(client.sessionId);
+    player.connected = true;
+    this.addGameLog(`${player.name} が再接続しました`);
+    this.updateMetadata();
+
+    client.send("historyInfo", {
+      undoCount: this.history.undoCount,
+      redoCount: this.history.redoCount,
+    });
+
+    // ホストが不在だった場合は復帰
+    if (this.state.hostId === "" || !this.state.players.get(this.state.hostId)?.connected) {
+      this.state.hostId = client.sessionId;
+    }
+
+    console.log(`${player.name} reconnected`);
+  }
+
   onDispose() {
-    this.clearEmptyTimer();
+    // 残っている再接続タイマーを全クリア
+    for (const entry of this.reconnections.values()) {
+      clearTimeout(entry.timeout);
+    }
+    this.reconnections.clear();
     console.log(`ZooRoom "${this.state.roomName}" disposed`);
   }
 
-  // ===== ユーティリティ =====
+  // ===== 再接続管理 =====
 
-  private startEmptyTimer() {
-    this.clearEmptyTimer();
-    this.emptyTimeout = setTimeout(() => {
-      console.log(`ZooRoom "${this.state.roomName}" empty for 15 min, disposing`);
-      this.disconnect();
-    }, ZooRoom.EMPTY_ROOM_TTL);
+  private cancelReconnection(sessionId: string) {
+    const entry = this.reconnections.get(sessionId);
+    if (entry) {
+      clearTimeout(entry.timeout);
+      this.reconnections.delete(sessionId);
+    }
   }
 
-  private clearEmptyTimer() {
-    if (this.emptyTimeout) {
-      clearTimeout(this.emptyTimeout);
-      this.emptyTimeout = null;
+  /** ターン終了時に呼び出し: 不在プレイヤーのターン経過チェック */
+  checkDisconnectedPlayers() {
+    for (const [sessionId, entry] of this.reconnections) {
+      const missedTurns = this.turnCounter - entry.disconnectedAtTurn;
+      if (missedTurns >= MISSED_TURNS_LIMIT) {
+        const name = this.state.players.get(sessionId)?.name ?? sessionId;
+        console.log(`${name}: ${missedTurns}ターン不在、再接続を拒否`);
+        this.addGameLog(`${name} は${MISSED_TURNS_LIMIT}ターン不在のため退出しました`);
+        entry.deferred.reject();
+        clearTimeout(entry.timeout);
+        this.reconnections.delete(sessionId);
+      }
     }
   }
 

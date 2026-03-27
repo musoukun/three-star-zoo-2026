@@ -13,11 +13,12 @@ import {
 /** Room本体から渡されるユーティリティ */
 interface RoomContext {
   readonly state: ZooState;
-  readonly room: Room<ZooState>;
+  readonly room: Room<{ state: ZooState }>;
   addGameLog(message: string): void;
   logEffect(message: string): void;
   getPlayerName(sessionId: string): string;
   getPlayerCage(playerId: string, cageNum: number): Cage;
+  onTurnEnd(): void;
 }
 
 /**
@@ -725,6 +726,7 @@ export class RoomGameplay {
 
   handleEndTurn() {
     this.state.burstPlayerId = "";
+    this.ctx.onTurnEnd();
     this.nextTurn();
   }
 

@@ -12,7 +12,7 @@ export class RoomHistory {
   private static MAX_HISTORY = 200;
 
   constructor(
-    private room: Room<ZooState>,
+    private room: Room<{ state: ZooState }>,
     private getGameplay: () => RoomGameplay,
   ) {}
 

@@ -132,7 +132,8 @@ async function startGame(browser: any, roomSuffix: string, testName: string): Pr
 
   await bob.goto('/');
   await bob.fill('input[placeholder="名前を入力..."]', 'ボブ');
-  await sleep(2000);
+  // LobbyRoom経由のリアルタイム一覧更新を待つ
+  await bob.getByRole('button', { name: '入室 →' }).first().waitFor({ state: 'visible', timeout: 15000 });
   await ss(bob, 'bob', testName, '03-room-list');
 
   const targetRoom = bob.locator('div')

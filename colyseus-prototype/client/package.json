@@ -8,9 +8,9 @@
     "build": "vite build"
   },
   "dependencies": {
+    "@colyseus/sdk": "^0.17.35",
     "@react-three/drei": "^10.7.7",
     "@react-three/fiber": "^9.5.0",
-    "colyseus.js": "^0.15.0",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
     "three": "^0.183.2"
