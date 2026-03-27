@@ -639,6 +639,7 @@ function ActionPanel() {
               <Emoji name="broom" size={14} /> 掃除 (1<Emoji name="coin" size={12} />→2個除去)
             </button>
           )}
+          <div style={{ flexGrow: 1 }} />
           <button className="action-btn secondary" onClick={() => send('endClean')}>
             <Emoji name="check" size={14} /> 掃除終了
           </button>
