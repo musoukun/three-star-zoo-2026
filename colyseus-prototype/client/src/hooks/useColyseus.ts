@@ -207,11 +207,14 @@ export function useColyseus() {
     (window as any).__colyseusRoom = r;
     setError('');
 
-    // localStorageにセッション情報を保存（再接続用）
-    saveSession(r.roomId, r.reconnectionToken, playerName || '');
-
     // 0.17: 初回の r.state はまだ同期されていないため onStateChange を待つ
+    let sessionSaved = false;
     r.onStateChange((newState: any) => {
+      // 初回のonStateChange時にreconnectionTokenが確定しているので、ここで保存
+      if (!sessionSaved) {
+        sessionSaved = true;
+        saveSession(r.roomId, r.reconnectionToken, playerName || '');
+      }
       const plain = schemaToPlain(newState);
       setState(plain);
     });
