@@ -5,7 +5,6 @@ import { CHANCE_CARD_DATA } from '../game/chanceCards';
 import type { CageState } from '../hooks/useColyseus';
 import { AnimalIcon, checkPlacement } from './boardUtils';
 import { Emoji, COLOR_EMOJI } from './Emoji';
-import sameAnimalRuleImg from '../assets/same-animal-rule.png';
 
 // ===== リザルト画面 =====
 export function GameResultModal({ onLeave }: { onLeave: () => void }) {
@@ -219,7 +218,6 @@ export function RuleTooltip() {
           1エリアに異なる色の動物は置けない（色が1つでも一致すればOK）<br/>
           同じ動物の2匹目を配置するときは、上下左右に隣接するエリアに置く<br/>
           1檻に2匹まで配置できる</p>
-          <img src={sameAnimalRuleImg} alt="同じ動物を置く時のルール" className="rule-image" />
         </div>
         <div className="rule-section">
           <strong>効果処理順</strong>

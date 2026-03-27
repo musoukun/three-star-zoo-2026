@@ -3,6 +3,7 @@ import { useColyseus } from './hooks/useColyseus';
 import type { ZooRoomState, HistoryInfo, RoomListing } from './hooks/useColyseus';
 import { Board } from './components/Board';
 import { Emoji } from './components/Emoji';
+import { ANIMALS, ANIMAL_ICONS } from './game/animals';
 
 // プレイヤーカラー定義（ロビー＆ゲーム中共通）
 export const PLAYER_COLORS: Record<string, { bg: string; light: string; label: string }> = {
@@ -368,11 +369,34 @@ export function App() {
       {/* 人数別在庫テーブル */}
       <div style={{ margin: '12px 0', textAlign: 'center' }}>
         <h4 style={{ margin: '0 0 8px', fontSize: 14, color: '#555' }}>人数別チップ在庫数</h4>
-        <img
-          src="/inventory-table.png"
-          alt="人数別チップ在庫数"
-          style={{ maxWidth: '100%', borderRadius: 8, border: '1px solid #ddd' }}
-        />
+        <table style={{ margin: '0 auto', borderCollapse: 'collapse', fontSize: 13 }}>
+          <thead>
+            <tr style={{ background: '#f5f5f5' }}>
+              <th style={{ padding: '4px 8px', border: '1px solid #ddd' }}>動物</th>
+              <th style={{ padding: '4px 8px', border: '1px solid #ddd' }}>コスト</th>
+              <th style={{ padding: '4px 8px', border: '1px solid #ddd' }}>2人</th>
+              <th style={{ padding: '4px 8px', border: '1px solid #ddd' }}>3〜4人</th>
+            </tr>
+          </thead>
+          <tbody>
+            {Object.entries(ANIMALS).map(([id, a]) => (
+              <tr key={id}>
+                <td style={{ padding: '3px 8px', border: '1px solid #ddd', textAlign: 'left' }}>
+                  {ANIMAL_ICONS[id]} {a.name}
+                </td>
+                <td style={{ padding: '3px 8px', border: '1px solid #ddd', textAlign: 'center' }}>
+                  {a.cost}
+                </td>
+                <td style={{ padding: '3px 8px', border: '1px solid #ddd', textAlign: 'center' }}>
+                  {a.inventory2p ?? a.inventory}
+                </td>
+                <td style={{ padding: '3px 8px', border: '1px solid #ddd', textAlign: 'center' }}>
+                  {a.inventory}
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
       </div>
 
       <div style={styles.lobbyActions}>
