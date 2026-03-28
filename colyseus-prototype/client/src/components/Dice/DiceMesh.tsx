@@ -6,12 +6,12 @@ import * as THREE from 'three';
 // three.jsのBoxGeometryのface順: right(+X), left(-X), top(+Y), bottom(-Y), front(+Z), back(-Z)
 // 目の配置: 1=top, 2=front, 3=right, 4=left, 5=back, 6=bottom (標準サイコロ)
 const DICE_ROTATIONS: Record<number, { x: number; y: number; z: number }> = {
-  1: { x: Math.PI / 2, y: 0, z: Math.PI },         // 1(+Y面)をカメラ側(+Z)に ※Z回転でテクスチャ上下補正
+  1: { x: Math.PI / 2, y: 0, z: 0 },               // 1(+Y面)をカメラ側(+Z)に
   2: { x: 0, y: 0, z: 0 },                        // 2を正面に
   3: { x: 0, y: -Math.PI / 2, z: 0 },            // 3を正面に
   4: { x: 0, y: Math.PI / 2, z: 0 },             // 4を正面に
   5: { x: 0, y: Math.PI, z: 0 },                  // 5を正面に
-  6: { x: -Math.PI / 2, y: 0, z: Math.PI },        // 6(-Y面)をカメラ側(+Z)に ※Z回転でテクスチャ上下補正
+  6: { x: -Math.PI / 2, y: 0, z: 0 },              // 6(-Y面)をカメラ側(+Z)に
 };
 
 /** Canvasで各面のテクスチャを生成 */
