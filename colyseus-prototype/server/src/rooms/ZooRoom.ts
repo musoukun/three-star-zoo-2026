@@ -19,8 +19,13 @@ interface ReconnectionEntry {
 const MISSED_TURNS_LIMIT = 3;
 /** 最大再接続猶予（ミリ秒） */
 const MAX_RECONNECT_MS = 60 * 60 * 1000; // 1時間
-/** 人間プレイヤーが0人になってからルームを破棄するまで（ミリ秒） */
-const EMPTY_ROOM_MS = 60 * 60 * 1000; // 1時間
+/** フェーズ別の空室タイマー（ミリ秒） */
+const EMPTY_ROOM_MS: Record<string, number> = {
+  lobby:   10 * 60 * 1000, // 10分
+  setup:   30 * 60 * 1000, // 30分
+  main:    30 * 60 * 1000, // 30分
+  ended:   15 * 60 * 1000, // 15分
+};
 
 export class ZooRoom extends Room<{ state: ZooState }> {
   maxClients = 4;
@@ -249,11 +254,12 @@ export class ZooRoom extends Room<{ state: ZooState }> {
     if (this.hasConnectedHumanPlayer()) return;
     if (this.emptyRoomTimeout) return; // 既にタイマー起動中
 
-    console.log(`ZooRoom "${this.state.roomName}": 人間プレイヤー0人、${EMPTY_ROOM_MS / 1000 / 60}分後にルーム破棄予定`);
+    const ms = EMPTY_ROOM_MS[this.state.phase] ?? EMPTY_ROOM_MS.lobby;
+    console.log(`ZooRoom "${this.state.roomName}": 人間プレイヤー0人、${ms / 1000 / 60}分後にルーム破棄予定 (phase=${this.state.phase})`);
     this.emptyRoomTimeout = setTimeout(() => {
       console.log(`ZooRoom "${this.state.roomName}": 空室タイマー満了、ルームを破棄します`);
       this.disconnect();
-    }, EMPTY_ROOM_MS);
+    }, ms);
   }
 
   /** 空室タイマーをキャンセル */
