@@ -14,6 +14,7 @@ import {
 import { Emoji } from './Emoji';
 import { TutorialGuide, isTutorialDone } from './TutorialGuide';
 
+
 const DiceAnimation = lazy(() => import('./Dice/DiceAnimation'));
 
 // ===== モバイル判定フック =====
@@ -45,7 +46,7 @@ export function Board({ onLeave }: { onLeave: () => void }) {
     if (!state) return;
     if (state.turnStep === 'trade' && prevTurnStepRef.current !== 'trade') {
       setMarketBlink(true);
-      const timer = setTimeout(() => setMarketBlink(false), 2000);
+      const timer = setTimeout(() => setMarketBlink(false), 5500);
       return () => clearTimeout(timer);
     }
     prevTurnStepRef.current = state.turnStep;
@@ -270,7 +271,14 @@ export function Board({ onLeave }: { onLeave: () => void }) {
           />
         </Suspense>
       )}
-      {showTutorial && <TutorialGuide onDone={() => setShowTutorial(false)} />}
+      {showTutorial && (
+        <TutorialGuide
+          currentPhase={state.phase}
+          turnStep={state.turnStep}
+          isMyTurn={isMyTurn}
+          onDone={() => setShowTutorial(false)}
+        />
+      )}
     </div>
   );
 
@@ -392,7 +400,7 @@ export function Board({ onLeave }: { onLeave: () => void }) {
         return mc ? { background: mc.light, borderTopColor: mc.bg } : {};
       })()}>
         {!isSetup && !isEnded && (
-          <div className="progress-bar">
+          <div className="progress-bar" data-tutorial="progress-bar">
             {TURN_STEPS.map((step, i) => {
               const stepIdx = TURN_STEPS.findIndex(s => s.key === state.turnStep);
               const isActive = step.key === state.turnStep;
@@ -490,7 +498,14 @@ export function Board({ onLeave }: { onLeave: () => void }) {
           />
         </Suspense>
       )}
-      {showTutorial && <TutorialGuide onDone={() => setShowTutorial(false)} />}
+      {showTutorial && (
+        <TutorialGuide
+          currentPhase={state.phase}
+          turnStep={state.turnStep}
+          isMyTurn={isMyTurn}
+          onDone={() => setShowTutorial(false)}
+        />
+      )}
     </div>
   );
 }
@@ -557,7 +572,7 @@ function CageGrid({
   };
 
   return (
-    <div className="cage-grid-2row">
+    <div className="cage-grid-2row" data-tutorial="cage-grid">
       <div className="cage-row top-row">
         {TOP_ROW.map(n => renderCage(n))}
       </div>
@@ -604,20 +619,20 @@ function ActionPanel() {
   return (
     <div className="action-panel">
       {state.turnStep === 'poop' && (
-        <button className="action-btn" onClick={() => send('receivePoop')}>
+        <button className="action-btn" data-tutorial="btn-poop" onClick={() => send('receivePoop')}>
           <Emoji name="poop" size={14} /> うんちを受け取る
         </button>
       )}
 
       {state.turnStep === 'roll' && (
-        <>
+        <span data-tutorial="btn-roll" style={{ display: 'contents' }}>
           <button className="action-btn" onClick={() => send('rollDice', { diceCount: 1 })}>
             <Emoji name="dice" size={14} /> 1個振り (1-6)
           </button>
           <button className="action-btn" onClick={() => send('rollDice', { diceCount: 2 })}>
             <Emoji name="dice" size={14} /><Emoji name="dice" size={14} /> 2個振り (2-12)
           </button>
-        </>
+        </span>
       )}
 
       {/* 手番プレイヤー自身の保留効果解決UI */}
@@ -643,11 +658,13 @@ function ActionPanel() {
       )}
 
       {state.turnStep === 'trade' && !state.chanceCardPhase && (
-        <TradeActions />
+        <span data-tutorial="btn-trade" style={{ display: 'contents' }}>
+          <TradeActions />
+        </span>
       )}
 
       {state.turnStep === 'clean' && (
-        <>
+        <span data-tutorial="btn-clean" style={{ display: 'contents' }}>
           <span style={{ color: '#555', fontSize: 12, alignSelf: 'center' }}>
             <Emoji name="poop" size={12} /> {me.poopTokens}個 {me.poopTokens >= 7 && '⚠ 7個以上でバースト!'}
           </span>
@@ -660,7 +677,7 @@ function ActionPanel() {
           <button className="action-btn secondary" onClick={() => send('endClean')}>
             <Emoji name="check" size={14} /> 掃除終了
           </button>
-        </>
+        </span>
       )}
 
       {/* flushステップは自動でターン終了するため、UIは不要 */}
@@ -706,11 +723,6 @@ function TradeActions() {
 
   return (
     <>
-      {!state.boughtAnimal && (
-        <span className="trade-guide"><Emoji name="cart" size={16} /> 右のマーケットから動物をクリック<span className="blink-pointer">👉</span>で購入</span>
-      )}
-      {state.boughtAnimal && <span className="trade-done">✓ 動物購入済み</span>}
-
       {!state.boughtStar && me.coins >= STAR_COST && (
         <button className="action-btn trade" onClick={() => send('buyStar')}>
           <Emoji name="star" size={14} /> 星を買う ({STAR_COST}<Emoji name="coin" size={12} />)
@@ -727,9 +739,15 @@ function TradeActions() {
       <button className="action-btn secondary" onClick={() => setReturning(true)}>
         <Emoji name="refresh" size={14} /> 動物を返す
       </button>
+      <div style={{ minWidth: 50 }} />
       <button className="action-btn" onClick={() => send('endTrade')}>
         <Emoji name="skip" size={14} /> お買い物終了
       </button>
+
+      {!state.boughtAnimal && (
+        <span className="trade-guide"><Emoji name="cart" size={16} /> 右のマーケットから動物をクリック<span className="blink-pointer">👉</span>で購入</span>
+      )}
+      {state.boughtAnimal && <span className="trade-done">✓ 動物購入済み</span>}
     </>
   );
 }
