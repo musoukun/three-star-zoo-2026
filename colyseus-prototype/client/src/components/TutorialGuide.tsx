@@ -4,10 +4,12 @@ const STORAGE_KEY = 'zoo_tutorial_done';
 
 /** ガイド対象のフェーズとdata-tutorial属性の対応 */
 type GuideStep = {
-  phase: string;           // state.phase or turnStep に対応
-  target: string;          // data-tutorial 属性値
+  phase: string;
+  target: string;          // PC用 data-tutorial 属性値
+  mobileTarget?: string;   // モバイル用（省略時はtargetを使用）
   title: string;
   body: string;
+  mobileBody?: string;     // モバイル用テキスト（省略時はbodyを使用）
 };
 
 const GUIDE_STEPS: GuideStep[] = [
@@ -38,8 +40,10 @@ const GUIDE_STEPS: GuideStep[] = [
   {
     phase: 'trade',
     target: 'market-area',
+    mobileTarget: 'market-fab',
     title: '🛒 お買い物',
     body: 'このマーケットから動物をクリックして購入し、空いているケージに配置します。動物を返却することもできます（半額戻り）。買い物が終わったら「お買い物終了」ボタンを押して次へ。',
+    mobileBody: 'このショップボタンを押してマーケットを開き、動物をクリックして購入します。動物を返却することもできます（半額戻り）。買い物が終わったら「お買い物終了」ボタンを押して次へ。',
   },
   {
     phase: 'clean',
@@ -63,11 +67,13 @@ export function TutorialGuide({
   currentPhase,
   turnStep,
   isMyTurn,
+  isMobile,
   onDone,
 }: {
-  currentPhase: string;   // 'setup' | 'main' | 'ended'
-  turnStep: string;       // 'poop' | 'roll' | 'income' | 'trade' | 'clean' | 'flush'
+  currentPhase: string;
+  turnStep: string;
   isMyTurn: boolean;
+  isMobile: boolean;
   onDone: () => void;
 }) {
   const [stepIndex, setStepIndex] = useState(0);
@@ -111,8 +117,10 @@ export function TutorialGuide({
     const step = GUIDE_STEPS[stepIndex];
     if (!step) return;
 
+    const targetId = (isMobile && step.mobileTarget) ? step.mobileTarget : step.target;
+
     const positionBubble = () => {
-      const target = document.querySelector(`[data-tutorial="${step.target}"]`);
+      const target = document.querySelector(`[data-tutorial="${targetId}"]`);
       if (!target) return false;
 
       const rect = target.getBoundingClientRect();
@@ -138,7 +146,8 @@ export function TutorialGuide({
         arrowDir = 'up';
       }
 
-      // 水平: ターゲット中央に寄せつつ画面内に収める
+      // 画面内に収める
+      top = Math.max(8, Math.min(top, window.innerHeight - bubbleHeight - 8));
       let left = rect.left + rect.width / 2 - bubbleWidth / 2;
       left = Math.max(8, Math.min(left, window.innerWidth - bubbleWidth - 8));
 
@@ -234,7 +243,7 @@ export function TutorialGuide({
         <div className="tutorial-title">{step.title}</div>
 
         <div className="tutorial-body">
-          {step.body.split('\n').map((line, i) => (
+          {((isMobile && step.mobileBody) ? step.mobileBody : step.body).split('\n').map((line, i) => (
             <p key={i}>{line}</p>
           ))}
         </div>

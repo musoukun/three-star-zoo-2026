@@ -204,7 +204,7 @@ export function Board({ onLeave }: { onLeave: () => void }) {
       </div>
 
       {/* マーケットFAB + ドロワー */}
-      <button className="mobile-fab market-fab" onClick={() => setMarketOpen(true)}><Emoji name="store" size={20} /></button>
+      <button className="mobile-fab market-fab" data-tutorial="market-fab" onClick={() => setMarketOpen(true)}><Emoji name="store" size={20} /></button>
       {marketOpen && <div className="drawer-overlay" onClick={() => setMarketOpen(false)} />}
       <div className={`market-drawer ${marketOpen ? 'open' : ''}`}>
         <div className="market-drawer-header">
@@ -265,6 +265,7 @@ export function Board({ onLeave }: { onLeave: () => void }) {
           currentPhase={state.phase}
           turnStep={state.turnStep}
           isMyTurn={isMyTurn}
+          isMobile={isMobile}
           onDone={() => setShowTutorial(false)}
         />
       )}
@@ -498,6 +499,7 @@ export function Board({ onLeave }: { onLeave: () => void }) {
           currentPhase={state.phase}
           turnStep={state.turnStep}
           isMyTurn={isMyTurn}
+          isMobile={isMobile}
           onDone={() => setShowTutorial(false)}
         />
       )}
