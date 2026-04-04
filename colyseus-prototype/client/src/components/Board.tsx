@@ -285,8 +285,8 @@ export function Board({ onLeave }: { onLeave: () => void }) {
         <div className="status-bar">
           <strong>
             {isSetup
-              ? `セットアップ中 - ${getPlayerName(state.currentTurn)} が配置`
-              : `${getPlayerName(state.currentTurn)} のターン`}
+              ? (isMyTurn ? 'セットアップ中 - あなたが配置' : `セットアップ中 - ${getPlayerName(state.currentTurn)} が配置`)
+              : (isMyTurn ? <span className="my-turn">あなたのターン</span> : `${getPlayerName(state.currentTurn)} のターン`)}
           </strong>
           {state.diceRolled && (
             <span>
@@ -300,7 +300,6 @@ export function Board({ onLeave }: { onLeave: () => void }) {
           {state.phase === 'main' && state.chanceDeckCount > 0 && (
             <span style={{ fontSize: 14, color: '#fff' }}><Emoji name="card" size={15} />{state.chanceDeckCount}</span>
           )}
-          {isMyTurn && <span className="my-turn">あなたのターン</span>}
           <button onClick={onLeave} style={{ marginLeft: 'auto', padding: '2px 8px', cursor: 'pointer', fontSize: 11 }}>
             退出
           </button>
@@ -333,7 +332,7 @@ export function Board({ onLeave }: { onLeave: () => void }) {
                     {pid === state.currentTurn && <span style={{ fontSize: 10 }}><Emoji name="target" size={12} /></span>}
                   </div>
                   <div>
-                    <Emoji name="coin" size={12} />{p.coins} <Emoji name="star" size={12} />{'★'.repeat(p.stars)}{'☆'.repeat(3 - p.stars)} <Emoji name="poop" size={12} />{p.poopTokens}
+                    <Emoji name="coin" size={12} />{p.coins} <span style={{ marginLeft: '0.8em' }}>{'★'.repeat(p.stars)}{'☆'.repeat(3 - p.stars)}</span> <Emoji name="poop" size={12} />{p.poopTokens}
                     {p.hasHeldCard && <span title="伏せカード保持中"> <Emoji name="card" size={12} /></span>}
                   </div>
                 </div>
