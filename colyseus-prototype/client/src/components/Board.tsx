@@ -12,6 +12,7 @@ import {
   MarketPanel, ChanceCardDrawUI, ChanceCardInteractionUI,
 } from './BoardPanels';
 import { Emoji } from './Emoji';
+import { TutorialGuide, isTutorialDone } from './TutorialGuide';
 
 const DiceAnimation = lazy(() => import('./Dice/DiceAnimation'));
 
@@ -35,6 +36,7 @@ export function Board({ onLeave }: { onLeave: () => void }) {
   const [chatOpen, setChatOpen] = useState(false);
   const [diceAnimResults, setDiceAnimResults] = useState<number[] | null>(null);
   const prevDiceRolledRef = useRef(false);
+  const [showTutorial, setShowTutorial] = useState(() => !isTutorialDone());
 
   // サイコロが振られたらアニメーションを開始
   useEffect(() => {
@@ -255,6 +257,7 @@ export function Board({ onLeave }: { onLeave: () => void }) {
           />
         </Suspense>
       )}
+      {showTutorial && <TutorialGuide onDone={() => setShowTutorial(false)} />}
     </div>
   );
 
@@ -474,6 +477,7 @@ export function Board({ onLeave }: { onLeave: () => void }) {
           />
         </Suspense>
       )}
+      {showTutorial && <TutorialGuide onDone={() => setShowTutorial(false)} />}
     </div>
   );
 }
@@ -639,7 +643,7 @@ function ActionPanel() {
               <Emoji name="broom" size={14} /> 掃除 (1<Emoji name="coin" size={12} />→2個除去)
             </button>
           )}
-          <div style={{ flexGrow: 1 }} />
+          <div style={{ minWidth: 40 }} />
           <button className="action-btn secondary" onClick={() => send('endClean')}>
             <Emoji name="check" size={14} /> 掃除終了
           </button>

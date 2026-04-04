@@ -1695,3 +1695,161 @@ body {
     font-size: 24px;
   }
 }
+
+/* ===== チュートリアルガイド ===== */
+.tutorial-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.55);
+  z-index: 9000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  animation: tutorialFadeIn 0.3s ease;
+}
+
+@keyframes tutorialFadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+.tutorial-bubble {
+  background: #fffef5;
+  border: 3px solid #f9a825;
+  border-radius: 16px;
+  box-shadow: 0 8px 32px rgba(0,0,0,0.3);
+  padding: 20px 24px;
+  max-width: 420px;
+  width: 90vw;
+  position: relative;
+  animation: tutorialSlideIn 0.3s ease;
+}
+
+@keyframes tutorialSlideIn {
+  from { transform: translateY(20px); opacity: 0; }
+  to { transform: translateY(0); opacity: 1; }
+}
+
+.tutorial-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 12px;
+}
+
+.tutorial-step-indicator {
+  font-size: 12px;
+  color: #888;
+  background: #f0f0f0;
+  padding: 2px 8px;
+  border-radius: 10px;
+}
+
+.tutorial-skip {
+  background: none;
+  border: none;
+  color: #999;
+  font-size: 12px;
+  cursor: pointer;
+  padding: 2px 6px;
+}
+.tutorial-skip:hover {
+  color: #e74c3c;
+}
+
+.tutorial-title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 18px;
+  font-weight: bold;
+  color: #5d4037;
+  margin-bottom: 10px;
+}
+
+.tutorial-body {
+  color: #444;
+  font-size: 14px;
+  line-height: 1.7;
+}
+.tutorial-body p {
+  margin: 0 0 6px;
+}
+.tutorial-body p:last-child {
+  margin-bottom: 0;
+}
+
+.tutorial-nav {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 16px;
+}
+
+.tutorial-btn {
+  padding: 8px 18px;
+  border: none;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: bold;
+  cursor: pointer;
+  transition: background 0.15s, transform 0.1s;
+}
+.tutorial-btn:hover {
+  transform: translateY(-1px);
+}
+.tutorial-btn.primary {
+  background: linear-gradient(135deg, #f9a825, #fdd835);
+  color: #5d4037;
+}
+.tutorial-btn.primary:hover {
+  background: linear-gradient(135deg, #f57f17, #f9a825);
+}
+.tutorial-btn.secondary {
+  background: #e0e0e0;
+  color: #555;
+}
+.tutorial-btn.secondary:hover {
+  background: #ccc;
+}
+
+.tutorial-dots {
+  display: flex;
+  justify-content: center;
+  gap: 6px;
+  margin-top: 14px;
+}
+
+.tutorial-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #ddd;
+  cursor: pointer;
+  transition: background 0.2s, transform 0.2s;
+}
+.tutorial-dot.active {
+  background: #f9a825;
+  transform: scale(1.3);
+}
+.tutorial-dot.done {
+  background: #a5d6a7;
+}
+
+/* モバイル向けチュートリアル調整 */
+@media (max-width: 768px) {
+  .tutorial-bubble {
+    padding: 16px 18px;
+    max-width: 340px;
+  }
+  .tutorial-title {
+    font-size: 16px;
+  }
+  .tutorial-body {
+    font-size: 13px;
+  }
+  .tutorial-btn {
+    padding: 7px 14px;
+    font-size: 13px;
+  }
+}
