@@ -38,19 +38,6 @@ export function Board({ onLeave }: { onLeave: () => void }) {
   const [diceAnimResults, setDiceAnimResults] = useState<number[] | null>(null);
   const prevDiceRolledRef = useRef(false);
   const [showTutorial, setShowTutorial] = useState(() => !isTutorialDone());
-  const [marketBlink, setMarketBlink] = useState(false);
-  const prevTurnStepRef = useRef('');
-
-  // 買物フェーズに入ったらマーケット背景を点滅
-  useEffect(() => {
-    if (!state) return;
-    if (state.turnStep === 'trade' && prevTurnStepRef.current !== 'trade') {
-      setMarketBlink(true);
-      const timer = setTimeout(() => setMarketBlink(false), 5500);
-      return () => clearTimeout(timer);
-    }
-    prevTurnStepRef.current = state.turnStep;
-  }, [state?.turnStep]);
 
   // サイコロが振られたらアニメーションを開始
   useEffect(() => {
@@ -70,6 +57,7 @@ export function Board({ onLeave }: { onLeave: () => void }) {
   const isMyTurn = state.currentTurn === sessionId;
   const isEnded = state.phase === 'ended';
   const me = state.players[sessionId];
+  const marketBlink = state.turnStep === 'trade' && isMyTurn;
 
   const getPlayerName = (id: string) => state.players[id]?.name ?? id;
 
@@ -689,6 +677,7 @@ function ActionPanel() {
 function TradeActions() {
   const { state, sessionId, send } = useContext(ColyseusContext);
   const [returning, setReturning] = useState(false);
+  const isMobile = useIsMobile();
 
   if (!state) return null;
   const me = state.players[sessionId];
@@ -745,7 +734,12 @@ function TradeActions() {
       </button>
 
       {!state.boughtAnimal && (
-        <span className="trade-guide"><Emoji name="cart" size={16} /> 右のマーケットから動物をクリック<span className="blink-pointer">👉</span>で購入</span>
+        <span className="trade-guide">
+          {isMobile
+            ? <><Emoji name="store" size={16} /> ショップボタンから動物をクリックで購入</>
+            : <><Emoji name="cart" size={16} /> 右のマーケットから動物をクリックで購入<span className="blink-pointer">👉</span></>
+          }
+        </span>
       )}
       {state.boughtAnimal && <span className="trade-done">✓ 動物購入済み</span>}
     </>
