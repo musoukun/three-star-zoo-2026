@@ -157,14 +157,20 @@ body {
   font-weight: bold;
 }
 
-/* ===== プログレスバー ===== */
-.progress-bar {
+/* ===== プログレス＋ステータスバー ===== */
+.progress-stats-bar {
   display: flex;
   align-items: center;
-  justify-content: center;
-  gap: 4px;
+  justify-content: space-between;
+  gap: 12px;
   padding: 4px 0;
   margin-bottom: 8px;
+}
+
+.progress-steps {
+  display: flex;
+  align-items: center;
+  gap: 4px;
 }
 
 .progress-step {
@@ -680,7 +686,6 @@ body {
 .my-stats {
   display: flex;
   gap: 20px;
-  margin-bottom: 8px;
   font-size: 16px;
 }
 
