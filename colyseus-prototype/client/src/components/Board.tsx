@@ -37,6 +37,19 @@ export function Board({ onLeave }: { onLeave: () => void }) {
   const [diceAnimResults, setDiceAnimResults] = useState<number[] | null>(null);
   const prevDiceRolledRef = useRef(false);
   const [showTutorial, setShowTutorial] = useState(() => !isTutorialDone());
+  const [marketBlink, setMarketBlink] = useState(false);
+  const prevTurnStepRef = useRef('');
+
+  // 買物フェーズに入ったらマーケット背景を点滅
+  useEffect(() => {
+    if (!state) return;
+    if (state.turnStep === 'trade' && prevTurnStepRef.current !== 'trade') {
+      setMarketBlink(true);
+      const timer = setTimeout(() => setMarketBlink(false), 2000);
+      return () => clearTimeout(timer);
+    }
+    prevTurnStepRef.current = state.turnStep;
+  }, [state?.turnStep]);
 
   // サイコロが振られたらアニメーションを開始
   useEffect(() => {
@@ -281,7 +294,7 @@ export function Board({ onLeave }: { onLeave: () => void }) {
           </strong>
           {state.diceRolled && (
             <span>
-              <Emoji name="dice" size={14} /> {state.diceCount === 1
+              <Emoji name="dice" size={17} /> {state.diceCount === 1
                 ? `${state.dice1}`
                 : `${state.dice1}+${state.dice2}`}
               = <strong>{state.diceSum}</strong>
@@ -289,7 +302,7 @@ export function Board({ onLeave }: { onLeave: () => void }) {
             </span>
           )}
           {state.phase === 'main' && state.chanceDeckCount > 0 && (
-            <span style={{ fontSize: 11, color: '#777' }}><Emoji name="card" size={12} />{state.chanceDeckCount}</span>
+            <span style={{ fontSize: 14, color: '#fff' }}><Emoji name="card" size={15} />{state.chanceDeckCount}</span>
           )}
           {isMyTurn && <span className="my-turn">← あなた</span>}
           <button onClick={onLeave} style={{ marginLeft: 'auto', padding: '2px 8px', cursor: 'pointer', fontSize: 11 }}>
@@ -365,7 +378,7 @@ export function Board({ onLeave }: { onLeave: () => void }) {
       </div>
 
       {/* ===== 中央右: マーケット ===== */}
-      <div className="market-area">
+      <div className={`market-area ${marketBlink ? 'blink-trade' : ''}`}>
         <div className="market-title"><Emoji name="store" size={16} /> 動物マーケット <span className="market-header-coins">所持金：<Emoji name="coin" size={14} />{me?.coins ?? 0}</span></div>
         <MarketPanel />
       </div>
@@ -694,7 +707,7 @@ function TradeActions() {
   return (
     <>
       {!state.boughtAnimal && (
-        <span className="trade-done" style={{ color: '#333' }}><Emoji name="cart" size={14} /> マーケットから動物をクリックで購入</span>
+        <span className="trade-guide"><Emoji name="cart" size={16} /> 右のマーケットから動物をクリック<span className="blink-pointer">👉</span>で購入</span>
       )}
       {state.boughtAnimal && <span className="trade-done">✓ 動物購入済み</span>}
 
