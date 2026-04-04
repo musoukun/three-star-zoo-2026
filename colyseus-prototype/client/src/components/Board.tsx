@@ -179,6 +179,7 @@ export function Board({ onLeave }: { onLeave: () => void }) {
             isMyTurn={isMyTurn}
             setupInventory={state.setupInventory[sessionId] ?? ''}
             send={send}
+            tutorialId="my-cage-grid"
           />
 
           {!isSetup && isMyTurn && !isEnded && <ActionPanel />}
@@ -376,7 +377,7 @@ export function Board({ onLeave }: { onLeave: () => void }) {
       </div>
 
       {/* ===== 中央右: マーケット ===== */}
-      <div className={`market-area ${marketBlink ? 'blink-trade' : ''}`}>
+      <div className={`market-area ${marketBlink ? 'blink-trade' : ''}`} data-tutorial="market-area">
         <div className="market-title"><Emoji name="store" size={16} /> 動物マーケット <span className="market-header-coins">所持金：<Emoji name="coin" size={14} />{me?.coins ?? 0}</span></div>
         <MarketPanel />
       </div>
@@ -424,6 +425,7 @@ export function Board({ onLeave }: { onLeave: () => void }) {
           isMyTurn={isMyTurn}
           setupInventory={state.setupInventory[sessionId] ?? ''}
           send={send}
+          tutorialId="my-cage-grid"
         />
 
         {!isSetup && isMyTurn && !isEnded && (
@@ -505,7 +507,7 @@ export function Board({ onLeave }: { onLeave: () => void }) {
 
 // ===== ケージグリッド =====
 function CageGrid({
-  cages, diceSum, isSetup, isMyTurn, setupInventory, send,
+  cages, diceSum, isSetup, isMyTurn, setupInventory, send, tutorialId,
 }: {
   cages: CageState[];
   diceSum: number;
@@ -513,6 +515,7 @@ function CageGrid({
   isMyTurn: boolean;
   setupInventory: string;
   send: (type: string, data?: any) => void;
+  tutorialId?: string;
 }) {
   const invAnimals = setupInventory ? setupInventory.split(',').filter(s => s.length > 0) : [];
 
@@ -565,7 +568,7 @@ function CageGrid({
   };
 
   return (
-    <div className="cage-grid-2row" data-tutorial="cage-grid">
+    <div className="cage-grid-2row" {...(tutorialId ? { 'data-tutorial': tutorialId } : {})}>
       <div className="cage-row top-row">
         {TOP_ROW.map(n => renderCage(n))}
       </div>
@@ -618,7 +621,7 @@ function ActionPanel() {
       )}
 
       {state.turnStep === 'roll' && (
-        <span data-tutorial="btn-roll" style={{ display: 'contents' }}>
+        <span data-tutorial="btn-roll" style={{ display: 'flex', gap: 6 }}>
           <button className="action-btn" onClick={() => send('rollDice', { diceCount: 1 })}>
             <Emoji name="dice" size={14} /> 1個振り (1-6)
           </button>
@@ -651,13 +654,13 @@ function ActionPanel() {
       )}
 
       {state.turnStep === 'trade' && !state.chanceCardPhase && (
-        <span data-tutorial="btn-trade" style={{ display: 'contents' }}>
+        <span data-tutorial="btn-trade" style={{ display: 'flex', gap: 6, flexWrap: 'wrap', alignItems: 'center', justifyContent: 'flex-end' }}>
           <TradeActions />
         </span>
       )}
 
       {state.turnStep === 'clean' && (
-        <span data-tutorial="btn-clean" style={{ display: 'contents' }}>
+        <span data-tutorial="btn-clean" style={{ display: 'flex', gap: 6, flexWrap: 'wrap', alignItems: 'center' }}>
           <span style={{ color: '#555', fontSize: 12, alignSelf: 'center' }}>
             <Emoji name="poop" size={12} /> {me.poopTokens}個 {me.poopTokens >= 7 && '⚠ 7個以上でバースト!'}
           </span>

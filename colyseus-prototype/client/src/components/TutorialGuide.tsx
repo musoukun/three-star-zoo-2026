@@ -13,7 +13,7 @@ type GuideStep = {
 const GUIDE_STEPS: GuideStep[] = [
   {
     phase: 'setup',
-    target: 'cage-grid',
+    target: 'my-cage-grid',
     title: '🦁 動物の初期配置',
     body: 'レッサーパンダとペンギンを好きなケージに配置しましょう。ケージの番号がサイコロの出目に対応しています。',
   },
@@ -37,9 +37,9 @@ const GUIDE_STEPS: GuideStep[] = [
   },
   {
     phase: 'trade',
-    target: 'btn-trade',
+    target: 'market-area',
     title: '🛒 お買い物',
-    body: '右のマーケットから動物をクリックして購入し、空いているケージに配置します。動物を返却することもできます（半額戻り）。買い物が終わったら「お買い物終了」ボタンを押して次へ。',
+    body: 'このマーケットから動物をクリックして購入し、空いているケージに配置します。動物を返却することもできます（半額戻り）。買い物が終わったら「お買い物終了」ボタンを押して次へ。',
   },
   {
     phase: 'clean',
@@ -113,9 +113,12 @@ export function TutorialGuide({
 
     const positionBubble = () => {
       const target = document.querySelector(`[data-tutorial="${step.target}"]`);
-      if (!target) return;
+      if (!target) return false;
 
       const rect = target.getBoundingClientRect();
+      // まだDOMに配置されていない場合（サイズ0）はスキップ
+      if (rect.width === 0 && rect.height === 0) return false;
+
       const bubbleHeight = bubbleRef.current?.offsetHeight ?? 180;
       const bubbleWidth = bubbleRef.current?.offsetWidth ?? 360;
 
@@ -143,16 +146,22 @@ export function TutorialGuide({
 
       // ターゲットをハイライト
       target.classList.add('tutorial-highlight');
-      return () => target.classList.remove('tutorial-highlight');
+      return true;
     };
 
-    // DOMレンダリング後に位置計算
-    const timer = setTimeout(positionBubble, 50);
-    const cleanup = positionBubble();
+    // DOMレンダリング後に位置計算（リトライ付き）
+    let attempts = 0;
+    const tryPosition = () => {
+      const ok = positionBubble();
+      if (!ok && attempts < 10) {
+        attempts++;
+        retryTimer = setTimeout(tryPosition, 100);
+      }
+    };
+    let retryTimer = setTimeout(tryPosition, 50);
 
     return () => {
-      clearTimeout(timer);
-      cleanup?.();
+      clearTimeout(retryTimer);
       // 旧ターゲットのハイライト解除
       document.querySelectorAll('.tutorial-highlight').forEach(el => el.classList.remove('tutorial-highlight'));
     };
