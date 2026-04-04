@@ -195,6 +195,26 @@ body {
 }
 
 /* ===== プレイヤー情報 ===== */
+.player-and-log-row {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 8px;
+  align-items: flex-start;
+}
+
+.player-and-log-row .player-info-row {
+  flex: 1;
+  margin-bottom: 0;
+}
+
+.player-and-log-row .effect-log {
+  flex-shrink: 0;
+  max-width: 240px;
+  max-height: 80px;
+  overflow-y: auto;
+  margin-top: 0;
+}
+
 .player-info-row {
   display: flex;
   gap: 8px;

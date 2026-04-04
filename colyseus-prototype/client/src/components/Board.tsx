@@ -300,44 +300,55 @@ export function Board({ onLeave }: { onLeave: () => void }) {
           {state.phase === 'main' && state.chanceDeckCount > 0 && (
             <span style={{ fontSize: 14, color: '#fff' }}><Emoji name="card" size={15} />{state.chanceDeckCount}</span>
           )}
-          {isMyTurn && <span className="my-turn">← あなた</span>}
+          {isMyTurn && <span className="my-turn">あなたのターン</span>}
           <button onClick={onLeave} style={{ marginLeft: 'auto', padding: '2px 8px', cursor: 'pointer', fontSize: 11 }}>
             退出
           </button>
         </div>
 
-        <div className="player-info-row">
-          {sortedPlayers.map(([pid, p]) => {
-            const colorDef = p.color ? PLAYER_COLORS[p.color] : null;
-            return (
-              <div
-                key={pid}
-                className={`player-card ${pid === state.currentTurn ? 'current' : ''} ${pid === sessionId ? 'me' : ''}`}
-                style={{
-                  background: colorDef ? colorDef.light : (pid === sessionId ? '#eef6ff' : '#fff'),
-                  borderColor: pid === state.currentTurn
-                    ? (colorDef ? colorDef.bg : '#e74c3c')
-                    : (colorDef ? colorDef.bg + '80' : '#ccc'),
-                }}
-              >
-                <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
-                  {colorDef && (
-                    <span style={{
-                      display: 'inline-block', width: 10, height: 10, borderRadius: '50%',
-                      background: colorDef.bg, flexShrink: 0,
-                    }} />
-                  )}
-                  <strong>{p.name}</strong>
-                  {pid === sessionId && <span style={{ fontSize: 10, color: '#666' }}>(自分)</span>}
-                  {pid === state.currentTurn && <span style={{ fontSize: 10 }}><Emoji name="target" size={12} /></span>}
+        <div className="player-and-log-row">
+          <div className="player-info-row">
+            {sortedPlayers.map(([pid, p]) => {
+              const colorDef = p.color ? PLAYER_COLORS[p.color] : null;
+              return (
+                <div
+                  key={pid}
+                  className={`player-card ${pid === state.currentTurn ? 'current' : ''} ${pid === sessionId ? 'me' : ''}`}
+                  style={{
+                    background: colorDef ? colorDef.light : (pid === sessionId ? '#eef6ff' : '#fff'),
+                    borderColor: pid === state.currentTurn
+                      ? (colorDef ? colorDef.bg : '#e74c3c')
+                      : (colorDef ? colorDef.bg + '80' : '#ccc'),
+                  }}
+                >
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+                    {colorDef && (
+                      <span style={{
+                        display: 'inline-block', width: 10, height: 10, borderRadius: '50%',
+                        background: colorDef.bg, flexShrink: 0,
+                      }} />
+                    )}
+                    <strong>{p.name}</strong>
+                    {pid === sessionId && <span style={{ fontSize: 10, color: '#666' }}>(自分)</span>}
+                    {pid === state.currentTurn && <span style={{ fontSize: 10 }}><Emoji name="target" size={12} /></span>}
+                  </div>
+                  <div>
+                    <Emoji name="coin" size={12} />{p.coins} <Emoji name="star" size={12} />{'★'.repeat(p.stars)}{'☆'.repeat(3 - p.stars)} <Emoji name="poop" size={12} />{p.poopTokens}
+                    {p.hasHeldCard && <span title="伏せカード保持中"> <Emoji name="card" size={12} /></span>}
+                  </div>
                 </div>
-                <div>
-                  <Emoji name="coin" size={12} />{p.coins} <Emoji name="star" size={12} />{'★'.repeat(p.stars)}{'☆'.repeat(3 - p.stars)} <Emoji name="poop" size={12} />{p.poopTokens}
-                  {p.hasHeldCard && <span title="伏せカード保持中"> <Emoji name="card" size={12} /></span>}
-                </div>
-              </div>
-            );
-          })}
+              );
+            })}
+          </div>
+
+          {state.effectLog.length > 0 && (
+            <div className="effect-log">
+              <h4><Emoji name="memo" size={14} /> ログ</h4>
+              {state.effectLog.map((log: string, i: number) => (
+                <div key={i}>{log}</div>
+              ))}
+            </div>
+          )}
         </div>
 
         {otherPlayers.map(([pid, player]) => {
@@ -363,14 +374,6 @@ export function Board({ onLeave }: { onLeave: () => void }) {
           );
         })}
 
-        {state.effectLog.length > 0 && (
-          <div className="effect-log">
-            <h4><Emoji name="memo" size={14} /> ログ</h4>
-            {state.effectLog.map((log: string, i: number) => (
-              <div key={i}>{log}</div>
-            ))}
-          </div>
-        )}
       </div>
 
       {/* ===== 中央右: マーケット ===== */}
