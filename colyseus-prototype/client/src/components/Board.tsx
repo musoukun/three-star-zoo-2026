@@ -391,27 +391,29 @@ export function Board({ onLeave }: { onLeave: () => void }) {
         return mc ? { background: mc.light, borderTopColor: mc.bg } : {};
       })()}>
         <div className="progress-stats-bar" data-tutorial="progress-bar">
-          {!isSetup && !isEnded && (
-            <div className="progress-steps">
-              {TURN_STEPS.map((step, i) => {
-                const stepIdx = TURN_STEPS.findIndex(s => s.key === state.turnStep);
-                const isActive = step.key === state.turnStep;
-                return (
-                  <span key={step.key}>
-                    {i > 0 && <span className={`progress-line ${i <= stepIdx ? 'active' : ''}`} />}
-                    <span className={`progress-step ${isActive ? 'active' : ''}`}>
-                      <StepIcon emoji={step.emoji} size={14} /> {step.label}
-                    </span>
-                  </span>
-                );
-              })}
-            </div>
-          )}
           {me && (
             <div className="my-stats">
               <span><Emoji name="coin" size={14} /> {me.coins}コイン</span>
-              <span><Emoji name="star" size={14} /> {'★'.repeat(me.stars)}{'☆'.repeat(3 - me.stars)}</span>
+              <span style={{ marginLeft: '1em' }}>{'★'.repeat(me.stars)}{'☆'.repeat(3 - me.stars)}</span>
               <span><Emoji name="poop" size={14} /> {me.poopTokens}個{me.poopTokens >= 7 ? ' ⚠バースト!' : ''}</span>
+            </div>
+          )}
+          {!isSetup && !isEnded && (
+            <div className="progress-steps-wrapper">
+              <div className="progress-steps">
+                {TURN_STEPS.map((step, i) => {
+                  const stepIdx = TURN_STEPS.findIndex(s => s.key === state.turnStep);
+                  const isActive = step.key === state.turnStep;
+                  return (
+                    <span key={step.key}>
+                      {i > 0 && <span className={`progress-line ${i <= stepIdx ? 'active' : ''}`} />}
+                      <span className={`progress-step ${isActive ? 'active' : ''}`}>
+                        <StepIcon emoji={step.emoji} size={14} /> {step.label}
+                      </span>
+                    </span>
+                  );
+                })}
+              </div>
             </div>
           )}
         </div>

@@ -161,10 +161,19 @@ body {
 .progress-stats-bar {
   display: flex;
   align-items: center;
-  justify-content: space-between;
   gap: 12px;
   padding: 4px 0;
   margin-bottom: 8px;
+}
+
+.progress-stats-bar .my-stats {
+  flex-shrink: 0;
+}
+
+.progress-steps-wrapper {
+  flex: 1;
+  display: flex;
+  justify-content: center;
 }
 
 .progress-steps {
