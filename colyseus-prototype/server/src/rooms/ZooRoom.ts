@@ -115,8 +115,7 @@ export class ZooRoom extends Room<{ state: ZooState }> {
             // turnOrderとplayersのキーを新sessionIdに差し替え
             const idx = this.state.turnOrder.indexOf(oldSessionId);
             if (idx !== -1) {
-              this.state.turnOrder.splice(idx, 1);
-              this.state.turnOrder.splice(idx, 0, client.sessionId);
+              this.state.turnOrder.splice(idx, 1, client.sessionId);
             }
             if (this.state.currentTurn === oldSessionId) this.state.currentTurn = client.sessionId;
             if (this.state.hostId === oldSessionId) this.state.hostId = client.sessionId;
