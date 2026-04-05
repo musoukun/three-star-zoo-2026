@@ -330,7 +330,7 @@ export function MarketPanel() {
             onClick={() => canBuy && setBuying(a.id)}
             style={{
               cursor: canBuy ? 'pointer' : 'default',
-              ...(tooExpensive ? { opacity: 0.45, filter: 'grayscale(0.6)' } : {}),
+              ...(tooExpensive ? { opacity: 0.65, filter: 'grayscale(0.35)' } : {}),
             }}
           >
             <div className={`market-card-header ${colorClass}`}>
