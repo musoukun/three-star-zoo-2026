@@ -910,10 +910,12 @@ function PendingEffectUI() {
 function ChatPanel() {
   const { state, send } = useContext(ColyseusContext);
   const [text, setText] = useState('');
+  const [showLog, setShowLog] = useState(true);
 
   if (!state) return null;
 
   const gameLog = state.gameLog ?? [];
+  const filtered = showLog ? gameLog : gameLog.filter(msg => msg.includes('💬'));
 
   const handleSend = () => {
     const trimmed = text.trim();
@@ -924,9 +926,15 @@ function ChatPanel() {
 
   return (
     <div className="chat-area">
-      <div className="chat-header"><Emoji name="chat" size={14} /> ログ / チャット</div>
+      <div className="chat-header">
+        <span><Emoji name="chat" size={14} /> ログ / チャット</span>
+        <label style={{ fontSize: 10, display: 'flex', alignItems: 'center', gap: 3, cursor: 'pointer', marginLeft: 'auto', fontWeight: 'normal' }}>
+          <input type="checkbox" checked={showLog} onChange={e => setShowLog(e.target.checked)} style={{ width: 13, height: 13 }} />
+          ログ表示
+        </label>
+      </div>
       <div className="chat-messages" ref={el => { if (el) el.scrollTop = el.scrollHeight; }}>
-        {gameLog.map((msg, i) => (
+        {filtered.map((msg, i) => (
           <div key={i} className={`chat-msg ${msg.includes('💬') ? 'chat' : 'system'}`}>
             {msg}
           </div>
