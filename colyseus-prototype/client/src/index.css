@@ -1168,15 +1168,22 @@ body {
   font-size: 11px;
 }
 
-.mobile-leave-btn {
+.leave-btn {
   margin-left: auto;
-  padding: 2px 8px;
-  font-size: 10px;
+  padding: 4px 10px;
+  font-size: 11px;
   cursor: pointer;
-  background: rgba(255,255,255,0.15);
-  border: 1px solid rgba(255,255,255,0.3);
-  color: #fff;
+  background: rgba(220, 80, 80, 0.25);
+  border: 1px solid rgba(220, 80, 80, 0.5);
+  color: #ffcccc;
   border-radius: 4px;
+  transition: background 0.2s;
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+}
+.leave-btn:hover {
+  background: rgba(220, 80, 80, 0.45);
 }
 
 /* ===== プレイヤーサマリーストリップ ===== */

@@ -184,7 +184,7 @@ export function Board({ onLeave }: { onLeave: () => void }) {
           <span style={{ fontSize: 10, color: 'rgba(255,255,255,0.6)' }}><Emoji name="card" size={12} />{state.chanceDeckCount}</span>
         )}
         {isMyTurn && <span className="my-turn">あなた</span>}
-        <button onClick={onLeave} className="mobile-leave-btn">退出</button>
+        <button onClick={onLeave} className="leave-btn"><Emoji name="door" size={10} /> 退室</button>
       </div>
 
       {/* プレイヤーサマリー横スクロール */}
@@ -393,8 +393,8 @@ export function Board({ onLeave }: { onLeave: () => void }) {
           {state.phase === 'main' && state.chanceDeckCount > 0 && (
             <span style={{ fontSize: 14, color: '#fff' }}><Emoji name="card" size={15} />{state.chanceDeckCount}</span>
           )}
-          <button onClick={onLeave} style={{ marginLeft: 'auto', padding: '2px 8px', cursor: 'pointer', fontSize: 11 }}>
-            退出
+          <button onClick={onLeave} className="leave-btn">
+            <Emoji name="door" size={12} /> 退室
           </button>
         </div>
 
