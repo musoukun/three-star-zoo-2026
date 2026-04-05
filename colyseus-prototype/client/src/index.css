@@ -512,6 +512,10 @@ body {
   font-size: 16px;
 }
 
+.cage-place-btn .place-icon img {
+  width: 32px !important;
+}
+
 .cage-place-btn .place-label {
   font-size: 10px;
   color: #222;
