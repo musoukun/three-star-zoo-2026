@@ -653,7 +653,7 @@ body {
   height: 32px;
   object-fit: cover;
   object-position: center;
-  border-radius: 4px;
+  border-radius: 50%;
   vertical-align: middle;
 }
 

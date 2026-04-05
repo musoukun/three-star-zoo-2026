@@ -29,17 +29,17 @@ export const ANIMAL_ICONS: Record<string, string> = {
 };
 
 // 顔アイコン画像
-import faceRessaPanda from '../assets/animals/RessaPanda_face.jpg';
-import faceRosyFacedLovebird from '../assets/animals/RosyFacedLovebird_face.jpg';
-import facePenguin from '../assets/animals/Penguin_face.jpg';
-import faceLion from '../assets/animals/Lion_face.jpg';
-import faceGiantPanda from '../assets/animals/GiantPanda_face.jpg';
-import faceCaliforniaSeaLion from '../assets/animals/CaliforniaSeaLion_face.jpg';
-import faceReticulatedGiraffe from '../assets/animals/ReticulatedGiraffe_face.jpg';
-import faceCheetah from '../assets/animals/Cheetah_face.jpg';
-import faceAfricanElephant from '../assets/animals/AfricanElephant_face.jpg';
-import faceSouthernWhiteRhino from '../assets/animals/SouthernWhiteRhino_face.jpg';
-import faceBottlenoseDolphin from '../assets/animals/BottlenoseDolphin_face.jpg';
+import faceRessaPanda from '../assets/animals/RessaPanda_face.png';
+import faceRosyFacedLovebird from '../assets/animals/RosyFacedLovebird_face.png';
+import facePenguin from '../assets/animals/Penguin_face.png';
+import faceLion from '../assets/animals/Lion_face.png';
+import faceGiantPanda from '../assets/animals/GiantPanda_face.png';
+import faceCaliforniaSeaLion from '../assets/animals/CaliforniaSeaLion_face.png';
+import faceReticulatedGiraffe from '../assets/animals/ReticulatedGiraffe_face.png';
+import faceCheetah from '../assets/animals/Cheetah_face.png';
+import faceAfricanElephant from '../assets/animals/AfricanElephant_face.png';
+import faceSouthernWhiteRhino from '../assets/animals/SouthernWhiteRhino_face.png';
+import faceBottlenoseDolphin from '../assets/animals/BottlenoseDolphin_face.png';
 
 /** カード用画像パス */
 export const ANIMAL_CARD_IMAGES: Record<string, string> = {
