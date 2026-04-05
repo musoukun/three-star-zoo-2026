@@ -96,19 +96,22 @@ export class RandomStrategy implements BotStrategy {
   }
 
   private decideTrade(state: ZooState, playerId: string, player: PlayerState): BotAction | null {
-    // 星を買えるなら高確率で買う（コインがあるのに買わない問題を修正）
+    // 保持カードがあれば40%で使用
+    if (player.hasHeldCard && Math.random() < 0.4) {
+      return { type: "useHeldCardInTrade" };
+    }
+
+    // 星を買えるなら高確率で買う
     if (!state.boughtStar && player.coins >= STAR_COST) {
-      // 星2つ（あと1つで勝利）なら確実に買う、それ以外は80%
       if (player.stars >= 2 || Math.random() < 0.8) {
         return { type: "buyStar" };
       }
     }
 
-    // 星をまだ買っていない場合、コインを温存して動物を買わないことがある
-    // 星1つ以上で6コイン以上持っていれば50%で温存
+    // 星温存判定
     const savingForStar = player.stars >= 1 && player.coins >= 6 && Math.random() < 0.5;
 
-    // 30%の確率で動物を買う（買えるなら）— 星温存中は買わない
+    // 30%の確率で動物を買う（買えるなら）
     if (!state.boughtAnimal && !savingForStar && Math.random() < 0.3) {
       const purchase = this.findRandomPurchase(state, playerId, player);
       if (purchase) return purchase;
@@ -153,10 +156,10 @@ export class RandomStrategy implements BotStrategy {
   private decideChanceCard(state: ZooState, playerId: string, player: PlayerState): BotAction | null {
     switch (state.chanceCardPhase) {
       case "useOrKeep":
-        // 50%でキープ、50%で即使用
-        return Math.random() < 0.5
-          ? { type: "keepChanceCard" }
-          : { type: "useDrawnChanceCard" };
+        // 70%で即使用、30%でキープ
+        return Math.random() < 0.7
+          ? { type: "useDrawnChanceCard" }
+          : { type: "keepChanceCard" };
 
       case "forceUse":
         // ランダムに引いたカードか保持カードを使用

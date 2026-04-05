@@ -18,6 +18,7 @@ export type BotAction =
   | { type: "keepChanceCard" }
   | { type: "useDrawnChanceCard" }
   | { type: "useHeldChanceCard" }
+  | { type: "useHeldCardInTrade" }
   | { type: "resolveCompost"; count: number }
   | { type: "resolveCompostGive"; distributions: { targetId: string; count: number }[] }
   | { type: "resolveEviction"; targetPlayerId: string; animalId: string; cageNum: number };
