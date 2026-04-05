@@ -41,7 +41,7 @@ export const BOTTOM_ROW = [11, 10, 9, 8, 7]; // 11 = 結合ケージ(11&12)
 export function AnimalIcon({ id, size = 28, className = '' }: { id: string; size?: number; className?: string }) {
   const src = ANIMAL_FACE_IMAGES[id];
   if (src) {
-    return <img src={src} alt={id} className={`animal-icon-img ${className}`} style={{ width: size, height: size }} />;
+    return <img src={src} alt={id} className={`animal-icon-img ${className}`} style={{ width: size }} />;
   }
   // フォールバック: 3D絵文字画像
   const emojiKey = ANIMAL_EMOJI_MAP[id];
