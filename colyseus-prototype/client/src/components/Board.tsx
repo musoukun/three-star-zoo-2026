@@ -15,7 +15,13 @@ import { Emoji } from './Emoji';
 import { TutorialGuide, isTutorialDone } from './TutorialGuide';
 
 
-const DiceAnimation = lazy(() => import('./Dice/DiceAnimation'));
+const DiceAnimation = lazy(() =>
+  import('./Dice/DiceAnimation').catch(() => {
+    // デプロイでアセットハッシュが変わった場合、リロードして最新を取得
+    window.location.reload();
+    return { default: () => null } as any;
+  })
+);
 
 // ===== モバイル判定フック =====
 function useIsMobile(breakpoint = 768) {
