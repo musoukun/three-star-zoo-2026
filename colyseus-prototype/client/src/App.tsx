@@ -211,10 +211,14 @@ export function App() {
                       {isLoading ? '接続中...' : '戻る →'}
                     </button>
                     <button
-                      onClick={() => { clearLastRoom(); }}
-                      style={{ ...S.cancelBtn, fontSize: 11, padding: '4px 8px' }}
+                      onClick={() => {
+                        if (confirm('この部屋から退室しますか？再入室できなくなります。')) {
+                          clearLastRoom();
+                        }
+                      }}
+                      style={{ ...S.cancelBtn, fontSize: 12, padding: '6px 10px' }}
                     >
-                      消す
+                      退室する
                     </button>
                   </div>
                 </div>
