@@ -138,14 +138,15 @@ export class RandomStrategy implements BotStrategy {
   }
 
   private decideClean(player: PlayerState): BotAction {
-    // 危険域（5個以上）：コインがあれば必ず掃除
-    if (player.poopTokens >= 5 && player.coins >= 1) {
-      return { type: "cleanPoop" };
-    }
-    // 注意域（4個）：50%の確率で掃除（やさしいCPUなのでたまにサボる）
-    if (player.poopTokens >= 4 && player.coins >= 1 && Math.random() < 0.5) {
-      return { type: "cleanPoop" };
-    }
+    if (player.coins < 1 || player.poopTokens <= 0) return { type: "endClean" };
+    // 5個以上：必ず掃除
+    if (player.poopTokens >= 5) return { type: "cleanPoop" };
+    // 4個：90%で掃除
+    if (player.poopTokens >= 4 && Math.random() < 0.9) return { type: "cleanPoop" };
+    // 3個：60%で掃除
+    if (player.poopTokens >= 3 && Math.random() < 0.6) return { type: "cleanPoop" };
+    // 2個：30%で掃除
+    if (player.poopTokens >= 2 && Math.random() < 0.3) return { type: "cleanPoop" };
     return { type: "endClean" };
   }
 
