@@ -181,7 +181,7 @@ export function Board({ onLeave }: { onLeave: () => void }) {
           <span><Emoji name="dice" size={14} />{state.diceCount === 1 ? `${state.dice1}` : `${state.dice1}+${state.dice2}`}={state.diceSum}</span>
         )}
         {state.phase === 'main' && state.chanceDeckCount > 0 && (
-          <span style={{ fontSize: 10, color: 'rgba(255,255,255,0.6)' }}><Emoji name="card" size={12} />{state.chanceDeckCount}</span>
+          <span style={{ fontSize: 10, color: 'rgba(255,255,255,0.6)' }}><Emoji name="card" size={12} />{state.chanceDeckCount}枚</span>
         )}
         <button onClick={onLeave} className="leave-btn"><Emoji name="door" size={10} /> 退室</button>
       </div>
@@ -390,7 +390,7 @@ export function Board({ onLeave }: { onLeave: () => void }) {
             </span>
           )}
           {state.phase === 'main' && state.chanceDeckCount > 0 && (
-            <span style={{ fontSize: 14, color: '#fff' }}><Emoji name="card" size={15} />{state.chanceDeckCount}</span>
+            <span style={{ fontSize: 14, color: '#fff' }}><Emoji name="card" size={15} />{state.chanceDeckCount}枚</span>
           )}
           <button onClick={onLeave} className="leave-btn">
             <Emoji name="door" size={12} /> 退室
