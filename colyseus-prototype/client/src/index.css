@@ -642,7 +642,9 @@ body {
 
 .cage-animal-img {
   width: 50px;
-  height: 50px;
+  height: auto;
+  max-width: 100%;
+  aspect-ratio: 1;
   object-fit: cover;
   object-position: center;
   border-radius: 50%;
@@ -1414,7 +1416,7 @@ body {
 
 .game-layout-mobile .cage-animal-img {
   width: 42px;
-  height: 42px;
+  height: auto;
 }
 
 .game-layout-mobile .cage-animal-effect {
