@@ -634,9 +634,8 @@ function CageGrid({
             return (
               <div key={si} className="cage-animal" title={EFFECT_TEXT_FULL[slot.animalId] || a.name}>
                 <span className="cage-animal-icon">
-                  <AnimalIcon id={slot.animalId} size={32} className="cage-animal-img" />
+                  <AnimalIcon id={slot.animalId} size={44} className="cage-animal-img" />
                 </span>
-                <span className="cage-animal-effect">{EFFECT_TEXT_SHORT[slot.animalId]}</span>
               </div>
             );
           })}

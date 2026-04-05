@@ -461,28 +461,15 @@ body {
 .cage-animal {
   display: flex;
   align-items: center;
-  gap: 3px;
-  font-size: 13px;
-  padding: 2px 4px;
-  border-radius: 4px;
-  background: rgba(255,255,255,0.7);
-  border: 1px solid rgba(0,0,0,0.08);
+  justify-content: center;
+  padding: 1px;
   flex: 1 1 45%;
   min-width: 0;
 }
 
 .cage-animal-icon {
-  font-size: 18px;
   flex-shrink: 0;
-}
-
-.cage-animal-effect {
-  font-size: 11px;
-  color: #444;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  min-width: 0;
+  line-height: 0;
 }
 
 .cage-empty {
@@ -649,8 +636,8 @@ body {
 }
 
 .cage-animal-img {
-  width: 32px;
-  height: 32px;
+  width: 44px;
+  height: 44px;
   object-fit: cover;
   object-position: center;
   border-radius: 50%;
@@ -1414,8 +1401,8 @@ body {
 }
 
 .game-layout-mobile .cage-animal-img {
-  width: 24px;
-  height: 24px;
+  width: 32px;
+  height: 32px;
 }
 
 .game-layout-mobile .cage-animal-effect {
