@@ -333,6 +333,9 @@ test.describe('勝利とバースト', () => {
       // 勝利モーダルが表示されるはず（掃除終了時にcheckWinが走る）
       const resultModal = alice.locator('.result-modal');
       await expect(resultModal).toBeVisible({ timeout: 10000 });
+      // サイコロアニメーション終了を待つ
+      await alice.locator('.dice-animation-overlay, canvas').waitFor({ state: 'hidden', timeout: 10000 }).catch(() => {});
+      await sleep(1500);
       await ssBoth(alice, bob, T, 'victory-modal');
 
       // 勝者がアリスであることを確認
@@ -341,9 +344,12 @@ test.describe('勝利とバースト', () => {
       log(`  勝利モーダル表示: ${winnerText?.substring(0, 50)}...`);
       await ss(alice, 'alice', T, 'result-winner');
 
-      // ボブ側（敗北画面）のスクリーンショット
+      // ボブ側（敗北画面）— サイコロアニメーション終了を待つ
       const bobResultModal = bob.locator('.result-modal');
       await expect(bobResultModal).toBeVisible({ timeout: 10000 });
+      // サイコロアニメーションが消えるまで待機
+      await bob.locator('.dice-animation-overlay, canvas').waitFor({ state: 'hidden', timeout: 10000 }).catch(() => {});
+      await sleep(1500);
       await ss(bob, 'bob', T, 'result-defeat');
       const bobResultText = await bobResultModal.textContent();
       log(`  敗北モーダル表示: ${bobResultText?.substring(0, 80)}...`);
