@@ -104,7 +104,10 @@ export class BotManager {
     }
 
     const currentId = this.state.currentTurn;
-    if (currentId && this.cpuIds.has(currentId)) {
+    const isCpu = currentId ? this.cpuIds.has(currentId) : false;
+    const currentName = currentId ? (this.state.players.get(currentId)?.name ?? '???') : 'none';
+    console.log(`[BotManager.tick] currentTurn=${currentName} isCpu=${isCpu} cpuIds=[${[...this.cpuIds].map(id => this.state.players.get(id)?.name ?? id.slice(0,6)).join(',')}]`);
+    if (currentId && isCpu) {
       this.scheduleAction(currentId);
       return;
     }

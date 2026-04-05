@@ -97,9 +97,13 @@ export class RoomGameplay {
       this.ctx.logEffect(`🃏 再入園! ${this.ctx.getPlayerName(this.state.currentTurn)} のもう1ターン`);
       return;
     }
+    const prev = this.state.currentTurn;
     const idx = this.state.turnOrder.indexOf(this.state.currentTurn);
     const nextIdx = (idx + 1) % this.state.turnOrder.length;
     this.state.currentTurn = this.state.turnOrder.at(nextIdx)!;
+    const prevName = this.state.players.get(prev)?.name ?? '???';
+    const nextName = this.state.players.get(this.state.currentTurn)?.name ?? '???';
+    console.log(`[nextTurn] ${prevName}(idx=${idx}) → ${nextName}(idx=${nextIdx}) turnOrder=[${this.state.turnOrder.toArray().map(id => this.state.players.get(id)?.name ?? id.slice(0,6)).join(',')}]`);
     this.resetTurnState();
   }
 

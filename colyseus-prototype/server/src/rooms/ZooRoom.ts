@@ -214,7 +214,12 @@ export class ZooRoom extends Room<{ state: ZooState }> {
 
     player.connected = false;
     this.addGameLog(`${player.name} が退室しました`);
-    console.log(`${player.name} left permanently (code: ${code})`);
+    console.log(`[onLeave] ${player.name}(${client.sessionId.slice(0,6)}) left (code=${code}) phase=${this.state.phase} currentTurn=${this.state.currentTurn?.slice(0,6)}`);
+
+    // 人間退室時はCPUのスケジュール済みアクションをキャンセル
+    if (!player.isCpu) {
+      this.botManager.cancelPending();
+    }
 
     if (this.state.phase === "lobby") {
       const idx = this.state.turnOrder.indexOf(client.sessionId);
@@ -741,12 +746,17 @@ export class ZooRoom extends Room<{ state: ZooState }> {
     this.botManager.cancelPending();
 
     // 人間プレイヤーが全員disconnectedならCPUを停止（再入室時にtickBotで再開）
+    const playerInfo: string[] = [];
     let hasConnectedHuman = false;
-    this.state.players.forEach((p) => {
+    this.state.players.forEach((p, sid) => {
+      playerInfo.push(`${p.name}(${sid.slice(0,6)}): cpu=${p.isCpu} conn=${p.connected}`);
       if (!p.isCpu && p.connected) hasConnectedHuman = true;
     });
+    const currentName = this.state.players.get(this.state.currentTurn)?.name ?? '???';
+    console.log(`[tickBot] currentTurn=${currentName}(${this.state.currentTurn?.slice(0,6)}) step=${this.state.turnStep} phase=${this.state.phase} humanOnline=${hasConnectedHuman} players=[${playerInfo.join(', ')}]`);
+
     if (!hasConnectedHuman) {
-      console.log('[Bot] No connected human players, pausing CPU');
+      console.log('[tickBot] No connected human → pausing');
       return;
     }
 
