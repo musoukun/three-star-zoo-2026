@@ -805,6 +805,8 @@ export class RoomGameplay {
     this.shouldDrawChance = false;
     this.extraTurnFlag = false;
     this.drawnCardId = "";
+    this.state.poopOverrides.clear();
+    this.state.costOverrides.clear();
   }
 
   // ===== バリデーション =====
