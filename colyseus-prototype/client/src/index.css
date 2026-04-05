@@ -500,6 +500,7 @@ body {
   color: #004d40;
   font-weight: bold;
   width: 100%;
+  grid-column: 1 / -1;
 }
 
 .cage-place-btn:hover {
