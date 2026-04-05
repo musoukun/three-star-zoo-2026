@@ -76,20 +76,20 @@ function PoopOverridePanel({ overrides, setOverrides }: {
           const anyChanged = poopChanged || costChanged;
           return (
             <div key={a.id} style={{ borderBottom: '1px solid rgba(255,255,255,0.1)', paddingBottom: 4 }}>
-              <div style={{ fontWeight: anyChanged ? 'bold' : 'normal', color: anyChanged ? '#ffd700' : 'inherit', marginBottom: 2 }}>
+              <div style={{ fontWeight: anyChanged ? 'bold' : 'normal', color: anyChanged ? '#c8a600' : 'inherit', marginBottom: 2 }}>
                 {a.name}
               </div>
               <div style={{ display: 'flex', alignItems: 'center', gap: 6, paddingLeft: 4 }}>
                 <Emoji name="coin" size={16} />
                 <button style={BTN_STYLE} onClick={() => setVal(a.id, 'cost', costVal - 1)}>-</button>
                 <span style={{ width: 22, textAlign: 'center', fontWeight: costChanged ? 'bold' : 'normal',
-                  color: costChanged ? '#ffd700' : 'inherit' }}>{costVal}</span>
+                  color: costChanged ? '#c8a600' : 'inherit' }}>{costVal}</span>
                 <button style={BTN_STYLE} onClick={() => setVal(a.id, 'cost', costVal + 1)}>+</button>
                 <span style={{ width: 8 }} />
                 <Emoji name="poop" size={16} />
                 <button style={BTN_STYLE} onClick={() => setVal(a.id, 'poop', poopVal - 1)}>-</button>
                 <span style={{ width: 22, textAlign: 'center', fontWeight: poopChanged ? 'bold' : 'normal',
-                  color: poopChanged ? '#ffd700' : 'inherit' }}>{poopVal}</span>
+                  color: poopChanged ? '#c8a600' : 'inherit' }}>{poopVal}</span>
                 <button style={BTN_STYLE} onClick={() => setVal(a.id, 'poop', poopVal + 1)}>+</button>
               </div>
             </div>

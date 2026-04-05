@@ -315,10 +315,10 @@ export function MarketPanel() {
             </div>
             <div className="market-card-body">
               <div className="market-card-icon">
-                <span className="market-card-badge badge-coin" style={a.id in overrides.cost ? { color: '#ffd700', fontWeight: 'bold' } : {}}>
+                <span className="market-card-badge badge-coin" style={a.id in overrides.cost ? { color: '#c8a600', fontWeight: 'bold' } : {}}>
                   <Emoji name="coin" size={14} />{a.id in overrides.cost ? overrides.cost[a.id] : a.cost}
                 </span>
-                <span className="market-card-badge badge-poop" style={a.id in overrides.poop ? { color: '#ffd700', fontWeight: 'bold' } : {}}>
+                <span className="market-card-badge badge-poop" style={a.id in overrides.poop ? { color: '#c8a600', fontWeight: 'bold' } : {}}>
                   <Emoji name="poop" size={14} />{a.id in overrides.poop ? overrides.poop[a.id] : a.poops}
                 </span>
                 {ANIMAL_CARD_IMAGES[a.id]
