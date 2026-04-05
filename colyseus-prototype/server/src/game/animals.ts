@@ -6,7 +6,7 @@ export const ANIMALS: Record<string, AnimalDef> = {
     name: 'レッサーパンダ',
     cost: 0,
     poops: 0,
-    colors: ['RED', 'GREEN', 'ORANGE'],
+    colors: ['ORANGE'],
     inventory: 8,
     inventory2p: 6,
     effect: {

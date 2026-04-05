@@ -646,6 +646,10 @@ export class ZooRoom extends Room<{ state: ZooState }> {
     this.onMessage("__debugSetPoop", (_c, d: { playerId: string; poop: number }) => {
       const p = this.state.players.get(d.playerId); if (p) p.poopTokens = d.poop;
     });
+    this.onMessage("__debugLionDoublePoop", (_c, d: { enabled: boolean }) => {
+      gp.lionDoublePoop = !!d.enabled;
+      console.log(`[Debug] lionDoublePoop = ${gp.lionDoublePoop}`);
+    });
   }
 
   // ===== Bot =====

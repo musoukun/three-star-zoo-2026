@@ -247,6 +247,12 @@ export function Board({ onLeave }: { onLeave: () => void }) {
             <button className="history-btn danger" disabled={historyInfo.undoCount === 0}
               onClick={() => { if (confirm('ゲームを初期状態に戻しますか？')) send('resetGame'); }}><Emoji name="refresh" size={12} /> Reset</button>
           </div>
+          <div style={{ marginTop: 8, fontSize: '0.8em', borderTop: '1px solid rgba(255,255,255,0.2)', paddingTop: 6 }}>
+            <label style={{ display: 'flex', alignItems: 'center', gap: 4, cursor: 'pointer' }}>
+              <input type="checkbox" onChange={(e) => send('__debugLionDoublePoop', { enabled: e.target.checked })} />
+              <span>試験的: ライオンのうんちを②にする</span>
+            </label>
+          </div>
         </div>
       )}
 

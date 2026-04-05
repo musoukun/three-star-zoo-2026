@@ -36,6 +36,7 @@ export class RoomGameplay {
 
   // デバッグ用
   _debugForcedDice: number[] | null = null;
+  lionDoublePoop: boolean = false;  // 試験的: ライオンのうんちを2にする
 
   constructor(private ctx: RoomContext) {}
 
@@ -437,7 +438,14 @@ export class RoomGameplay {
 
   handleReceivePoop(sessionId: string) {
     const player = this.state.players.get(sessionId)!;
-    const cost = calculatePoopCost(player);
+    let cost = calculatePoopCost(player);
+
+    // 試験的機能: ライオンのうんちを2にする
+    if (this.lionDoublePoop) {
+      const lionCount = countPlayerAnimal(player, 'Lion');
+      cost += lionCount * 2;  // ライオン1頭あたり+2うんち
+    }
+
     player.poopTokens += cost;
 
     this.state.effectLog.clear();

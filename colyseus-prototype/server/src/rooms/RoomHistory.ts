@@ -93,6 +93,7 @@ export class RoomHistory {
       shouldDrawChance: gp.shouldDrawChance,
       extraTurnFlag: gp.extraTurnFlag,
       drawnCardId: gp.drawnCardId,
+      lionDoublePoop: gp.lionDoublePoop,
     };
   }
 
@@ -105,6 +106,7 @@ export class RoomHistory {
     gp.shouldDrawChance = snapshot.shouldDrawChance ?? false;
     gp.extraTurnFlag = snapshot.extraTurnFlag ?? false;
     gp.drawnCardId = snapshot.drawnCardId ?? "";
+    gp.lionDoublePoop = snapshot.lionDoublePoop ?? false;
   }
 
   /** JSONからstateを完全復元 */
