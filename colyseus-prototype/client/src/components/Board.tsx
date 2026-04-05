@@ -236,7 +236,7 @@ export function Board({ onLeave }: { onLeave: () => void }) {
             {me && (
               <div className="mobile-my-stats">
                 <span><Emoji name="coin" size={14} /> {me.coins}</span>
-                <span><Emoji name="star" size={14} /> {'★'.repeat(me.stars)}{'☆'.repeat(3 - me.stars)}</span>
+                <span><Emoji name="star" size={14} />{me.stars}</span>
                 <span><Emoji name="poop" size={14} /> {me.poopTokens}{me.poopTokens >= 7 ? ' ⚠バースト!' : ''}</span>
               </div>
             )}
@@ -423,7 +423,7 @@ export function Board({ onLeave }: { onLeave: () => void }) {
                     {pid === state.currentTurn && <span style={{ fontSize: 10 }}><Emoji name="target" size={12} /></span>}
                   </div>
                   <div>
-                    <Emoji name="coin" size={12} />{p.coins} <span style={{ marginLeft: '0.8em' }}>{'★'.repeat(p.stars)}{'☆'.repeat(3 - p.stars)}</span> <Emoji name="poop" size={12} />{p.poopTokens}
+                    <Emoji name="coin" size={12} />{p.coins} <span style={{ marginLeft: '0.8em' }}><Emoji name="star" size={12} />{p.stars}</span> <Emoji name="poop" size={12} />{p.poopTokens}
                     {p.hasHeldCard && <span title="伏せカード保持中"> <Emoji name="card" size={12} /></span>}
                   </div>
                 </div>
@@ -484,7 +484,7 @@ export function Board({ onLeave }: { onLeave: () => void }) {
           {me && (
             <div className="my-stats">
               <span><Emoji name="coin" size={14} /> {me.coins}コイン</span>
-              <span style={{ marginLeft: '1em' }}>{'★'.repeat(me.stars)}{'☆'.repeat(3 - me.stars)}</span>
+              <span style={{ marginLeft: '1em' }}><Emoji name="star" size={12} />{me.stars}</span>
               <span><Emoji name="poop" size={14} /> {me.poopTokens}個{me.poopTokens >= 7 ? ' ⚠バースト!' : ''}</span>
             </div>
           )}
