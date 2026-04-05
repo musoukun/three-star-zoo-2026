@@ -65,14 +65,9 @@ function PoopOverridePanel({ overrides, setOverrides }: {
   };
 
   return (
-    <div style={{ marginTop: 8, fontSize: '0.77em', borderTop: '1px solid rgba(255,255,255,0.2)', paddingTop: 6 }}>
-      <div style={{ fontWeight: 'bold', marginBottom: 4 }}>試験的: パラメータ調整</div>
-      <div style={{ display: 'flex', gap: 4, marginBottom: 2, fontSize: '0.85em', color: 'rgba(255,255,255,0.6)' }}>
-        <span style={{ flex: 1 }}>動物</span>
-        <span style={{ width: 70, textAlign: 'center' }}>金額</span>
-        <span style={{ width: 70, textAlign: 'center' }}>うんち</span>
-      </div>
-      <div style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+    <div style={{ marginTop: 8, fontSize: '0.8em', borderTop: '1px solid rgba(255,255,255,0.2)', paddingTop: 6 }}>
+      <div style={{ fontWeight: 'bold', marginBottom: 6 }}>試験的: パラメータ調整</div>
+      <div style={{ maxHeight: 240, overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: 6 }}>
         {ANIMAL_LIST.map(a => {
           const poopVal = getVal(a.id, 'poop');
           const costVal = getVal(a.id, 'cost');
@@ -80,19 +75,22 @@ function PoopOverridePanel({ overrides, setOverrides }: {
           const costChanged = a.id in overrides.cost;
           const anyChanged = poopChanged || costChanged;
           return (
-            <div key={a.id} style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
-              <span style={{ flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
-                color: anyChanged ? '#ffd700' : 'inherit' }}>{a.name}</span>
-              {/* 金額 */}
-              <button style={BTN_STYLE} onClick={() => setVal(a.id, 'cost', costVal - 1)}>-</button>
-              <span style={{ width: 18, textAlign: 'center', fontWeight: costChanged ? 'bold' : 'normal',
-                color: costChanged ? '#ffd700' : 'inherit' }}>{costVal}</span>
-              <button style={BTN_STYLE} onClick={() => setVal(a.id, 'cost', costVal + 1)}>+</button>
-              {/* うんち */}
-              <button style={BTN_STYLE} onClick={() => setVal(a.id, 'poop', poopVal - 1)}>-</button>
-              <span style={{ width: 18, textAlign: 'center', fontWeight: poopChanged ? 'bold' : 'normal',
-                color: poopChanged ? '#ffd700' : 'inherit' }}>{poopVal}</span>
-              <button style={BTN_STYLE} onClick={() => setVal(a.id, 'poop', poopVal + 1)}>+</button>
+            <div key={a.id} style={{ borderBottom: '1px solid rgba(255,255,255,0.1)', paddingBottom: 4 }}>
+              <div style={{ fontWeight: anyChanged ? 'bold' : 'normal', color: anyChanged ? '#ffd700' : 'inherit', marginBottom: 2 }}>
+                {a.name}
+              </div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8, paddingLeft: 4 }}>
+                <span style={{ fontSize: '0.85em', color: 'rgba(255,255,255,0.6)', minWidth: 36 }}>コイン</span>
+                <button style={BTN_STYLE} onClick={() => setVal(a.id, 'cost', costVal - 1)}>-</button>
+                <span style={{ width: 20, textAlign: 'center', fontWeight: costChanged ? 'bold' : 'normal',
+                  color: costChanged ? '#ffd700' : 'inherit' }}>{costVal}</span>
+                <button style={BTN_STYLE} onClick={() => setVal(a.id, 'cost', costVal + 1)}>+</button>
+                <span style={{ fontSize: '0.85em', color: 'rgba(255,255,255,0.6)', minWidth: 36, marginLeft: 8 }}>うんち</span>
+                <button style={BTN_STYLE} onClick={() => setVal(a.id, 'poop', poopVal - 1)}>-</button>
+                <span style={{ width: 20, textAlign: 'center', fontWeight: poopChanged ? 'bold' : 'normal',
+                  color: poopChanged ? '#ffd700' : 'inherit' }}>{poopVal}</span>
+                <button style={BTN_STYLE} onClick={() => setVal(a.id, 'poop', poopVal + 1)}>+</button>
+              </div>
             </div>
           );
         })}
