@@ -173,7 +173,9 @@ export function Board({ onLeave }: { onLeave: () => void }) {
       {/* ステータスバー */}
       <div className="mobile-status-bar">
         <strong>
-          {isSetup ? `${getPlayerName(state.currentTurn)} 配置中` : getPlayerName(state.currentTurn)}
+          {isSetup
+            ? (isMyTurn ? 'セットアップ中 - あなたが配置' : `セットアップ中 - ${getPlayerName(state.currentTurn)} が配置`)
+            : (isMyTurn ? <span className="my-turn">あなたのターン</span> : `${getPlayerName(state.currentTurn)} のターン`)}
         </strong>
         {state.diceRolled && (
           <span><Emoji name="dice" size={14} />{state.diceCount === 1 ? `${state.dice1}` : `${state.dice1}+${state.dice2}`}={state.diceSum}</span>
