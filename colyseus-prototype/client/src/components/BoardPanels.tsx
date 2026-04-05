@@ -53,12 +53,19 @@ export function GameResultModal({ onLeave }: { onLeave: () => void }) {
 
   const shareText = buildShareText();
 
+  const victoryMessages = [
+    '見事な経営手腕！三ツ星動物園の完成です！',
+    '動物たちも大喜び！素晴らしい園長さん！',
+    'おめでとう！最高の動物園が誕生しました！',
+  ];
   const defeatMessages = [
     'また挑戦しよう！次はきっとうまくいく！',
     '惜しかった！次こそ三ツ星を目指そう！',
     'ドンマイ！動物たちも応援してるよ！',
   ];
-  const defeatMessage = defeatMessages[Math.floor(winner.name.length % defeatMessages.length)];
+  const msgSeed = Math.floor(winner.name.length % 3);
+  const victoryMessage = victoryMessages[msgSeed];
+  const defeatMessage = defeatMessages[msgSeed];
 
   const handleShareX = () => {
     const url = `https://x.com/intent/tweet?text=${encodeURIComponent(shareText)}`;
@@ -99,6 +106,7 @@ export function GameResultModal({ onLeave }: { onLeave: () => void }) {
                 <span style={{ display: 'inline-block', width: 16, height: 16, borderRadius: '50%', background: winnerColor.bg, marginRight: 6, verticalAlign: 'middle' }} />
               )}
               <strong>{winner.name}</strong> の勝利！
+              <div style={{ fontSize: 13, color: '#888', marginTop: 4, fontWeight: 'normal' }}>{victoryMessage}</div>
             </div>
           ) : (
             <div style={{ textAlign: 'center', margin: '8px 0 12px' }}>
@@ -109,20 +117,29 @@ export function GameResultModal({ onLeave }: { onLeave: () => void }) {
             </div>
           )}
 
-          <div className="result-stats">
-            <div className="result-stat">
-              <span className="result-stat-icon"><Emoji name="star" size={18} /></span>
-              <span>星 {winner.stars}つ</span>
-            </div>
-            <div className="result-stat">
-              <span className="result-stat-icon"><Emoji name="coin" size={18} /></span>
-              <span>残りコイン {winner.coins}枚</span>
-            </div>
-            <div className="result-stat">
-              <span className="result-stat-icon"><Emoji name="poop" size={18} /></span>
-              <span>掃除した💩 {winner.totalPoopCleaned}個</span>
-            </div>
-          </div>
+          {(() => {
+            const target = isWinner ? winner : me;
+            const label = isWinner ? '' : 'あなたの記録';
+            return (
+              <>
+                {label && <div style={{ fontSize: 12, color: '#888', textAlign: 'center', marginBottom: 2 }}>{label}</div>}
+                <div className="result-stats">
+                  <div className="result-stat">
+                    <span className="result-stat-icon"><Emoji name="star" size={18} /></span>
+                    <span>星 {target?.stars ?? 0}つ</span>
+                  </div>
+                  <div className="result-stat">
+                    <span className="result-stat-icon"><Emoji name="coin" size={18} /></span>
+                    <span>残りコイン {target?.coins ?? 0}枚</span>
+                  </div>
+                  <div className="result-stat">
+                    <span className="result-stat-icon"><Emoji name="poop" size={18} /></span>
+                    <span>掃除した💩 {target?.totalPoopCleaned ?? 0}個</span>
+                  </div>
+                </div>
+              </>
+            );
+          })()}
 
           <div className="result-section">
             <div className="result-section-title">盤面</div>
