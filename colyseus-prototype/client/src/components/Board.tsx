@@ -36,7 +36,7 @@ interface AnimalOverrides {
 export const PoopOverrideContext = createContext<AnimalOverrides>({ poop: {}, cost: {} });
 const ANIMAL_LIST = Object.values(ANIMALS);
 
-const BTN_STYLE = { width: 22, height: 22, padding: 0, lineHeight: '20px', cursor: 'pointer', fontSize: '0.85em' } as const;
+const BTN_STYLE = { width: 28, height: 28, padding: 0, lineHeight: '26px', cursor: 'pointer', fontSize: '1em', borderRadius: 4 } as const;
 
 function PoopOverridePanel({ overrides, setOverrides }: {
   overrides: AnimalOverrides;
@@ -79,15 +79,16 @@ function PoopOverridePanel({ overrides, setOverrides }: {
               <div style={{ fontWeight: anyChanged ? 'bold' : 'normal', color: anyChanged ? '#ffd700' : 'inherit', marginBottom: 2 }}>
                 {a.name}
               </div>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 8, paddingLeft: 4 }}>
-                <span style={{ fontSize: '0.85em', color: 'rgba(255,255,255,0.6)', minWidth: 36 }}>コイン</span>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 6, paddingLeft: 4 }}>
+                <Emoji name="coin" size={16} />
                 <button style={BTN_STYLE} onClick={() => setVal(a.id, 'cost', costVal - 1)}>-</button>
-                <span style={{ width: 20, textAlign: 'center', fontWeight: costChanged ? 'bold' : 'normal',
+                <span style={{ width: 22, textAlign: 'center', fontWeight: costChanged ? 'bold' : 'normal',
                   color: costChanged ? '#ffd700' : 'inherit' }}>{costVal}</span>
                 <button style={BTN_STYLE} onClick={() => setVal(a.id, 'cost', costVal + 1)}>+</button>
-                <span style={{ fontSize: '0.85em', color: 'rgba(255,255,255,0.6)', minWidth: 36, marginLeft: 8 }}>うんち</span>
+                <span style={{ width: 8 }} />
+                <Emoji name="poop" size={16} />
                 <button style={BTN_STYLE} onClick={() => setVal(a.id, 'poop', poopVal - 1)}>-</button>
-                <span style={{ width: 20, textAlign: 'center', fontWeight: poopChanged ? 'bold' : 'normal',
+                <span style={{ width: 22, textAlign: 'center', fontWeight: poopChanged ? 'bold' : 'normal',
                   color: poopChanged ? '#ffd700' : 'inherit' }}>{poopVal}</span>
                 <button style={BTN_STYLE} onClick={() => setVal(a.id, 'poop', poopVal + 1)}>+</button>
               </div>
