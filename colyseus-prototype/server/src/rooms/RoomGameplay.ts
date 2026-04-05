@@ -36,7 +36,7 @@ export class RoomGameplay {
 
   // デバッグ用
   _debugForcedDice: number[] | null = null;
-  lionDoublePoop: boolean = false;  // 試験的: ライオンのうんちを2にする
+  poopOverrides: Record<string, number> = {};  // 試験的: 動物ごとのうんち数オーバーライド
 
   constructor(private ctx: RoomContext) {}
 
@@ -440,10 +440,13 @@ export class RoomGameplay {
     const player = this.state.players.get(sessionId)!;
     let cost = calculatePoopCost(player);
 
-    // 試験的機能: ライオンのうんちを2にする
-    if (this.lionDoublePoop) {
-      const lionCount = countPlayerAnimal(player, 'Lion');
-      cost += lionCount * 2;  // ライオン1頭あたり+2うんち
+    // 試験的機能: 動物ごとのうんちオーバーライド
+    for (const [animalId, overridePoop] of Object.entries(this.poopOverrides)) {
+      const count = countPlayerAnimal(player, animalId);
+      if (count > 0) {
+        const basePoop = ANIMALS[animalId]?.poops ?? 0;
+        cost += count * (overridePoop - basePoop);
+      }
     }
 
     player.poopTokens += cost;

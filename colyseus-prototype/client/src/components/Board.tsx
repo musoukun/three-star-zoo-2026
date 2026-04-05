@@ -28,6 +28,53 @@ function useIsMobile(breakpoint = 768) {
   return isMobile;
 }
 
+// ===== 試験的: 動物うんちオーバーライドパネル =====
+const ANIMAL_LIST = Object.values(ANIMALS);
+
+function PoopOverridePanel() {
+  const { send } = useContext(ColyseusContext);
+  const [overrides, setOverrides] = useState<Record<string, number>>({});
+
+  const getPoops = (animalId: string) => overrides[animalId] ?? ANIMALS[animalId].poops;
+
+  const setPoops = (animalId: string, value: number) => {
+    const clamped = Math.max(0, Math.min(9, value));
+    const base = ANIMALS[animalId].poops;
+    const next = { ...overrides };
+    if (clamped === base) {
+      delete next[animalId];
+    } else {
+      next[animalId] = clamped;
+    }
+    setOverrides(next);
+    send('__debugSetAnimalPoop', { animalId, poops: clamped });
+  };
+
+  return (
+    <div style={{ marginTop: 8, fontSize: '0.75em', borderTop: '1px solid rgba(255,255,255,0.2)', paddingTop: 6 }}>
+      <div style={{ fontWeight: 'bold', marginBottom: 4 }}>試験的: うんち数調整</div>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+        {ANIMAL_LIST.map(a => {
+          const current = getPoops(a.id);
+          const isOverridden = a.id in overrides;
+          return (
+            <div key={a.id} style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+              <span style={{ flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
+                color: isOverridden ? '#ffd700' : 'inherit' }}>{a.name}</span>
+              <button style={{ width: 20, height: 20, padding: 0, lineHeight: '18px', cursor: 'pointer' }}
+                onClick={() => setPoops(a.id, current - 1)}>-</button>
+              <span style={{ width: 16, textAlign: 'center', fontWeight: isOverridden ? 'bold' : 'normal',
+                color: isOverridden ? '#ffd700' : 'inherit' }}>{current}</span>
+              <button style={{ width: 20, height: 20, padding: 0, lineHeight: '18px', cursor: 'pointer' }}
+                onClick={() => setPoops(a.id, current + 1)}>+</button>
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
 // ===== メインBoard =====
 export function Board({ onLeave }: { onLeave: () => void }) {
   const { state, sessionId, historyInfo, send } = useContext(ColyseusContext);
@@ -247,12 +294,7 @@ export function Board({ onLeave }: { onLeave: () => void }) {
             <button className="history-btn danger" disabled={historyInfo.undoCount === 0}
               onClick={() => { if (confirm('ゲームを初期状態に戻しますか？')) send('resetGame'); }}><Emoji name="refresh" size={12} /> Reset</button>
           </div>
-          <div style={{ marginTop: 8, fontSize: '0.8em', borderTop: '1px solid rgba(255,255,255,0.2)', paddingTop: 6 }}>
-            <label style={{ display: 'flex', alignItems: 'center', gap: 4, cursor: 'pointer' }}>
-              <input type="checkbox" onChange={(e) => send('__debugLionDoublePoop', { enabled: e.target.checked })} />
-              <span>試験的: ライオンのうんちを②にする</span>
-            </label>
-          </div>
+          <PoopOverridePanel />
         </div>
       )}
 
