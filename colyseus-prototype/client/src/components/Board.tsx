@@ -183,7 +183,6 @@ export function Board({ onLeave }: { onLeave: () => void }) {
         {state.phase === 'main' && state.chanceDeckCount > 0 && (
           <span style={{ fontSize: 10, color: 'rgba(255,255,255,0.6)' }}><Emoji name="card" size={12} />{state.chanceDeckCount}</span>
         )}
-        {isMyTurn && <span className="my-turn">あなた</span>}
         <button onClick={onLeave} className="leave-btn"><Emoji name="door" size={10} /> 退室</button>
       </div>
 
