@@ -529,6 +529,7 @@ export function Board({ onLeave }: { onLeave: () => void }) {
               <Emoji name="refresh" size={12} /> Reset
             </button>
           </div>
+          <PoopOverridePanel />
         </div>
       )}
 
