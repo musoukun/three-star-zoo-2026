@@ -635,7 +635,7 @@ function CageGrid({
             return (
               <div key={si} className="cage-animal" title={EFFECT_TEXT_FULL[slot.animalId] || a.name}>
                 <span className="cage-animal-icon">
-                  <AnimalIcon id={slot.animalId} size={44} className="cage-animal-img" />
+                  <AnimalIcon id={slot.animalId} size={50} className="cage-animal-img" />
                 </span>
               </div>
             );
@@ -684,7 +684,7 @@ function MiniCageGrid({ cages, diceSum }: { cages: CageState[]; diceSum: number 
         className={`mini-cage ${isRolled ? 'rolled' : ''} ${isMerged ? 'mini-cage-merged' : ''}`}
         style={cageStyle}>
         {cage.slots.map((slot, si) => (
-          <AnimalIcon key={si} id={slot.animalId} size={16} />
+          <AnimalIcon key={si} id={slot.animalId} size={22} />
         ))}
       </div>
     );

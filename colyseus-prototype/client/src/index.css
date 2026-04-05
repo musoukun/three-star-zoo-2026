@@ -421,7 +421,7 @@ body {
   padding: 2px;
   background: #f8f8f8;
   position: relative;
-  min-height: 60px;
+  min-height: 66px;
   font-size: 13px;
   transition: all 0.2s;
 }
@@ -638,8 +638,8 @@ body {
 }
 
 .cage-animal-img {
-  width: 44px;
-  height: 44px;
+  width: 50px;
+  height: 50px;
   object-fit: cover;
   object-position: center;
   border-radius: 50%;
@@ -1305,7 +1305,7 @@ body {
   border-radius: 3px;
   padding: 2px;
   background: #f8f8f8;
-  min-height: 34px;
+  min-height: 40px;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -1390,7 +1390,7 @@ body {
 
 /* ===== モバイル用ケージ調整 ===== */
 .game-layout-mobile .cage {
-  min-height: 57px;
+  min-height: 67px;
   padding: 2px;
   font-size: 11px;
 }
@@ -1410,8 +1410,8 @@ body {
 }
 
 .game-layout-mobile .cage-animal-img {
-  width: 32px;
-  height: 32px;
+  width: 42px;
+  height: 42px;
 }
 
 .game-layout-mobile .cage-animal-effect {
