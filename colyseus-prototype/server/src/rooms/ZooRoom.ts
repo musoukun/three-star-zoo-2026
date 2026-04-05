@@ -163,6 +163,8 @@ export class ZooRoom extends Room<{ state: ZooState }> {
             });
 
             console.log(`${player.name} rejoined as ${client.sessionId} (was ${oldSessionId})`);
+            // 人間が戻ったのでCPUを再開
+            this.tickBot();
             return;
           }
         }
@@ -290,6 +292,8 @@ export class ZooRoom extends Room<{ state: ZooState }> {
     }
 
     console.log(`${player.name} reconnected`);
+    // 人間が戻ったのでCPUを再開
+    this.tickBot();
   }
 
   onDispose() {
@@ -736,6 +740,17 @@ export class ZooRoom extends Room<{ state: ZooState }> {
 
   private tickBot() {
     this.botManager.cancelPending();
+
+    // 人間プレイヤーが全員disconnectedならCPUを停止（再入室時にtickBotで再開）
+    let hasConnectedHuman = false;
+    this.state.players.forEach((p) => {
+      if (!p.isCpu && p.connected) hasConnectedHuman = true;
+    });
+    if (!hasConnectedHuman) {
+      console.log('[Bot] No connected human players, pausing CPU');
+      return;
+    }
+
     this.botManager.tick();
   }
 }

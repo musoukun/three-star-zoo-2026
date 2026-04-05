@@ -53,6 +53,13 @@ export function GameResultModal({ onLeave }: { onLeave: () => void }) {
 
   const shareText = buildShareText();
 
+  const defeatMessages = [
+    'また挑戦しよう！次はきっとうまくいく！',
+    '惜しかった！次こそ三ツ星を目指そう！',
+    'ドンマイ！動物たちも応援してるよ！',
+  ];
+  const defeatMessage = defeatMessages[Math.floor(winner.name.length % defeatMessages.length)];
+
   const handleShareX = () => {
     const url = `https://x.com/intent/tweet?text=${encodeURIComponent(shareText)}`;
     window.open(url, '_blank', 'noopener,noreferrer');
@@ -78,17 +85,29 @@ export function GameResultModal({ onLeave }: { onLeave: () => void }) {
 
   return (
     <div className="result-overlay">
-      <div className="result-modal" style={winnerColor ? { borderColor: winnerColor.bg } : {}}>
-        <div className="result-header" style={winnerColor ? { background: winnerColor.bg } : {}}>
-          <Emoji name="trophy" size={20} /> ゲーム終了
+      <div className="result-modal" style={{ borderColor: isWinner ? (winnerColor?.bg ?? '#ffc107') : '#5c7cfa' }}>
+        <div className="result-header" style={{ background: isWinner ? (winnerColor?.bg ?? '#ffc107') : '#5c7cfa' }}>
+          {isWinner
+            ? <><Emoji name="trophy" size={20} /> 勝利！</>
+            : <><Emoji name="paw" size={20} /> ゲーム終了</>
+          }
         </div>
         <div className="result-body">
-          <div className="result-winner">
-            {winnerColor && (
-              <span style={{ display: 'inline-block', width: 16, height: 16, borderRadius: '50%', background: winnerColor.bg, marginRight: 6, verticalAlign: 'middle' }} />
-            )}
-            <strong>{winner.name}</strong> の勝利！
-          </div>
+          {isWinner ? (
+            <div className="result-winner">
+              {winnerColor && (
+                <span style={{ display: 'inline-block', width: 16, height: 16, borderRadius: '50%', background: winnerColor.bg, marginRight: 6, verticalAlign: 'middle' }} />
+              )}
+              <strong>{winner.name}</strong> の勝利！
+            </div>
+          ) : (
+            <div style={{ textAlign: 'center', margin: '8px 0 12px' }}>
+              <div style={{ fontSize: 18, fontWeight: 'bold', color: '#5c7cfa', marginBottom: 4 }}>
+                {winner.name} の勝ち...
+              </div>
+              <div style={{ fontSize: 13, color: '#888' }}>{defeatMessage}</div>
+            </div>
+          )}
 
           <div className="result-stats">
             <div className="result-stat">
