@@ -67,7 +67,7 @@ function PoopOverridePanel({ overrides, setOverrides }: {
   return (
     <div style={{ marginTop: 8, fontSize: '0.8em', borderTop: '1px solid rgba(255,255,255,0.2)', paddingTop: 6 }}>
       <div style={{ fontWeight: 'bold', marginBottom: 6 }}>試験的: パラメータ調整</div>
-      <div style={{ maxHeight: 240, overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: 6 }}>
+      <div style={{ maxHeight: 360, overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: 6 }}>
         {ANIMAL_LIST.map(a => {
           const poopVal = getVal(a.id, 'poop');
           const costVal = getVal(a.id, 'cost');
