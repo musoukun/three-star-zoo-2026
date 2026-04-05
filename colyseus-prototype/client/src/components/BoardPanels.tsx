@@ -301,6 +301,7 @@ export function MarketPanel() {
         const stock = state.market[a.id] ?? 0;
         const effectiveCost = a.id in overrides.cost ? overrides.cost[a.id] : a.cost;
         const canBuy = isTrade && stock > 0 && (me?.coins ?? 0) >= effectiveCost;
+        const tooExpensive = isTrade && stock > 0 && (me?.coins ?? 0) < effectiveCost;
         const colorClass = COLOR_CLASS[a.colors[0]] || '';
 
         return (
@@ -308,7 +309,10 @@ export function MarketPanel() {
             key={a.id}
             className={`market-card ${stock === 0 ? 'sold-out' : ''}`}
             onClick={() => canBuy && setBuying(a.id)}
-            style={{ cursor: canBuy ? 'pointer' : 'default' }}
+            style={{
+              cursor: canBuy ? 'pointer' : 'default',
+              ...(tooExpensive ? { opacity: 0.45, filter: 'grayscale(0.6)' } : {}),
+            }}
           >
             <div className={`market-card-header ${colorClass}`}>
               <span>{a.effect.global ? '範囲：全員' : '範囲：自分のみ'}</span>
