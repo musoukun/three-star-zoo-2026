@@ -76,4 +76,8 @@ export class ZooState extends Schema {
 
   // チャット+ゲームログ（全員に表示）
   @type(["string"]) gameLog = new ArraySchema<string>();
+
+  // 試験的: 動物パラメータオーバーライド（全員共有）
+  @type({ map: "number" }) poopOverrides = new MapSchema<number>();
+  @type({ map: "number" }) costOverrides = new MapSchema<number>();
 }

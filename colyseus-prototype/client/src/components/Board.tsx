@@ -44,25 +44,23 @@ const ANIMAL_LIST = Object.values(ANIMALS);
 
 const BTN_STYLE = { width: 28, height: 28, padding: 0, lineHeight: '26px', cursor: 'pointer', fontSize: '1em', borderRadius: 4 } as const;
 
-function PoopOverridePanel({ overrides, setOverrides }: {
-  overrides: AnimalOverrides;
-  setOverrides: (v: AnimalOverrides) => void;
-}) {
-  const { send } = useContext(ColyseusContext);
+function PoopOverridePanel() {
+  const { state, sessionId, send } = useContext(ColyseusContext);
+  if (!state) return null;
+
+  const overrides: AnimalOverrides = {
+    poop: state.poopOverrides ?? {},
+    cost: state.costOverrides ?? {},
+  };
+  const isMyTurn = state.currentTurn === sessionId;
+  const canEdit = state.phase !== 'main' || (isMyTurn && state.turnStep === 'clean');
 
   const getVal = (animalId: string, field: 'poop' | 'cost') =>
     overrides[field][animalId] ?? (field === 'poop' ? ANIMALS[animalId].poops : ANIMALS[animalId].cost);
 
   const setVal = (animalId: string, field: 'poop' | 'cost', value: number) => {
+    if (!canEdit) return;
     const clamped = Math.max(0, Math.min(99, value));
-    const base = field === 'poop' ? ANIMALS[animalId].poops : ANIMALS[animalId].cost;
-    const next = { ...overrides, [field]: { ...overrides[field] } };
-    if (clamped === base) {
-      delete next[field][animalId];
-    } else {
-      next[field][animalId] = clamped;
-    }
-    setOverrides(next);
     if (field === 'poop') {
       send('__debugSetAnimalPoop', { animalId, poops: clamped });
     } else {
@@ -72,8 +70,13 @@ function PoopOverridePanel({ overrides, setOverrides }: {
 
   return (
     <div style={{ marginTop: 8, fontSize: '0.8em', borderTop: '1px solid rgba(255,255,255,0.2)', paddingTop: 6 }}>
-      <div style={{ fontWeight: 'bold', marginBottom: 6 }}>試験的: パラメータ調整</div>
-      <div style={{ maxHeight: 360, overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: 6 }}>
+      <div style={{ fontWeight: 'bold', marginBottom: 4 }}>試験的: パラメータ調整</div>
+      {!canEdit && (
+        <div style={{ fontSize: '0.8em', color: 'rgba(255,255,255,0.5)', marginBottom: 4 }}>
+          掃除フェーズ中のみ変更可能
+        </div>
+      )}
+      <div style={{ maxHeight: 360, overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: 6, opacity: canEdit ? 1 : 0.5 }}>
         {ANIMAL_LIST.map(a => {
           const poopVal = getVal(a.id, 'poop');
           const costVal = getVal(a.id, 'cost');
@@ -87,16 +90,16 @@ function PoopOverridePanel({ overrides, setOverrides }: {
               </div>
               <div style={{ display: 'flex', alignItems: 'center', gap: 6, paddingLeft: 4 }}>
                 <Emoji name="coin" size={16} />
-                <button style={BTN_STYLE} onClick={() => setVal(a.id, 'cost', costVal - 1)}>-</button>
+                <button style={BTN_STYLE} disabled={!canEdit} onClick={() => setVal(a.id, 'cost', costVal - 1)}>-</button>
                 <span style={{ width: 22, textAlign: 'center', fontWeight: costChanged ? 'bold' : 'normal',
                   color: costChanged ? '#c8a600' : 'inherit' }}>{costVal}</span>
-                <button style={BTN_STYLE} onClick={() => setVal(a.id, 'cost', costVal + 1)}>+</button>
+                <button style={BTN_STYLE} disabled={!canEdit} onClick={() => setVal(a.id, 'cost', costVal + 1)}>+</button>
                 <span style={{ width: 8 }} />
                 <Emoji name="poop" size={16} />
-                <button style={BTN_STYLE} onClick={() => setVal(a.id, 'poop', poopVal - 1)}>-</button>
+                <button style={BTN_STYLE} disabled={!canEdit} onClick={() => setVal(a.id, 'poop', poopVal - 1)}>-</button>
                 <span style={{ width: 22, textAlign: 'center', fontWeight: poopChanged ? 'bold' : 'normal',
                   color: poopChanged ? '#c8a600' : 'inherit' }}>{poopVal}</span>
-                <button style={BTN_STYLE} onClick={() => setVal(a.id, 'poop', poopVal + 1)}>+</button>
+                <button style={BTN_STYLE} disabled={!canEdit} onClick={() => setVal(a.id, 'poop', poopVal + 1)}>+</button>
               </div>
             </div>
           );
@@ -110,7 +113,10 @@ function PoopOverridePanel({ overrides, setOverrides }: {
 export function Board({ onLeave }: { onLeave: () => void }) {
   const { state, sessionId, historyInfo, send } = useContext(ColyseusContext);
   const [historyOpen, setHistoryOpen] = useState(false);
-  const [animalOverrides, setAnimalOverrides] = useState<AnimalOverrides>({ poop: {}, cost: {} });
+  const animalOverrides: AnimalOverrides = {
+    poop: state?.poopOverrides ?? {},
+    cost: state?.costOverrides ?? {},
+  };
   const isMobile = useIsMobile();
   const [marketOpen, setMarketOpen] = useState(false);
   const [chatOpen, setChatOpen] = useState(false);
@@ -327,7 +333,7 @@ export function Board({ onLeave }: { onLeave: () => void }) {
             <button className="history-btn danger" disabled={historyInfo.undoCount === 0}
               onClick={() => { if (confirm('ゲームを初期状態に戻しますか？')) send('resetGame'); }}><Emoji name="refresh" size={12} /> Reset</button>
           </div>
-          <PoopOverridePanel overrides={animalOverrides} setOverrides={setAnimalOverrides} />
+          <PoopOverridePanel />
         </div>
       )}
 
@@ -564,7 +570,7 @@ export function Board({ onLeave }: { onLeave: () => void }) {
               <Emoji name="refresh" size={12} /> Reset
             </button>
           </div>
-          <PoopOverridePanel overrides={animalOverrides} setOverrides={setAnimalOverrides} />
+          <PoopOverridePanel />
         </div>
       )}
 

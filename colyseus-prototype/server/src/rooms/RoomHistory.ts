@@ -93,8 +93,6 @@ export class RoomHistory {
       shouldDrawChance: gp.shouldDrawChance,
       extraTurnFlag: gp.extraTurnFlag,
       drawnCardId: gp.drawnCardId,
-      poopOverrides: { ...gp.poopOverrides },
-      costOverrides: { ...gp.costOverrides },
     };
   }
 
@@ -107,8 +105,6 @@ export class RoomHistory {
     gp.shouldDrawChance = snapshot.shouldDrawChance ?? false;
     gp.extraTurnFlag = snapshot.extraTurnFlag ?? false;
     gp.drawnCardId = snapshot.drawnCardId ?? "";
-    gp.poopOverrides = snapshot.poopOverrides ?? {};
-    gp.costOverrides = snapshot.costOverrides ?? {};
   }
 
   /** JSONからstateを完全復元 */
@@ -215,6 +211,20 @@ export class RoomHistory {
     if (json.setupInventory) {
       for (const [k, v] of Object.entries(json.setupInventory)) {
         state.setupInventory.set(k, v as string);
+      }
+    }
+
+    // poopOverrides / costOverrides
+    state.poopOverrides.clear();
+    if (json.poopOverrides) {
+      for (const [k, v] of Object.entries(json.poopOverrides)) {
+        state.poopOverrides.set(k, v as number);
+      }
+    }
+    state.costOverrides.clear();
+    if (json.costOverrides) {
+      for (const [k, v] of Object.entries(json.costOverrides)) {
+        state.costOverrides.set(k, v as number);
       }
     }
   }

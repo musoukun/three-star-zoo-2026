@@ -718,25 +718,28 @@ export class ZooRoom extends Room<{ state: ZooState }> {
     this.onMessage("__debugSetPoop", (_c, d: { playerId: string; poop: number }) => {
       const p = this.state.players.get(d.playerId); if (p) p.poopTokens = d.poop;
     });
-    this.onMessage("__debugSetAnimalPoop", (_c, d: { animalId: string; poops: number }) => {
+    this.onMessage("__debugSetAnimalPoop", (c, d: { animalId: string; poops: number }) => {
+      // 掃除フェーズの手番プレイヤーのみ変更可能
+      if (this.state.phase === "main" && this.state.turnStep !== "clean") return;
+      if (this.state.phase === "main" && this.state.currentTurn !== c.sessionId) return;
       const basePoop = ANIMALS[d.animalId]?.poops;
       if (basePoop === undefined) return;
       if (d.poops === basePoop) {
-        delete gp.poopOverrides[d.animalId];
+        this.state.poopOverrides.delete(d.animalId);
       } else {
-        gp.poopOverrides[d.animalId] = d.poops;
+        this.state.poopOverrides.set(d.animalId, d.poops);
       }
-      console.log(`[Debug] poopOverrides =`, gp.poopOverrides);
     });
-    this.onMessage("__debugSetAnimalCost", (_c, d: { animalId: string; cost: number }) => {
+    this.onMessage("__debugSetAnimalCost", (c, d: { animalId: string; cost: number }) => {
+      if (this.state.phase === "main" && this.state.turnStep !== "clean") return;
+      if (this.state.phase === "main" && this.state.currentTurn !== c.sessionId) return;
       const baseCost = ANIMALS[d.animalId]?.cost;
       if (baseCost === undefined) return;
       if (d.cost === baseCost) {
-        delete gp.costOverrides[d.animalId];
+        this.state.costOverrides.delete(d.animalId);
       } else {
-        gp.costOverrides[d.animalId] = d.cost;
+        this.state.costOverrides.set(d.animalId, d.cost);
       }
-      console.log(`[Debug] costOverrides =`, gp.costOverrides);
     });
   }
 

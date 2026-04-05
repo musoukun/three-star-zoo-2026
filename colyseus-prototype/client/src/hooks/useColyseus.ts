@@ -131,6 +131,8 @@ export interface ZooRoomState {
   chanceCardPhase: string;
   activeChanceCard: string;
   gameLog: string[];
+  poopOverrides: Record<string, number>;
+  costOverrides: Record<string, number>;
 }
 
 export interface HistoryInfo {

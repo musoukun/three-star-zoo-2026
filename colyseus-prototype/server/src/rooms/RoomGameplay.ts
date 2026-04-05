@@ -36,8 +36,7 @@ export class RoomGameplay {
 
   // デバッグ用
   _debugForcedDice: number[] | null = null;
-  poopOverrides: Record<string, number> = {};  // 試験的: 動物ごとのうんち数オーバーライド
-  costOverrides: Record<string, number> = {};  // 試験的: 動物ごとの購入金額オーバーライド
+  // poopOverrides/costOverrides はスキーマ（ZooState）に移動済み
 
   constructor(private ctx: RoomContext) {}
 
@@ -446,7 +445,7 @@ export class RoomGameplay {
     let cost = calculatePoopCost(player);
 
     // 試験的機能: 動物ごとのうんちオーバーライド
-    for (const [animalId, overridePoop] of Object.entries(this.poopOverrides)) {
+    for (const [animalId, overridePoop] of this.state.poopOverrides.entries()) {
       const count = countPlayerAnimal(player, animalId);
       if (count > 0) {
         const basePoop = ANIMALS[animalId]?.poops ?? 0;
@@ -582,7 +581,7 @@ export class RoomGameplay {
 
     const player = this.state.players.get(sessionId)!;
     const stock = this.state.market.get(animalId) ?? 0;
-    const cost = this.costOverrides[animalId] ?? animalDef.cost;
+    const cost = this.state.costOverrides.get(animalId) ?? animalDef.cost;
 
     if (stock <= 0) return;
     if (player.coins < cost) return;
