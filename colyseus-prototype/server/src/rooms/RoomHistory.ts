@@ -94,6 +94,7 @@ export class RoomHistory {
       extraTurnFlag: gp.extraTurnFlag,
       drawnCardId: gp.drawnCardId,
       poopOverrides: { ...gp.poopOverrides },
+      costOverrides: { ...gp.costOverrides },
     };
   }
 
@@ -107,6 +108,7 @@ export class RoomHistory {
     gp.extraTurnFlag = snapshot.extraTurnFlag ?? false;
     gp.drawnCardId = snapshot.drawnCardId ?? "";
     gp.poopOverrides = snapshot.poopOverrides ?? {};
+    gp.costOverrides = snapshot.costOverrides ?? {};
   }
 
   /** JSONからstateを完全復元 */

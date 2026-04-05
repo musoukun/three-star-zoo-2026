@@ -722,6 +722,16 @@ export class ZooRoom extends Room<{ state: ZooState }> {
       }
       console.log(`[Debug] poopOverrides =`, gp.poopOverrides);
     });
+    this.onMessage("__debugSetAnimalCost", (_c, d: { animalId: string; cost: number }) => {
+      const baseCost = ANIMALS[d.animalId]?.cost;
+      if (baseCost === undefined) return;
+      if (d.cost === baseCost) {
+        delete gp.costOverrides[d.animalId];
+      } else {
+        gp.costOverrides[d.animalId] = d.cost;
+      }
+      console.log(`[Debug] costOverrides =`, gp.costOverrides);
+    });
   }
 
   // ===== Bot =====

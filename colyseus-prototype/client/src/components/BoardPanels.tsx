@@ -4,6 +4,7 @@ import { ANIMALS, ANIMAL_ICONS, ANIMAL_CARD_IMAGES, EFFECT_TEXT_FULL, COLOR_CLAS
 import { CHANCE_CARD_DATA } from '../game/chanceCards';
 import type { CageState } from '../hooks/useColyseus';
 import { AnimalIcon, checkPlacement } from './boardUtils';
+import { PoopOverrideContext } from './Board';
 import { Emoji, COLOR_EMOJI } from './Emoji';
 
 // ===== リザルト画面 =====
@@ -231,6 +232,7 @@ export function RuleTooltip() {
 // ===== マーケットパネル =====
 export function MarketPanel() {
   const { state, sessionId, send } = useContext(ColyseusContext);
+  const overrides = useContext(PoopOverrideContext);
   if (!state) return null;
 
   const isMyTurn = state.currentTurn === sessionId;
@@ -297,7 +299,8 @@ export function MarketPanel() {
     <div className="market-grid">
       {animalList.map(a => {
         const stock = state.market[a.id] ?? 0;
-        const canBuy = isTrade && stock > 0 && (me?.coins ?? 0) >= a.cost;
+        const effectiveCost = a.id in overrides.cost ? overrides.cost[a.id] : a.cost;
+        const canBuy = isTrade && stock > 0 && (me?.coins ?? 0) >= effectiveCost;
         const colorClass = COLOR_CLASS[a.colors[0]] || '';
 
         return (
@@ -312,8 +315,12 @@ export function MarketPanel() {
             </div>
             <div className="market-card-body">
               <div className="market-card-icon">
-                <span className="market-card-badge badge-coin"><Emoji name="coin" size={14} />{a.cost}</span>
-                <span className="market-card-badge badge-poop"><Emoji name="poop" size={14} />{a.poops}</span>
+                <span className="market-card-badge badge-coin" style={a.id in overrides.cost ? { color: '#ffd700', fontWeight: 'bold' } : {}}>
+                  <Emoji name="coin" size={14} />{a.id in overrides.cost ? overrides.cost[a.id] : a.cost}
+                </span>
+                <span className="market-card-badge badge-poop" style={a.id in overrides.poop ? { color: '#ffd700', fontWeight: 'bold' } : {}}>
+                  <Emoji name="poop" size={14} />{a.id in overrides.poop ? overrides.poop[a.id] : a.poops}
+                </span>
                 {ANIMAL_CARD_IMAGES[a.id]
                   ? <img src={ANIMAL_CARD_IMAGES[a.id]} alt={a.name} className="market-card-img" />
                   : ANIMAL_ICONS[a.id]}

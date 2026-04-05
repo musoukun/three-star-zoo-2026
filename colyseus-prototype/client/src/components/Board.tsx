@@ -1,4 +1,4 @@
-import { useState, useEffect, useContext, useMemo, useRef, lazy, Suspense } from 'react';
+import { useState, useEffect, useContext, useMemo, useRef, lazy, Suspense, createContext } from 'react';
 import { ColyseusContext, PLAYER_COLORS } from '../App';
 import { ANIMALS, ANIMAL_ICONS, EFFECT_TEXT_FULL, EFFECT_TEXT_SHORT, STAR_COST } from '../game/animals';
 import { CHANCE_CARD_DATA } from '../game/chanceCards';
@@ -28,45 +28,71 @@ function useIsMobile(breakpoint = 768) {
   return isMobile;
 }
 
-// ===== 試験的: 動物うんちオーバーライドパネル =====
+// ===== 試験的: 動物パラメータオーバーライド =====
+interface AnimalOverrides {
+  poop: Record<string, number>;
+  cost: Record<string, number>;
+}
+export const PoopOverrideContext = createContext<AnimalOverrides>({ poop: {}, cost: {} });
 const ANIMAL_LIST = Object.values(ANIMALS);
 
-function PoopOverridePanel() {
+const BTN_STYLE = { width: 22, height: 22, padding: 0, lineHeight: '20px', cursor: 'pointer', fontSize: '0.85em' } as const;
+
+function PoopOverridePanel({ overrides, setOverrides }: {
+  overrides: AnimalOverrides;
+  setOverrides: (v: AnimalOverrides) => void;
+}) {
   const { send } = useContext(ColyseusContext);
-  const [overrides, setOverrides] = useState<Record<string, number>>({});
 
-  const getPoops = (animalId: string) => overrides[animalId] ?? ANIMALS[animalId].poops;
+  const getVal = (animalId: string, field: 'poop' | 'cost') =>
+    overrides[field][animalId] ?? (field === 'poop' ? ANIMALS[animalId].poops : ANIMALS[animalId].cost);
 
-  const setPoops = (animalId: string, value: number) => {
-    const clamped = Math.max(0, Math.min(9, value));
-    const base = ANIMALS[animalId].poops;
-    const next = { ...overrides };
+  const setVal = (animalId: string, field: 'poop' | 'cost', value: number) => {
+    const clamped = Math.max(0, Math.min(99, value));
+    const base = field === 'poop' ? ANIMALS[animalId].poops : ANIMALS[animalId].cost;
+    const next = { ...overrides, [field]: { ...overrides[field] } };
     if (clamped === base) {
-      delete next[animalId];
+      delete next[field][animalId];
     } else {
-      next[animalId] = clamped;
+      next[field][animalId] = clamped;
     }
     setOverrides(next);
-    send('__debugSetAnimalPoop', { animalId, poops: clamped });
+    if (field === 'poop') {
+      send('__debugSetAnimalPoop', { animalId, poops: clamped });
+    } else {
+      send('__debugSetAnimalCost', { animalId, cost: clamped });
+    }
   };
 
   return (
-    <div style={{ marginTop: 8, fontSize: '0.75em', borderTop: '1px solid rgba(255,255,255,0.2)', paddingTop: 6 }}>
-      <div style={{ fontWeight: 'bold', marginBottom: 4 }}>試験的: うんち数調整</div>
+    <div style={{ marginTop: 8, fontSize: '0.77em', borderTop: '1px solid rgba(255,255,255,0.2)', paddingTop: 6 }}>
+      <div style={{ fontWeight: 'bold', marginBottom: 4 }}>試験的: パラメータ調整</div>
+      <div style={{ display: 'flex', gap: 4, marginBottom: 2, fontSize: '0.85em', color: 'rgba(255,255,255,0.6)' }}>
+        <span style={{ flex: 1 }}>動物</span>
+        <span style={{ width: 70, textAlign: 'center' }}>金額</span>
+        <span style={{ width: 70, textAlign: 'center' }}>うんち</span>
+      </div>
       <div style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
         {ANIMAL_LIST.map(a => {
-          const current = getPoops(a.id);
-          const isOverridden = a.id in overrides;
+          const poopVal = getVal(a.id, 'poop');
+          const costVal = getVal(a.id, 'cost');
+          const poopChanged = a.id in overrides.poop;
+          const costChanged = a.id in overrides.cost;
+          const anyChanged = poopChanged || costChanged;
           return (
             <div key={a.id} style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
               <span style={{ flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
-                color: isOverridden ? '#ffd700' : 'inherit' }}>{a.name}</span>
-              <button style={{ width: 20, height: 20, padding: 0, lineHeight: '18px', cursor: 'pointer' }}
-                onClick={() => setPoops(a.id, current - 1)}>-</button>
-              <span style={{ width: 16, textAlign: 'center', fontWeight: isOverridden ? 'bold' : 'normal',
-                color: isOverridden ? '#ffd700' : 'inherit' }}>{current}</span>
-              <button style={{ width: 20, height: 20, padding: 0, lineHeight: '18px', cursor: 'pointer' }}
-                onClick={() => setPoops(a.id, current + 1)}>+</button>
+                color: anyChanged ? '#ffd700' : 'inherit' }}>{a.name}</span>
+              {/* 金額 */}
+              <button style={BTN_STYLE} onClick={() => setVal(a.id, 'cost', costVal - 1)}>-</button>
+              <span style={{ width: 18, textAlign: 'center', fontWeight: costChanged ? 'bold' : 'normal',
+                color: costChanged ? '#ffd700' : 'inherit' }}>{costVal}</span>
+              <button style={BTN_STYLE} onClick={() => setVal(a.id, 'cost', costVal + 1)}>+</button>
+              {/* うんち */}
+              <button style={BTN_STYLE} onClick={() => setVal(a.id, 'poop', poopVal - 1)}>-</button>
+              <span style={{ width: 18, textAlign: 'center', fontWeight: poopChanged ? 'bold' : 'normal',
+                color: poopChanged ? '#ffd700' : 'inherit' }}>{poopVal}</span>
+              <button style={BTN_STYLE} onClick={() => setVal(a.id, 'poop', poopVal + 1)}>+</button>
             </div>
           );
         })}
@@ -79,6 +105,7 @@ function PoopOverridePanel() {
 export function Board({ onLeave }: { onLeave: () => void }) {
   const { state, sessionId, historyInfo, send } = useContext(ColyseusContext);
   const [historyOpen, setHistoryOpen] = useState(false);
+  const [animalOverrides, setAnimalOverrides] = useState<AnimalOverrides>({ poop: {}, cost: {} });
   const isMobile = useIsMobile();
   const [marketOpen, setMarketOpen] = useState(false);
   const [chatOpen, setChatOpen] = useState(false);
@@ -129,6 +156,7 @@ export function Board({ onLeave }: { onLeave: () => void }) {
 
   // ===== モバイルレイアウト =====
   if (isMobile) return (
+    <PoopOverrideContext.Provider value={animalOverrides}>
     <div className="game-layout-mobile">
 
       {/* ステータスバー */}
@@ -294,7 +322,7 @@ export function Board({ onLeave }: { onLeave: () => void }) {
             <button className="history-btn danger" disabled={historyInfo.undoCount === 0}
               onClick={() => { if (confirm('ゲームを初期状態に戻しますか？')) send('resetGame'); }}><Emoji name="refresh" size={12} /> Reset</button>
           </div>
-          <PoopOverridePanel />
+          <PoopOverridePanel overrides={animalOverrides} setOverrides={setAnimalOverrides} />
         </div>
       )}
 
@@ -318,10 +346,12 @@ export function Board({ onLeave }: { onLeave: () => void }) {
         />
       )}
     </div>
+    </PoopOverrideContext.Provider>
   );
 
   // ===== デスクトップレイアウト =====
   return (
+    <PoopOverrideContext.Provider value={animalOverrides}>
     <div className="game-layout">
 
       {/* ===== 左上: メインエリア ===== */}
@@ -529,7 +559,7 @@ export function Board({ onLeave }: { onLeave: () => void }) {
               <Emoji name="refresh" size={12} /> Reset
             </button>
           </div>
-          <PoopOverridePanel />
+          <PoopOverridePanel overrides={animalOverrides} setOverrides={setAnimalOverrides} />
         </div>
       )}
 
@@ -553,6 +583,7 @@ export function Board({ onLeave }: { onLeave: () => void }) {
         />
       )}
     </div>
+    </PoopOverrideContext.Provider>
   );
 }
 
