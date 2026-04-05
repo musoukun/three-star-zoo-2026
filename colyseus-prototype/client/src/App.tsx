@@ -1,5 +1,5 @@
 import { useState, useEffect, createContext } from 'react';
-import { useColyseus } from './hooks/useColyseus';
+import { useColyseus, loadLastRoom, clearLastRoom } from './hooks/useColyseus';
 import type { ZooRoomState, HistoryInfo, RoomListing } from './hooks/useColyseus';
 import { Board } from './components/Board';
 import { Emoji } from './components/Emoji';
@@ -177,6 +177,51 @@ export function App() {
             </div>
           </div>
 
+          {/* 前の部屋に戻るバナー */}
+          {(() => {
+            const last = loadLastRoom();
+            if (!last) return null;
+            const lastRoom = rooms.find(r => r.roomId === last.roomId);
+            if (!lastRoom) return null;
+            return (
+              <div style={{ ...S.card, border: '2px solid #ffc107', background: '#fff8e1' }}>
+                <div style={{ padding: '12px 16px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8, flexWrap: 'wrap' }}>
+                  <div>
+                    <div style={{ fontWeight: 'bold', color: '#333' }}>
+                      <Emoji name="door" size={14} /> 前の部屋が残っています
+                    </div>
+                    <div style={{ fontSize: 12, color: '#666', marginTop: 2 }}>
+                      {lastRoom.metadata?.roomName || lastRoom.roomId}（{last.playerName}として再入室）
+                    </div>
+                  </div>
+                  <div style={{ display: 'flex', gap: 6 }}>
+                    <button
+                      onClick={() => {
+                        const pName = name || last.playerName || 'ゲスト';
+                        if (lastRoom.metadata?.isPrivate) {
+                          setPasswordTarget(lastRoom);
+                          setJoinPassword('');
+                        } else {
+                          joinRoomById(last.roomId, pName);
+                        }
+                      }}
+                      style={isLoading ? S.disabledBtn : S.goldBtn}
+                      disabled={isLoading}
+                    >
+                      {isLoading ? '接続中...' : '戻る →'}
+                    </button>
+                    <button
+                      onClick={() => { clearLastRoom(); }}
+                      style={{ ...S.cancelBtn, fontSize: 11, padding: '4px 8px' }}
+                    >
+                      消す
+                    </button>
+                  </div>
+                </div>
+              </div>
+            );
+          })()}
+
           {/* ルーム一覧 */}
           <div style={S.card}>
             <div style={S.cardHeader}>
@@ -201,12 +246,17 @@ export function App() {
                 </p>
               ) : (
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
-                  {filteredRooms.map((r) => (
-                    <div key={r.roomId} style={S.roomRow}>
+                  {filteredRooms.map((r) => {
+                    const last = loadLastRoom();
+                    const isMyRoom = last?.roomId === r.roomId;
+                    const canJoin = !r.locked || isMyRoom;
+                    return (
+                    <div key={r.roomId} style={{ ...S.roomRow, ...(isMyRoom ? { border: '1px solid #ffc107', background: '#fffde7' } : {}) }}>
                       <div>
                         <div style={S.roomName}>
                           {r.metadata?.isPrivate ? <><Emoji name="lock" size={14} /> </> : <><Emoji name="house" size={14} /> </>}
                           {r.metadata?.roomName || r.roomId}
+                          {isMyRoom && <span style={{ fontSize: 10, color: '#f57f17', marginLeft: 4 }}>前回の部屋</span>}
                         </div>
                         <div style={S.roomMeta}>
                           <Emoji name="people" size={12} /> {r.metadata?.playerCount ?? r.clients}人
@@ -215,21 +265,23 @@ export function App() {
                       </div>
                       <button
                         onClick={() => {
-                          if (r.locked) return;
+                          if (!canJoin) return;
+                          const pName = isMyRoom ? (name || last?.playerName || 'ゲスト') : (name || 'ゲスト');
                           if (r.metadata?.isPrivate) {
                             setPasswordTarget(r);
                             setJoinPassword('');
                           } else {
-                            joinRoomById(r.roomId, name || 'ゲスト');
+                            joinRoomById(r.roomId, pName);
                           }
                         }}
-                        style={(r.locked || isLoading) ? S.disabledBtn : S.joinBtn}
-                        disabled={r.locked || isLoading}
+                        style={(!canJoin || isLoading) ? S.disabledBtn : isMyRoom ? S.goldBtn : S.joinBtn}
+                        disabled={!canJoin || isLoading}
                       >
-                        {r.locked ? '入室不可' : isLoading ? '接続中...' : '入室 →'}
+                        {!canJoin ? '入室不可' : isLoading ? '接続中...' : isMyRoom && r.locked ? '再入室 →' : '入室 →'}
                       </button>
                     </div>
-                  ))}
+                    );
+                  })}
                 </div>
               )}
             </div>

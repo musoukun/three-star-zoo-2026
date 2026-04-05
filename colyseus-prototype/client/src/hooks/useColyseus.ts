@@ -6,6 +6,7 @@ const SERVER_URL = import.meta.env.VITE_SERVER_URL || 'ws://localhost:2567';
 
 // localStorage キー
 const LS_KEY = 'zoo_room_session';
+const LS_LAST_ROOM_KEY = 'zoo_last_room';
 
 interface SavedSession {
   roomId: string;
@@ -14,9 +15,22 @@ interface SavedSession {
   savedAt: number;
 }
 
+interface LastRoomInfo {
+  roomId: string;
+  playerName: string;
+  savedAt: number;
+}
+
 function saveSession(roomId: string, reconnectionToken: string, playerName: string) {
   const data: SavedSession = { roomId, reconnectionToken, playerName, savedAt: Date.now() };
   localStorage.setItem(LS_KEY, JSON.stringify(data));
+  // 退室しても残る「最後に居た部屋」情報
+  saveLastRoom(roomId, playerName);
+}
+
+function saveLastRoom(roomId: string, playerName: string) {
+  const data: LastRoomInfo = { roomId, playerName, savedAt: Date.now() };
+  localStorage.setItem(LS_LAST_ROOM_KEY, JSON.stringify(data));
 }
 
 function loadSession(): SavedSession | null {
@@ -28,6 +42,27 @@ function loadSession(): SavedSession | null {
     localStorage.removeItem(LS_KEY);
     return null;
   }
+}
+
+export function loadLastRoom(): LastRoomInfo | null {
+  try {
+    const raw = localStorage.getItem(LS_LAST_ROOM_KEY);
+    if (!raw) return null;
+    const data = JSON.parse(raw) as LastRoomInfo;
+    // 24時間以上前の情報は無効
+    if (Date.now() - data.savedAt > 24 * 60 * 60 * 1000) {
+      localStorage.removeItem(LS_LAST_ROOM_KEY);
+      return null;
+    }
+    return data;
+  } catch {
+    localStorage.removeItem(LS_LAST_ROOM_KEY);
+    return null;
+  }
+}
+
+export function clearLastRoom() {
+  localStorage.removeItem(LS_LAST_ROOM_KEY);
 }
 
 function clearSession() {

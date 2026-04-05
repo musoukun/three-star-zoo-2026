@@ -95,6 +95,7 @@ export class ZooRoom extends Room<{ state: ZooState }> {
     }
 
     if (this.state.phase !== "lobby") {
+      // 同じsessionIdでの再接続
       const existingPlayer = this.state.players.get(client.sessionId);
       if (existingPlayer) {
         existingPlayer.connected = true;
@@ -102,6 +103,71 @@ export class ZooRoom extends Room<{ state: ZooState }> {
         this.updateMetadata();
         return;
       }
+
+      // 名前一致で切断中プレイヤーに乗り移り（退室後の再入室）
+      const joinName = options.name || '';
+      if (joinName) {
+        for (const [oldSessionId, player] of this.state.players.entries()) {
+          if (!player.connected && player.name === joinName) {
+            // 再接続エントリがあればキャンセル
+            this.cancelReconnection(oldSessionId);
+
+            // turnOrderとplayersのキーを新sessionIdに差し替え
+            const idx = this.state.turnOrder.indexOf(oldSessionId);
+            if (idx !== -1) {
+              this.state.turnOrder.splice(idx, 1);
+              this.state.turnOrder.splice(idx, 0, client.sessionId);
+            }
+            if (this.state.currentTurn === oldSessionId) this.state.currentTurn = client.sessionId;
+            if (this.state.hostId === oldSessionId) this.state.hostId = client.sessionId;
+
+            // プレイヤー情報を新sessionIdで再登録
+            this.state.players.delete(oldSessionId);
+            player.id = client.sessionId;
+            player.connected = true;
+            this.state.players.set(client.sessionId, player);
+
+            // ケージ内のスロットのplayerIdも更新
+            for (const cage of player.cages) {
+              for (const slot of cage.slots) {
+                if (slot.playerId === oldSessionId) slot.playerId = client.sessionId;
+              }
+            }
+
+            // pendingEffectsのownerPlayerIdも更新
+            for (const pe of this.state.pendingEffects) {
+              if (pe.ownerPlayerId === oldSessionId) pe.ownerPlayerId = client.sessionId;
+            }
+
+            // setupInventoryのキーも移行
+            if (this.state.setupInventory.has(oldSessionId)) {
+              const inv = this.state.setupInventory.get(oldSessionId)!;
+              this.state.setupInventory.delete(oldSessionId);
+              this.state.setupInventory.set(client.sessionId, inv);
+            }
+
+            // heldCardsのキーも移行
+            if (this.gameplay.heldCards.has(oldSessionId)) {
+              const card = this.gameplay.heldCards.get(oldSessionId)!;
+              this.gameplay.heldCards.delete(oldSessionId);
+              this.gameplay.heldCards.set(client.sessionId, card);
+            }
+
+            this.updateMetadata();
+            this.cancelEmptyTimer();
+            this.addGameLog(`${player.name} が再入室しました`);
+
+            client.send("historyInfo", {
+              undoCount: this.history.undoCount,
+              redoCount: this.history.redoCount,
+            });
+
+            console.log(`${player.name} rejoined as ${client.sessionId} (was ${oldSessionId})`);
+            return;
+          }
+        }
+      }
+
       throw new Error("ゲームが進行中のため参加できません");
     }
 
