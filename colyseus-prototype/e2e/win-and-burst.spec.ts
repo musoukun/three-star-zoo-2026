@@ -37,7 +37,8 @@ function sleep(ms: number) {
 }
 
 async function clickAction(page: Page, text: string | RegExp, timeout = 10000) {
-  const btn = page.locator('.action-panel').getByRole('button', { name: text }).first();
+  // getByRoleだとimg alt付きのボタン名マッチに問題が出るのでgetByTextにフォールバック
+  const btn = page.locator('.action-panel button').filter({ hasText: text }).first();
   await btn.waitFor({ state: 'visible', timeout });
   await btn.click();
 }
@@ -138,6 +139,7 @@ async function startGame(browser: any, roomSuffix: string, testName: string) {
   const bob = await ctxBob.newPage();
 
   await alice.goto('/');
+  await alice.evaluate(() => localStorage.setItem('zoo_tutorial_done', '1'));
   await alice.fill('input[placeholder="名前を入力..."]', 'アリス');
   await alice.getByRole('button', { name: /ルームを作成/ }).first().click();
   await alice.fill('input[placeholder="部屋の名前..."]', `WB_${roomSuffix}`);
@@ -145,6 +147,7 @@ async function startGame(browser: any, roomSuffix: string, testName: string) {
   await sleep(500);
 
   await bob.goto('/');
+  await bob.evaluate(() => localStorage.setItem('zoo_tutorial_done', '1'));
   await bob.fill('input[placeholder="名前を入力..."]', 'ボブ');
 
   // LobbyRoom経由のリアルタイム一覧更新を待つ
@@ -205,13 +208,9 @@ async function advanceToIncome(page: Page, testName: string, who: string, dice1:
 async function finishTurn(page: Page, testName: string, who: string) {
   await clickAction(page, /お買い物終了/);
   await sleep(200);
-  const cleanDone = page.locator('.action-panel').getByRole('button', { name: /掃除終了/ });
-  if (await cleanDone.count() > 0) {
-    await cleanDone.click();
-    await sleep(200);
-  }
-  await clickAction(page, /ターン終了/);
-  await sleep(200);
+  // 掃除終了ボタンをクリック（掃除終了で自動ターン終了）
+  await clickAction(page, /掃除終了/);
+  await sleep(500);
 }
 
 async function skipBobTurn(bob: Page, testName: string) {
@@ -278,11 +277,8 @@ test.describe('勝利とバースト', () => {
 
       await clickAction(alice, /お買い物終了/);
       await sleep(200);
-      const cd1 = alice.locator('.action-panel').getByRole('button', { name: /掃除終了/ });
-      if (await cd1.count() > 0) await cd1.click();
-      await sleep(200);
-      await clickAction(alice, /ターン終了/);
-      await sleep(200);
+      await clickAction(alice, /掃除終了/);
+      await sleep(500);
       await ss(alice, 'alice', T, 'turn1-end');
 
       // ボブスキップ
@@ -304,11 +300,8 @@ test.describe('勝利とバースト', () => {
 
       await clickAction(alice, /お買い物終了/);
       await sleep(200);
-      const cd2 = alice.locator('.action-panel').getByRole('button', { name: /掃除終了/ });
-      if (await cd2.count() > 0) await cd2.click();
-      await sleep(200);
-      await clickAction(alice, /ターン終了/);
-      await sleep(200);
+      await clickAction(alice, /掃除終了/);
+      await sleep(500);
 
       await skipBobTurn(bob, T);
 
@@ -330,11 +323,10 @@ test.describe('勝利とバースト', () => {
       log(`  星3つ目: ★${stars3}`);
       expect(stars3).toBe(3);
 
-      // お買い物終了 → 掃除終了（うんち0なので不要だがフロー通り）
+      // お買い物終了 → 掃除終了 → 勝利判定
       await clickAction(alice, /お買い物終了/);
       await sleep(200);
-      const cd3 = alice.locator('.action-panel').getByRole('button', { name: /掃除終了/ });
-      if (await cd3.count() > 0) await cd3.click();
+      await clickAction(alice, /掃除終了/);
       await sleep(500);
       await ss(alice, 'alice', T, 'after-clean-phase');
 
@@ -347,9 +339,21 @@ test.describe('勝利とバースト', () => {
       const winnerText = await resultModal.textContent();
       expect(winnerText).toContain('アリス');
       log(`  勝利モーダル表示: ${winnerText?.substring(0, 50)}...`);
-      await ss(alice, 'alice', T, 'result-verified');
+      await ss(alice, 'alice', T, 'result-winner');
 
-      log('OK 星3つで勝利');
+      // ボブ側（敗北画面）のスクリーンショット
+      const bobResultModal = bob.locator('.result-modal');
+      await expect(bobResultModal).toBeVisible({ timeout: 10000 });
+      await ss(bob, 'bob', T, 'result-defeat');
+      const bobResultText = await bobResultModal.textContent();
+      log(`  敗北モーダル表示: ${bobResultText?.substring(0, 80)}...`);
+
+      // 敗北画面にはブルー系ヘッダーと励ましメッセージがある
+      const defeatHeader = bobResultModal.locator('.result-header');
+      const headerBg = await defeatHeader.evaluate(el => getComputedStyle(el).backgroundColor);
+      log(`  敗北ヘッダー色: ${headerBg}`);
+
+      log('OK 星3つで勝利 + 敗北画面確認');
     } finally {
       await ctxAlice.close();
       await ctxBob.close();
@@ -387,8 +391,7 @@ test.describe('勝利とバースト', () => {
       log(`  バースト前: ★${starsBefore}, 💰${coinsBefore}, 💩7`);
 
       // 掃除終了 → バースト発動
-      const cd = alice.locator('.action-panel').getByRole('button', { name: /掃除終了/ });
-      await cd.click();
+      await clickAction(alice, /掃除終了/);
       await sleep(500);
       await ss(alice, 'alice', T, 'after-clean-burst');
 
@@ -457,8 +460,7 @@ test.describe('勝利とバースト', () => {
       expect(starsBefore).toBe(0);
 
       // 掃除終了 → バースト発動
-      const cd = alice.locator('.action-panel').getByRole('button', { name: /掃除終了/ });
-      await cd.click();
+      await clickAction(alice, /掃除終了/);
       await sleep(500);
       await ss(alice, 'alice', T, 'after-burst');
 
