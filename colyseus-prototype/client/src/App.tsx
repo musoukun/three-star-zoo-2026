@@ -249,7 +249,8 @@ export function App() {
                   {filteredRooms.map((r) => {
                     const last = loadLastRoom();
                     const isMyRoom = last?.roomId === r.roomId;
-                    const canJoin = !r.locked || isMyRoom;
+                    const isInGame = r.metadata?.phase !== 'lobby';
+                    const canJoin = !isInGame || isMyRoom;
                     return (
                     <div key={r.roomId} style={{ ...S.roomRow, ...(isMyRoom ? { border: '1px solid #ffc107', background: '#fffde7' } : {}) }}>
                       <div>
@@ -260,7 +261,7 @@ export function App() {
                         </div>
                         <div style={S.roomMeta}>
                           <Emoji name="people" size={12} /> {r.metadata?.playerCount ?? r.clients}人
-                          {r.locked ? <> ・ <Emoji name="controller" size={12} /> ゲーム中</> : <> ・ <Emoji name="hourglass" size={12} /> 待機中</>}
+                          {isInGame ? <> ・ <Emoji name="controller" size={12} /> ゲーム中</> : <> ・ <Emoji name="hourglass" size={12} /> 待機中</>}
                         </div>
                       </div>
                       <button
@@ -277,7 +278,7 @@ export function App() {
                         style={(!canJoin || isLoading) ? S.disabledBtn : isMyRoom ? S.goldBtn : S.joinBtn}
                         disabled={!canJoin || isLoading}
                       >
-                        {!canJoin ? '入室不可' : isLoading ? '接続中...' : isMyRoom && r.locked ? '再入室 →' : '入室 →'}
+                        {!canJoin ? '入室不可' : isLoading ? '接続中...' : isMyRoom && isInGame ? '再入室 →' : '入室 →'}
                       </button>
                     </div>
                     );

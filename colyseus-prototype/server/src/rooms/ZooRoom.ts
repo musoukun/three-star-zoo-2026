@@ -575,7 +575,6 @@ export class ZooRoom extends Room<{ state: ZooState }> {
       if (this.state.players.size < 2) return;
 
       this.minClients = this.state.players.size;
-      this.lock();
       gp.startSetupPhase();
       this.updateMetadata();
       this.addGameLog(`ゲーム開始！ (${this.minClients}人)`);
@@ -656,7 +655,6 @@ export class ZooRoom extends Room<{ state: ZooState }> {
       this.botManager.removeAllCpus();
       gp.handleRestartGame();
       this.history.clear();
-      this.unlock();
       this.updateMetadata();
       this.addGameLog("ゲームがリスタートされました");
       console.log("Game restarted to lobby");
